@@ -34,9 +34,11 @@ import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
 import { LowResultsNotice } from './LowResultsNotice';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
+import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
 import { RemediationNextStepsCard } from '@/components/results/RemediationNextStepsCard';
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { calculateExposureScore } from '@/lib/exposureScore';
+import { calculateExposureReductionScore } from '@/lib/exposureReductionScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import { buildRemediationPlan } from '@/lib/remediationPlan';
 import type { Finding } from '@/lib/ufm';
@@ -58,29 +60,34 @@ interface AdvancedResultsPageProps {
 const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches', 'map', 'remediation', 'privacy'] as const;
 type TabValue = typeof VALID_TABS[number];
 
+/** Helper: convert results to Finding[] for score calculators */
+function resultsToFindings(results: any[]): Finding[] {
+  return results.map(r => ({
+    id: r.id || '',
+    type: r.kind === 'profile_presence' ? 'social_media' : (r.kind || 'identity'),
+    title: r.meta?.title || r.site || '',
+    description: '',
+    severity: (['low', 'medium', 'high', 'critical', 'info'].includes(r.severity) ? r.severity : 'info') as Finding['severity'],
+    confidence:
+      typeof (r as any).confidence === 'number' ? (r as any).confidence :
+      typeof (r as any).evidence?.confidence_score === 'number' ? (r as any).evidence.confidence_score / 100 :
+      0.5,
+    provider: r.provider || '',
+    providerCategory: '',
+    evidence: [],
+    impact: '',
+    remediation: [],
+    tags: [],
+    observedAt: r.created_at || new Date().toISOString(),
+  }));
+}
+
 /** Helper to compute and render ExposureScoreCard for Pro users */
 function AdvancedExposureScoreSection({ results }: { results: any[] }) {
-  const scoreResult = useMemo(() => {
-    const findings: Finding[] = results.map(r => ({
-      id: r.id || '',
-      type: r.kind === 'profile_presence' ? 'social_media' : (r.kind || 'identity'),
-      title: r.meta?.title || r.site || '',
-      description: '',
-      severity: (['low', 'medium', 'high', 'critical', 'info'].includes(r.severity) ? r.severity : 'info') as Finding['severity'],
-      confidence:
-        typeof (r as any).confidence === 'number' ? (r as any).confidence :
-        typeof (r as any).evidence?.confidence_score === 'number' ? (r as any).evidence.confidence_score / 100 :
-        0.5,
-      provider: r.provider || '',
-      providerCategory: '',
-      evidence: [],
-      impact: '',
-      remediation: [],
-      tags: [],
-      observedAt: r.created_at || new Date().toISOString(),
-    }));
-    return calculateExposureScore(findings);
-  }, [results]);
+  const findings = useMemo(() => resultsToFindings(results), [results]);
+
+  const scoreResult = useMemo(() => calculateExposureScore(findings), [findings]);
+  const reductionResult = useMemo(() => calculateExposureReductionScore(findings), [findings]);
 
   const drivers = useMemo(() => generateExposureDrivers(results), [results]);
   const level = scoreResult.score >= 80 ? 'severe' as const : scoreResult.level;
@@ -94,8 +101,27 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
 
   const plan = useMemo(() => buildRemediationPlan(drivers, level), [drivers, level]);
 
+  // Mock historical data for Pro (in production this would come from DB)
+  const mockHistory = useMemo(() => {
+    const score = reductionResult.score;
+    return [
+      { date: '2w ago', score: Math.max(0, score - 12) },
+      { date: '1w ago', score: Math.max(0, score - 5) },
+      { date: 'Now', score },
+    ];
+  }, [reductionResult.score]);
+
+  const previousScore = mockHistory.length > 1 ? mockHistory[mockHistory.length - 2].score : undefined;
+
   return (
     <>
+      <ExposureReductionScoreCard
+        score={reductionResult.score}
+        level={reductionResult.level}
+        previousScore={previousScore}
+        history={mockHistory}
+        className="mb-4"
+      />
       <ExposureScoreCard
         score={scoreResult.score}
         level={level}

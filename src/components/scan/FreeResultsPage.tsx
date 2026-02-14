@@ -75,7 +75,9 @@ import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
+import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
 import { calculateExposureScore } from '@/lib/exposureScore';
+import { calculateExposureReductionScore } from '@/lib/exposureReductionScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import type { Finding } from '@/lib/ufm';
 import { filterFindings } from '@/lib/findingFilters';
@@ -195,6 +197,37 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
         className="mt-4"
       />
     </>
+  );
+}
+
+/** Exposure Reduction Score™ for Free users (score only, locked trends) */
+function FreeReductionScore({ results, onUpgradeClick }: { results: ScanResult[]; onUpgradeClick: () => void }) {
+  const reductionResult = useMemo(() => {
+    const findings: Finding[] = (results as any[]).map(r => ({
+      id: r.id || '',
+      type: r.kind === 'profile_presence' ? 'social_media' : (r.kind || 'identity'),
+      title: r.meta?.title || r.site || '',
+      description: '',
+      severity: (['low', 'medium', 'high', 'critical', 'info'].includes(r.severity) ? r.severity : 'info') as Finding['severity'],
+      confidence: typeof (r as any).confidence === 'number' ? (r as any).confidence : 0.5,
+      provider: r.provider || '',
+      providerCategory: '',
+      evidence: [],
+      impact: '',
+      remediation: [],
+      tags: [],
+      observedAt: r.created_at || new Date().toISOString(),
+    }));
+    return calculateExposureReductionScore(findings);
+  }, [results]);
+
+  return (
+    <ExposureReductionScoreCard
+      score={reductionResult.score}
+      level={reductionResult.level}
+      isLocked
+      onUpgradeClick={onUpgradeClick}
+    />
   );
 }
 
@@ -621,6 +654,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 <span>No monitoring</span>
               </div>
             </div>
+
+            {/* ===== EXPOSURE REDUCTION SCORE™ ===== */}
+            <FreeReductionScore results={results} onUpgradeClick={handleUpgradeClick} />
 
             {/* ===== EXPOSURE SCORE HERO CARD ===== */}
             <ExposureScoreCardSection results={results} onUpgradeClick={handleUpgradeClick} />
