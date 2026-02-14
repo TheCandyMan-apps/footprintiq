@@ -16,11 +16,11 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   'Full platform coverage',
-  'Deep correlation graph',
-  'Breach timeline',
-  'Risk scoring engine',
-  'Remediation prioritization',
-  'Historical tracking',
+  'Exposure prioritization scoring',
+  'Removal pathway mapping',
+  'Curated opt-out database',
+  'Exportable remediation plan',
+  'Historical tracking & risk trends',
 ];
 
 export function FreeProComparisonStrip({ onUpgradeClick, className }: FreeProComparisonStripProps) {
