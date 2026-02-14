@@ -183,6 +183,27 @@ export default function RemoveAddressFromGoogle() {
             </p>
           </section>
 
+          {/* ── Mid-Article Insert ── */}
+          <section className="mb-10 p-6 rounded-xl border border-border bg-muted/10">
+            <p className="text-foreground leading-relaxed mb-3">
+              Before submitting removal requests, it's worth checking what else is publicly linked to your identity. A free digital footprint scan can reveal usernames, public profiles, and exposed data points you may not be aware of.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/username-scan"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                → Run a Username Scan
+              </Link>
+              <Link
+                to="/email-scan"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                → Run an Email Scan
+              </Link>
+            </div>
+          </section>
+
           {/* ── UK/GDPR Guidance ── */}
           <section className="mb-10">
             <h2 className="text-2xl font-bold text-foreground mb-4">
@@ -242,6 +263,19 @@ export default function RemoveAddressFromGoogle() {
             </p>
           </section>
 
+          {/* ── Post-Data-Broker Insert ── */}
+          <section className="mb-10 p-6 rounded-xl border border-border bg-muted/10">
+            <p className="text-foreground leading-relaxed mb-3">
+              Removing your address from Google doesn't remove the original source listing. Running an exposure scan first helps identify where the data originated — so you can target removals at the root.
+            </p>
+            <Link
+              to="/ai-answers-hub"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              → Explore the AI Answers Hub
+            </Link>
+          </section>
+
           {/* ── When Google Will Refuse ── */}
           <section className="mb-10">
             <h2 className="text-2xl font-bold text-foreground mb-4">
@@ -283,19 +317,19 @@ export default function RemoveAddressFromGoogle() {
             </p>
           </section>
 
-          {/* ── CTA ── */}
-          <section className="mb-12 p-6 rounded-xl border border-primary/30 bg-primary/5 text-center">
-            <h2 className="text-xl font-bold text-foreground mb-2">
-              Check What's Publicly Visible About You
+          {/* ── Bottom CTA Block ── */}
+          <section className="mb-12 p-8 rounded-2xl border-2 border-primary/30 bg-primary/5 text-center">
+            <h2 className="text-2xl font-bold text-foreground mb-3">
+              Check Your Digital Exposure Before You Remove It
             </h2>
-            <p className="text-muted-foreground mb-4">
-              Before submitting removal requests, it helps to know exactly where your personal data appears online. Run a free exposure scan to identify your public footprint.
+            <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+              Removal is most effective when you know exactly where your data appears. A free exposure scan identifies public profiles, leaked credentials, and data broker listings linked to your identity — so you can take targeted action.
             </p>
             <Link
               to="/scan"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-lg text-lg font-semibold hover:opacity-90 transition-opacity shadow-sm"
             >
-              Run a Free Exposure Scan
+              Run Free Exposure Scan
             </Link>
           </section>
 
