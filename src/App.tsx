@@ -113,6 +113,7 @@ const AuraVsFootprintiq = lazy(() => import("./pages/comparisons/AuraVsFootprint
 const DeletemeVsFootprintiq = lazy(() => import("./pages/comparisons/DeletemeVsFootprintiq"));
 const IncogniVsFootprintiq = lazy(() => import("./pages/comparisons/IncogniVsFootprintiq"));
 const KanaryVsFootprintiq = lazy(() => import("./pages/comparisons/KanaryVsFootprintiq"));
+const UsersearchVsFootprintiq = lazy(() => import("./pages/comparisons/UsersearchVsFootprintiq"));
 const EthicalOsintCharter = lazy(() => import("./pages/EthicalOsintCharter"));
 const CheckWhatsPubliclyVisible = lazy(() => import("./pages/guides/CheckWhatsPubliclyVisible"));
 const EmployersDigitalFootprint = lazy(() => import("./pages/guides/EmployersDigitalFootprint"));
@@ -645,6 +646,7 @@ function RouterContent() {
              <Route path="/deleteme-vs-footprintiq" element={<DeletemeVsFootprintiq />} />
              <Route path="/incogni-vs-footprintiq" element={<IncogniVsFootprintiq />} />
              <Route path="/kanary-vs-footprintiq" element={<KanaryVsFootprintiq />} />
+             <Route path="/usersearch-vs-footprintiq" element={<UsersearchVsFootprintiq />} />
              <Route path="/guides/check-whats-publicly-visible" element={<CheckWhatsPubliclyVisible />} />
              <Route path="/guides/employers-digital-footprint" element={<EmployersDigitalFootprint />} />
              <Route path="/guides/clean-up-online-presence" element={<CleanUpOnlinePresence />} />
