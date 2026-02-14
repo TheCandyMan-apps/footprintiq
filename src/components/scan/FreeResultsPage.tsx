@@ -82,7 +82,7 @@ import { calculateExposureReductionScore } from '@/lib/exposureReductionScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import type { Finding } from '@/lib/ufm';
 import { filterFindings } from '@/lib/findingFilters';
-import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
+// PostScanUpgradeModal removed to reduce upsell fatigue
 import { useNavigate } from 'react-router-dom';
 import { useExposureStatuses } from '@/hooks/useExposureStatuses';
 import type { ExposureStatus } from '@/hooks/useExposureStatuses';
@@ -95,8 +95,7 @@ import { AccountRow } from './results-tabs/accounts/AccountRow';
 import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
-import { FreeProComparisonStrip } from '@/components/results/FreeProComparisonStrip';
-import RemediationPlanTab from './results-tabs/RemediationPlanTab';
+// FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
@@ -261,9 +260,6 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     await updateStatus(findingId, platformName, newStatus);
   }, [updateStatus]);
 
-  // Post-scan upgrade modal state
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const hasShownModalRef = useRef(false);
 
   // Filter out provider health findings AND apply Focus Mode filtering (hide gaming lookup sites like OP.GG)
   const displayResults = useMemo(() => {
@@ -404,16 +400,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     }
   }, [job?.status, results.length, refetch]);
 
-  // Show upgrade modal after scan completes
-  useEffect(() => {
-    if (scanComplete && signalsFound > 0 && !hasShownModalRef.current) {
-      const timer = setTimeout(() => {
-        setShowUpgradeModal(true);
-        hasShownModalRef.current = true;
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [scanComplete, signalsFound]);
+   // Post-scan upgrade modal removed to reduce upsell fatigue (session replay feedback)
 
   const loadJob = async () => {
     try {
@@ -742,17 +729,10 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   </div>
                 </div>
 
-                {/* CTA inside risk snapshot */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full mt-4 h-8 text-xs text-primary hover:text-primary gap-1"
-                  onClick={handleUpgradeClick}
-                >
-                  <Lock className="h-3 w-3" />
-                  See which ones matter
-                  <ArrowRight className="h-3 w-3" />
-                </Button>
+                {/* Subtle hint instead of CTA */}
+                <p className="text-[10px] text-muted-foreground/60 mt-3 text-center">
+                  Pro users see risk-ranked findings with confidence scores.
+                </p>
               </CardContent>
             </Card>
 
@@ -1010,110 +990,18 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     <div className="text-[10px] text-muted-foreground">Breach Links</div>
                   </div>
                 </div>
-
-                {/* Locked: Your Exposure Reduction Journey */}
-                <div 
-                  className="relative rounded-lg border border-border/30 overflow-hidden cursor-pointer group hover:border-primary/20 transition-colors"
-                  onClick={handleUpgradeClick}
-                >
-                  <div className="p-3 border-b border-border/20 bg-muted/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Your Exposure Reduction Journey</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                        <Lock className="h-3 w-3" />
-                        <span>Pro</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Blurred preview content */}
-                  <div className="p-4 space-y-3 blur-[5px] select-none pointer-events-none opacity-50">
-                    {/* Fake trend graph bars */}
-                    <div className="flex items-end gap-1 h-16">
-                      {[35, 42, 38, 50, 55, 62, 68, 72, 78, 82, 85, 88].map((h, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 rounded-t bg-primary/40"
-                          style={{ height: `${h}%` }}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Fake resolved count history */}
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3 text-green-500" />
-                        <span>12 exposures resolved</span>
-                      </div>
-                      <span className="text-green-500 font-medium">+24 pts</span>
-                    </div>
-
-                    {/* Fake improvement % */}
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <BarChart3 className="h-3 w-3 text-primary" />
-                        <span>Overall improvement</span>
-                      </div>
-                      <span className="text-primary font-medium">+37%</span>
-                    </div>
-                  </div>
-
-                  {/* Overlay CTA */}
-                  <div className="absolute inset-0 top-[40px] bg-gradient-to-t from-background via-background/80 to-transparent flex items-end justify-center pb-4">
-                    <div className="text-center space-y-2">
-                      <p className="text-xs text-muted-foreground font-medium px-4">
-                        Pro unlocks continuous tracking and measurable privacy improvement.
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs text-primary hover:text-primary gap-1.5"
-                      >
-                        <Lock className="h-3 w-3" />
-                        Unlock Score Tracking
-                        <ArrowRight className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
 
-            {/* ===== REMEDIATION PLAN (locked for Free) ===== */}
-            <Card className="overflow-hidden border-border/50">
-              <CardContent className="p-4">
-                <RemediationPlanTab
-                  results={displayResults}
-                  isLocked
-                  onUpgradeClick={handleUpgradeClick}
-                />
-              </CardContent>
-            </Card>
-
-            {/* ===== LOCKED INTELLIGENCE TABS ===== */}
+            {/* ===== LOCKED INTELLIGENCE TABS (single consolidated upsell) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
                 <LockedTabsPreview onUpgradeClick={handleUpgradeClick} />
               </CardContent>
             </Card>
-
-            {/* ===== FREE vs PRO COMPARISON STRIP ===== */}
-            <FreeProComparisonStrip onUpgradeClick={handleUpgradeClick} />
           </div>
         )}
       </CardContent>
-
-      {/* Post-Scan Upgrade Modal */}
-      <PostScanUpgradeModal
-        open={showUpgradeModal}
-        onOpenChange={setShowUpgradeModal}
-        lockedSectionsCount={hiddenCount}
-        signalsFound={signalsFound}
-        highRiskCount={totalBreaches}
-      />
     </Card>
   );
 }
