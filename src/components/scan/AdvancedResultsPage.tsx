@@ -35,12 +35,16 @@ import { parseISO, isValid } from 'date-fns';
 import { LowResultsNotice } from './LowResultsNotice';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
 import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
+import { ExposureReducedBadge } from '@/components/results/ExposureStatusSelector';
+import { ExposureResolutionTimeline } from '@/components/results/ExposureResolutionTimeline';
 import { RemediationNextStepsCard } from '@/components/results/RemediationNextStepsCard';
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { calculateExposureScore } from '@/lib/exposureScore';
 import { calculateExposureReductionScore } from '@/lib/exposureReductionScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import { buildRemediationPlan } from '@/lib/remediationPlan';
+import { useExposureStatuses } from '@/hooks/useExposureStatuses';
+import type { ExposureStatus } from '@/hooks/useExposureStatuses';
 import type { Finding } from '@/lib/ufm';
 
 // Lazy load tab components for performance
@@ -83,11 +87,31 @@ function resultsToFindings(results: any[]): Finding[] {
 }
 
 /** Helper to compute and render ExposureScoreCard for Pro users */
-function AdvancedExposureScoreSection({ results }: { results: any[] }) {
+function AdvancedExposureScoreSection({ results, scanId }: { results: any[]; scanId: string }) {
   const findings = useMemo(() => resultsToFindings(results), [results]);
+  const {
+    statuses, history, updateStatus, getStatus, getScoreImprovement, loadHistory,
+  } = useExposureStatuses(scanId);
 
-  const scoreResult = useMemo(() => calculateExposureScore(findings), [findings]);
-  const reductionResult = useMemo(() => calculateExposureReductionScore(findings), [findings]);
+  // Load history on mount for Pro timeline
+  useEffect(() => { loadHistory(); }, [loadHistory]);
+
+  // Apply status overrides to findings for score calculation
+  const adjustedFindings = useMemo(() => {
+    return findings.map(f => {
+      const status = statuses[f.id]?.status;
+      if (status === 'resolved') {
+        return { ...f, type: 'resolved' as any, tags: [...(f.tags || []), 'resolved'] };
+      }
+      if (status === 'ignored') {
+        return { ...f, type: 'ignored' as any, tags: [...(f.tags || []), 'ignored'] };
+      }
+      return f;
+    });
+  }, [findings, statuses]);
+
+  const scoreResult = useMemo(() => calculateExposureScore(adjustedFindings), [adjustedFindings]);
+  const reductionResult = useMemo(() => calculateExposureReductionScore(adjustedFindings), [adjustedFindings]);
 
   const drivers = useMemo(() => generateExposureDrivers(results), [results]);
   const level = scoreResult.score >= 80 ? 'severe' as const : scoreResult.level;
@@ -112,6 +136,7 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
   }, [reductionResult.score]);
 
   const previousScore = mockHistory.length > 1 ? mockHistory[mockHistory.length - 2].score : undefined;
+  const scoreImprovement = getScoreImprovement();
 
   return (
     <>
@@ -122,6 +147,11 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
         history={mockHistory}
         className="mb-4"
       />
+      {scoreImprovement > 0 && (
+        <div className="mb-4 flex items-center justify-center">
+          <ExposureReducedBadge points={scoreImprovement} />
+        </div>
+      )}
       <ExposureScoreCard
         score={scoreResult.score}
         level={level}
@@ -135,11 +165,13 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
         plan={plan}
         className="mb-4"
       />
+      {history.length > 0 && (
+        <ExposureResolutionTimeline history={history} className="mb-4" />
+      )}
       <StrategicNextSteps className="mb-4" />
     </>
   );
 }
-
 export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -509,7 +541,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
         ) : (
           /* ===== FULL TABBED INTERFACE ===== */
           <InvestigationProvider scanId={jobId}>
-            <AdvancedExposureScoreSection results={results} />
+            <AdvancedExposureScoreSection results={results} scanId={jobId} />
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <ResultsTabBar 
                 tabCounts={tabCounts} 

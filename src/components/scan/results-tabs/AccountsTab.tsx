@@ -1,5 +1,7 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useExposureStatuses } from '@/hooks/useExposureStatuses';
+import type { ExposureStatus } from '@/hooks/useExposureStatuses';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +40,10 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('confidence');
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+  const { getStatus, updateStatus } = useExposureStatuses(jobId);
+  const handleExposureStatusChange = useCallback(async (findingId: string, platformName: string, newStatus: ExposureStatus) => {
+    await updateStatus(findingId, platformName, newStatus);
+  }, [updateStatus]);
   const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
   const [focusMode, setFocusMode] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
@@ -264,6 +270,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
           isFullAccess={isFullAccess}
           displayResults={displayResults}
           freeAccountLimit={freeAccountLimit}
+          getExposureStatus={getStatus}
+          onExposureStatusChange={handleExposureStatusChange}
         />
       ) : (
         <div>
@@ -338,6 +346,8 @@ interface VirtualizedAccountListProps {
   isFullAccess: boolean;
   displayResults: ScanResult[];
   freeAccountLimit: number;
+  getExposureStatus: (findingId: string) => ExposureStatus;
+  onExposureStatusChange: (findingId: string, platformName: string, status: ExposureStatus) => void;
 }
 
 function VirtualizedAccountList({
@@ -356,6 +366,8 @@ function VirtualizedAccountList({
   isFullAccess,
   displayResults,
   freeAccountLimit,
+  getExposureStatus,
+  onExposureStatusChange,
 }: VirtualizedAccountListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -393,6 +405,8 @@ function VirtualizedAccountList({
                 onSelect={() => handleSelect(result.id)}
                 onVerificationComplete={(r) => handleVerificationComplete(result.id, r)}
                 onClaimChange={(claim) => handleClaimChange(result.id, claim)}
+                exposureStatus={getExposureStatus(result.id)}
+                onExposureStatusChange={onExposureStatusChange}
               />
             </div>
           );

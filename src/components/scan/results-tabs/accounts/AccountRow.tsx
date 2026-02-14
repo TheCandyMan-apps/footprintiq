@@ -33,6 +33,8 @@ import {
   deriveMatchType,
 } from '@/lib/results/extractors';
 import { getBrokerRemovalGuide } from '@/lib/results/brokerRemovalGuides';
+import { ExposureStatusSelector } from '@/components/results/ExposureStatusSelector';
+import type { ExposureStatus } from '@/hooks/useExposureStatuses';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -49,6 +51,9 @@ interface AccountRowProps {
   onSelect: () => void;
   onVerificationComplete: (result: LensVerificationResult) => void;
   onClaimChange: (claim: ClaimType | null) => void;
+  /** Exposure status tracking */
+  exposureStatus?: ExposureStatus;
+  onExposureStatusChange?: (findingId: string, platformName: string, status: ExposureStatus) => void;
 }
 
 const getMatchConfidence = (score: number) => {
@@ -88,6 +93,8 @@ export function AccountRow({
   onSelect,
   onVerificationComplete,
   onClaimChange,
+  exposureStatus,
+  onExposureStatusChange,
 }: AccountRowProps) {
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
@@ -211,6 +218,16 @@ export function AccountRow({
 
       {/* RIGHT: Badges + Actions */}
       <div className="flex items-center gap-1.5 shrink-0 pl-1.5 border-l border-border/15">
+        {/* Exposure Status Selector */}
+        {onExposureStatusChange && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <ExposureStatusSelector
+              currentStatus={exposureStatus || 'active'}
+              onStatusChange={(status) => onExposureStatusChange(result.id, platformName, status)}
+              compact
+            />
+          </div>
+        )}
         {/* Confidence Badge */}
         <Popover>
           <PopoverTrigger asChild>

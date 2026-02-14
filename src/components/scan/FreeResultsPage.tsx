@@ -76,6 +76,7 @@ import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsA
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
 import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
+import { ExposureReducedBadge } from '@/components/results/ExposureStatusSelector';
 import { calculateExposureScore } from '@/lib/exposureScore';
 import { calculateExposureReductionScore } from '@/lib/exposureReductionScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
@@ -83,6 +84,8 @@ import type { Finding } from '@/lib/ufm';
 import { filterFindings } from '@/lib/findingFilters';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 import { useNavigate } from 'react-router-dom';
+import { useExposureStatuses } from '@/hooks/useExposureStatuses';
+import type { ExposureStatus } from '@/hooks/useExposureStatuses';
 
 import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser';
 import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
@@ -250,6 +253,13 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
   // Use realtime results hook for refetch capability
   const { refetch } = useRealtimeResults(jobId);
+
+  // Exposure status tracking (Free: marking only, no history)
+  const { statuses, updateStatus, getStatus, getScoreImprovement } = useExposureStatuses(jobId);
+
+  const handleExposureStatusChange = useCallback(async (findingId: string, platformName: string, newStatus: ExposureStatus) => {
+    await updateStatus(findingId, platformName, newStatus);
+  }, [updateStatus]);
 
   // Post-scan upgrade modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -657,7 +667,11 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
             {/* ===== EXPOSURE REDUCTION SCORE™ ===== */}
             <FreeReductionScore results={results} onUpgradeClick={handleUpgradeClick} />
-
+            {getScoreImprovement() > 0 && (
+              <div className="mt-2 flex items-center justify-center">
+                <ExposureReducedBadge points={getScoreImprovement()} />
+              </div>
+            )}
             {/* ===== EXPOSURE SCORE HERO CARD ===== */}
             <ExposureScoreCardSection results={results} onUpgradeClick={handleUpgradeClick} />
 
@@ -789,6 +803,8 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                               onSelect={() => handleToggleExpand(profile.id)}
                               onVerificationComplete={(result) => handleVerificationComplete(profile.id, result)}
                               onClaimChange={(claim) => handleClaimChange(profile.id, claim)}
+                              exposureStatus={getStatus(profile.id)}
+                              onExposureStatusChange={handleExposureStatusChange}
                             />
                             {/* Inline LENS verification for eligible profiles */}
                             <div className="px-4 pb-2">
