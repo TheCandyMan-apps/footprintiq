@@ -91,6 +91,7 @@ import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsP
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
 import { FreeProComparisonStrip } from '@/components/results/FreeProComparisonStrip';
+import RemediationPlanTab from './results-tabs/RemediationPlanTab';
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
@@ -928,6 +929,17 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
             {/* ===== STRATEGIC NEXT STEPS ===== */}
             <StrategicNextSteps />
+
+            {/* ===== REMEDIATION PLAN (locked for Free) ===== */}
+            <Card className="overflow-hidden border-border/50">
+              <CardContent className="p-4">
+                <RemediationPlanTab
+                  results={displayResults}
+                  isLocked
+                  onUpgradeClick={handleUpgradeClick}
+                />
+              </CardContent>
+            </Card>
 
             {/* ===== LOCKED INTELLIGENCE TABS ===== */}
             <Card className="overflow-hidden border-border/50">
