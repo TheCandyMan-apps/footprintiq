@@ -37,6 +37,7 @@ import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
 import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
 import { ExposureReducedBadge } from '@/components/results/ExposureStatusSelector';
 import { ExposureResolutionTimeline } from '@/components/results/ExposureResolutionTimeline';
+import { PrivacyRiskTrendChart } from '@/components/results/PrivacyRiskTrendChart';
 import { RemediationNextStepsCard } from '@/components/results/RemediationNextStepsCard';
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { calculateExposureScore } from '@/lib/exposureScore';
@@ -165,6 +166,7 @@ function AdvancedExposureScoreSection({ results, scanId }: { results: any[]; sca
         plan={plan}
         className="mb-4"
       />
+      <PrivacyRiskTrendChart findings={adjustedFindings} className="mb-4" />
       {history.length > 0 && (
         <ExposureResolutionTimeline history={history} className="mb-4" />
       )}
