@@ -14,6 +14,7 @@ import {
   Shield,
   Scale,
 } from "lucide-react";
+import { AboutFootprintIQBlock } from "@/components/seo/AboutFootprintIQBlock";
 import {
   Accordion,
   AccordionContent,
@@ -329,6 +330,13 @@ export function ComparisonPageLayout({ data }: { data: ComparisonPageData }) {
                 </Link>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── About FootprintIQ ── */}
+        <section className="py-8 px-6">
+          <div className="max-w-3xl mx-auto">
+            <AboutFootprintIQBlock />
           </div>
         </section>
 
