@@ -3,23 +3,23 @@ import { User, Search, Shield, Newspaper, Briefcase } from "lucide-react";
 const personas = [
   {
     icon: <User className="w-5 h-5" />,
-    label: "Privacy-conscious individuals",
-  },
-  {
-    icon: <Search className="w-5 h-5" />,
-    label: "OSINT analysts & researchers",
+    label: "Anyone who wants to see what's publicly visible about them",
   },
   {
     icon: <Shield className="w-5 h-5" />,
-    label: "Safeguarding & harm-prevention professionals",
+    label: "People cleaning up after a data breach",
   },
   {
     icon: <Newspaper className="w-5 h-5" />,
-    label: "Journalists & investigators",
+    label: "Parents checking their family's online exposure",
+  },
+  {
+    icon: <Search className="w-5 h-5" />,
+    label: "Security professionals and researchers",
   },
   {
     icon: <Briefcase className="w-5 h-5" />,
-    label: "Compliance & risk teams",
+    label: "HR and compliance teams",
   },
 ];
 

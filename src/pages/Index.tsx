@@ -210,10 +210,6 @@ export default function Home() {
       </div>
 
       <div className="below-fold">
-        <ForProfessionals />
-      </div>
-      
-      <div className="below-fold">
         <TrustTransparency />
       </div>
       
@@ -227,6 +223,10 @@ export default function Home() {
       
       <div className="below-fold">
         <FAQ />
+      </div>
+
+      <div className="below-fold">
+        <ForProfessionals />
       </div>
 
       <div className="below-fold">

@@ -6,28 +6,28 @@ import { Link } from "react-router-dom";
 const capabilities = [
   {
     icon: Shield,
-    title: "Identity Risk Scoring",
+    title: "Privacy Risk Score",
     description:
-      "FootprintIQ generates an identity risk score based on publicly observable correlation signals, account exposure patterns, and contextual indicators.",
+      "See a simple score that tells you how exposed you are, based on what's publicly visible about you.",
     learnMore: "/ai-answers/what-is-an-identity-risk-score",
   },
   {
     icon: Fingerprint,
-    title: "Digital Footprint Discovery",
+    title: "Account Discovery",
     description:
-      "Scans identify publicly accessible accounts, reused usernames, and exposure patterns across platforms.",
+      "Find every public account linked to your username or email across hundreds of platforms.",
   },
   {
     icon: AlertTriangle,
-    title: "Dark Web & Breach Signal Detection",
+    title: "Breach Alerts",
     description:
-      "Where available, breach and exposure indicators are surfaced as part of risk analysis.",
+      "Find out if your email or password appeared in known data breaches.",
   },
   {
     icon: BookOpen,
-    title: "Interpretation-First Design",
+    title: "Plain-Language Results",
     description:
-      "Scores and results are presented with context, limitations, and ethical guidance.",
+      "Every result comes with clear explanations — no jargon, no guesswork.",
   },
 ];
 
@@ -67,7 +67,7 @@ export function PlatformCapabilities({ includeSchema = false }: PlatformCapabili
             Platform Capabilities
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Core capabilities that power FootprintIQ's ethical digital footprint analysis.
+            Everything you need to understand and reduce your online exposure.
           </p>
         </div>
 

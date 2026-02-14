@@ -70,7 +70,7 @@ export function IntelligenceBrief({
     }
     
     const presenceLevel = accountsFound > 15 ? 'extensive' : accountsFound > 8 ? 'significant' : accountsFound > 3 ? 'moderate' : 'limited';
-    let text = `Investigation identified ${presenceLevel} online presence for "${username}" across ${accountsFound} public platform${accountsFound !== 1 ? 's' : ''}.`;
+    let text = `We found ${presenceLevel === 'extensive' ? 'an' : 'a'} ${presenceLevel} online presence for "${username}" across ${accountsFound} public platform${accountsFound !== 1 ? 's' : ''}.`;
     
     if (breachCount > 0) {
       text += ` ${breachCount} data breach exposure${breachCount !== 1 ? 's were' : ' was'} discovered, requiring immediate attention.`;
