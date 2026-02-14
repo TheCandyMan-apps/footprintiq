@@ -184,6 +184,51 @@ const blogPosts = [{
   featured: true,
   image: "/blog-images/digital-footprint.webp"
 }, {
+  slug: "what-is-ethical-osint-scan",
+  title: "What Is an Ethical OSINT Scan?",
+  excerpt: "Learn what makes an OSINT scan ethical, how responsible platforms operate, and why consent, transparency, and confidence scoring matter in digital exposure analysis.",
+  date: "February 14, 2026",
+  readTime: "11 min read",
+  category: "OSINT & Ethics",
+  featured: true,
+  image: "/blog-images/ethical-osint.webp"
+}, {
+  slug: "exposure-mapping-before-removal",
+  title: "Why Exposure Mapping Comes Before Data Removal",
+  excerpt: "Most people start with removal. The smarter approach is mapping exposure first — so remediation is strategic, efficient, and prioritised by actual risk.",
+  date: "February 14, 2026",
+  readTime: "12 min read",
+  category: "Strategy",
+  featured: false,
+  image: "/blog-images/digital-footprint.webp"
+}, {
+  slug: "public-vs-private-data-osint",
+  title: "Public Data vs Private Data: What Responsible OSINT Means",
+  excerpt: "The public/private data boundary is the foundation of ethical OSINT. Understand the distinction, the grey areas, and how responsible platforms stay on the right side.",
+  date: "February 14, 2026",
+  readTime: "12 min read",
+  category: "Ethics & Privacy",
+  featured: false,
+  image: "/blog-images/ethical-osint.webp"
+}, {
+  slug: "remove-from-data-brokers-guide",
+  title: "How to Remove Yourself from Data Brokers (Step-by-Step Guide)",
+  excerpt: "Complete guide to removing your personal information from data brokers. Covers opt-out processes, GDPR/CCPA rights, service comparisons, and ongoing monitoring strategies.",
+  date: "February 14, 2026",
+  readTime: "14 min read",
+  category: "Privacy Guides",
+  featured: true,
+  image: "/blog-images/digital-footprint.webp"
+}, {
+  slug: "is-footprintiq-data-broker",
+  title: "Is FootprintIQ a Data Broker? (No — Here's Why)",
+  excerpt: "FootprintIQ is not a data broker. Learn the fundamental differences between exposure intelligence platforms and data brokers, and why the distinction matters.",
+  date: "February 14, 2026",
+  readTime: "11 min read",
+  category: "Trust & Transparency",
+  featured: false,
+  image: "/blog-images/ethical-osint.webp"
+}, {
   slug: "what-is-osint-risk",
   title: "What is OSINT Risk? Understanding Your Digital Exposure",
   excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
