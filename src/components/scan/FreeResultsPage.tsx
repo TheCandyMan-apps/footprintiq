@@ -89,6 +89,8 @@ import { buildRemediationPlan } from '@/lib/remediationPlan';
 import { AccountRow } from './results-tabs/accounts/AccountRow';
 import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
+import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
+import { FreeProComparisonStrip } from '@/components/results/FreeProComparisonStrip';
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
@@ -927,49 +929,15 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             {/* ===== STRATEGIC NEXT STEPS ===== */}
             <StrategicNextSteps />
 
-            {/* ===== PERSONALIZED PRO VALUE BLOCK ===== */}
-            <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-              <CardContent className="p-5">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold mb-1">
-                    What Pro would reveal for <span className="text-primary">{username}</span>
-                  </h3>
-                </div>
-
-                <ul className="space-y-2.5 mb-5">
-                  <li className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>All {totalProfiles} profiles and where they appear</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>Which profiles are likely the same person</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>How identifiers connect across platforms</span>
-                  </li>
-                  <li className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <span>Which findings are likely false positives</span>
-                  </li>
-                </ul>
-
-                <Button className="w-full" size="lg" onClick={handleUpgradeClick}>
-                  Unlock Pro to view full analysis
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-
-                <p className="mt-3 text-center text-xs text-muted-foreground/80">
-                  Most people upgrade after seeing how many profiles are involved.
-                </p>
-
-                <p className="mt-3 text-center text-[10px] text-muted-foreground/70 flex items-center justify-center gap-1.5">
-                  <Shield className="h-2.5 w-2.5" />
-                  Public sources only • Ethical OSINT • Cancel anytime
-                </p>
+            {/* ===== LOCKED INTELLIGENCE TABS ===== */}
+            <Card className="overflow-hidden border-border/50">
+              <CardContent className="p-4">
+                <LockedTabsPreview onUpgradeClick={handleUpgradeClick} />
               </CardContent>
             </Card>
+
+            {/* ===== FREE vs PRO COMPARISON STRIP ===== */}
+            <FreeProComparisonStrip onUpgradeClick={handleUpgradeClick} />
           </div>
         )}
       </CardContent>
