@@ -142,6 +142,9 @@ export const INDEXNOW_URLS = [
   "/incogni-vs-footprintiq",
   "/kanary-vs-footprintiq",
   "/usersearch-vs-footprintiq",
+  "/people-search-vs-footprintiq",
+  "/osint-suites-vs-footprintiq",
+  "/osint-for-activists-journalists",
   // Mainstream Q&A Guides
   "/guides/check-whats-publicly-visible",
   "/guides/employers-digital-footprint",
