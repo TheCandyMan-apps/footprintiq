@@ -366,7 +366,27 @@ const PricingPage = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="space-y-6">
+                    <CardContent className="space-y-6">
+                    {/* Remediation Intelligence Engine */}
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Remediation Intelligence Engine</p>
+                      <ul className="space-y-1.5">
+                        {[
+                          'Exposure priority scoring',
+                          'Strategic remediation roadmap',
+                          'Opt-out database access',
+                          'Removal service guidance',
+                          'Exportable action plan (PDF)',
+                          'Risk trend tracking',
+                        ].map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-3">Everything in Free, plus</p>
                       <ul className="space-y-2">
@@ -507,6 +527,49 @@ const PricingPage = () => {
               </motion.div>
             </div>
             
+            {/* Free vs Pro Comparison */}
+            <div className="mt-16 max-w-4xl mx-auto">
+              <h3 className="text-xl font-bold text-center mb-6">Free vs Pro — At a Glance</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-muted-foreground">Free</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {['Snapshot exposure', 'Limited remediation insight', 'Basic scoring'].map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-muted-foreground/60" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+                <Card className="border-primary/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-primary">Pro</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {[
+                        'Full remediation roadmap',
+                        'Priority intelligence engine',
+                        'Removal pathway mapping',
+                        'Historical tracking',
+                        'Advanced correlation',
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
             {/* Trust Line */}
             <div className="text-center mt-12">
               <p className="text-sm text-muted-foreground font-medium">
