@@ -148,6 +148,33 @@ const blogPosts = [{
   featured: true,
   image: "/blog-images/digital-footprint.webp"
 }, {
+  slug: "remove-from-data-brokers-uk",
+  title: "How to Remove Yourself From Data Brokers (UK Guide)",
+  excerpt: "Complete UK guide to removing your personal data from data brokers. Covers GDPR erasure rights, opt-out processes, UK-specific brokers, and ongoing monitoring strategies.",
+  date: "February 14, 2026",
+  readTime: "13 min read",
+  category: "Privacy",
+  featured: true,
+  image: "/blog-images/digital-footprint.webp"
+}, {
+  slug: "delete-old-accounts",
+  title: "How to Delete Old Accounts You No Longer Use",
+  excerpt: "Every forgotten account is an attack surface. Learn how to find dormant accounts, why they're a security risk, and the step-by-step process for deleting them.",
+  date: "February 14, 2026",
+  readTime: "11 min read",
+  category: "Security",
+  featured: false,
+  image: "/blog-images/username-security.webp"
+}, {
+  slug: "what-is-digital-footprint-check",
+  title: "What Is a Digital Footprint Check?",
+  excerpt: "Learn what a digital footprint check reveals about your online presence, how automated scans work, and why periodic self-auditing is essential for privacy and security.",
+  date: "February 14, 2026",
+  readTime: "10 min read",
+  category: "Privacy",
+  featured: false,
+  image: "/blog-images/digital-footprint.webp"
+}, {
   slug: "what-is-osint-risk",
   title: "What is OSINT Risk? Understanding Your Digital Exposure",
   excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
