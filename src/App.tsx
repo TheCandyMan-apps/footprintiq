@@ -99,6 +99,7 @@ const RemoveFromDataBrokersUK = lazy(() => import("./pages/blog/RemoveFromDataBr
 const DeleteOldAccounts = lazy(() => import("./pages/blog/DeleteOldAccounts"));
 const WhatIsDigitalFootprintCheck = lazy(() => import("./pages/blog/WhatIsDigitalFootprintCheck"));
 const DigitalExposureReport2026 = lazy(() => import("./pages/blog/DigitalExposureReport2026"));
+const EthicalOsintCharter = lazy(() => import("./pages/EthicalOsintCharter"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -655,6 +656,7 @@ function RouterContent() {
           <Route path="/ethical-osint-for-individuals" element={<EthicalOsintForIndividuals />} />
           <Route path="/ethical-osint-principles" element={<EthicalOsintPrinciples />} />
           <Route path="/ethical-osint" element={<EthicalOsint />} />
+          <Route path="/ethical-osint-charter" element={<EthicalOsintCharter />} />
           <Route path="/press" element={<Press />} />
           <Route path="/media" element={<Press />} />
           
