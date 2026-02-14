@@ -128,20 +128,194 @@
       (function(){
         var B='https://footprintiq.app';
         var R={
-          '/social-media-finder':{t:'Social Media Finder – Search Public Profiles by Username',d:'Find public social media accounts linked to a username. Ethical OSINT-based profile search with privacy-focused results.',og:'article'},
+          /* ── Core Pages ── */
+          '/scan':{t:'Run a Free Digital Footprint Scan | FootprintIQ',d:'Scan your username, email, or phone number across 500+ platforms to discover your online exposure. Free, ethical OSINT scanning.',og:'website'},
+          '/pricing':{t:'Pricing – Free & Pro Plans | FootprintIQ',d:'Compare FootprintIQ Free and Pro plans. Unlock advanced OSINT scanning, data broker detection, and removal guidance.',og:'website'},
+          '/features':{t:'Features – Digital Footprint Intelligence Tools | FootprintIQ',d:'Explore FootprintIQ features: username search, email breach detection, data broker scanning, LENS confidence analysis, and more.',og:'website'},
+          '/digital-footprint-scanner':{t:'Digital Footprint Scanner – Check Your Online Exposure | FootprintIQ',d:'Use our digital footprint scanner to discover what personal data is publicly visible. Ethical OSINT-based scanning with actionable results.',og:'article'},
+          '/usernames':{t:'Username Search – Find Accounts Across 500+ Platforms | FootprintIQ',d:'Search for a username across 500+ social media platforms, forums, and communities. Privacy-first OSINT username enumeration.',og:'article'},
+          '/username-search':{t:'Username Search Tool – OSINT Username Enumeration | FootprintIQ',d:'Search usernames across social media, forums, and developer platforms using ethical OSINT methods. Free and Pro scanning available.',og:'article'},
+          '/email-breach-check':{t:'Email Breach Check – Has Your Email Been Compromised? | FootprintIQ',d:'Check if your email has appeared in known data breaches. Free breach detection with actionable remediation guidance.',og:'article'},
+          '/username-search-tools':{t:'Username Search Tools Compared – 2026 Guide | FootprintIQ',d:'Compare the best username search tools available in 2026. Understand accuracy, false positives, and ethical considerations.',og:'article'},
+          '/email-breach-tools':{t:'Email Breach Check Tools – Best Options in 2026 | FootprintIQ',d:'Compare email breach detection tools. Learn which services check breaches ethically and provide actionable remediation steps.',og:'article'},
+          '/lens':{t:'LENS – AI-Powered Confidence Analysis | FootprintIQ',d:'LENS uses probability-based analysis to reduce false positives in OSINT results. Understand confidence scores and verification guidance.',og:'article'},
+          /* ── Educational Content ── */
+          '/what-is-a-digital-footprint':{t:'What Is a Digital Footprint? Complete Guide | FootprintIQ',d:'Learn what a digital footprint is, how it forms, why it matters for privacy, and how to manage your online exposure.',og:'article'},
+          '/username-exposure':{t:'Username Exposure – How Reusing Usernames Creates Risk | FootprintIQ',d:'Discover how reusing the same username across platforms creates a traceable digital footprint and increases your exposure risk.',og:'article'},
+          '/what-is-osint':{t:'What Is OSINT? Open-Source Intelligence Explained | FootprintIQ',d:'Learn what OSINT (Open-Source Intelligence) is, how it works, and how individuals can use it ethically for self-audit.',og:'article'},
+          '/reduce-digital-footprint':{t:'How to Reduce Your Digital Footprint – Practical Guide | FootprintIQ',d:'Step-by-step guide to reducing your digital footprint. Delete old accounts, remove data broker listings, and limit online exposure.',og:'article'},
+          '/how-identity-theft-starts':{t:'How Identity Theft Starts – Understanding the Risk Chain | FootprintIQ',d:'Learn how identity theft begins with publicly available data and what you can do to reduce your exposure before it happens.',og:'article'},
+          '/digital-privacy-glossary':{t:'Digital Privacy Glossary – Key Terms Explained | FootprintIQ',d:'A comprehensive glossary of digital privacy and OSINT terms. Understand data brokers, breaches, exposure scores, and more.',og:'article'},
+          '/is-my-data-exposed':{t:'Is My Data Exposed? Check Your Online Visibility | FootprintIQ',d:'Find out if your personal data is exposed online. Learn what information is publicly visible and how to protect yourself.',og:'article'},
+          '/old-data-breaches':{t:'Old Data Breaches Still Matter – Why Past Leaks Affect You Today | FootprintIQ',d:'Understand why old data breaches remain dangerous. Leaked credentials and personal data persist and compound over time.',og:'article'},
+          '/which-data-matters':{t:'Which Data Matters Most in Your Digital Footprint? | FootprintIQ',d:'Not all exposed data is equal. Learn which types of personal information create the highest identity and privacy risk.',og:'article'},
+          '/stay-private-online':{t:'How to Stay Private Online – Privacy Protection Guide | FootprintIQ',d:'Practical tips to stay private online. From browser settings to account hygiene, protect your digital identity today.',og:'article'},
+          '/about-footprintiq':{t:'About FootprintIQ – Ethical Digital Footprint Intelligence | FootprintIQ',d:'Learn about FootprintIQ, our mission, ethical principles, and how we help people understand their online exposure.',og:'article'},
+          '/ethical-osint-for-individuals':{t:'Ethical OSINT for Individuals – Self-Audit Guide | FootprintIQ',d:'How individuals can use ethical OSINT techniques to audit their own digital footprint safely and legally.',og:'article'},
+          /* ── Research Reports ── */
+          '/research/username-reuse-report-2026':{t:'Username Reuse Report 2026 – Cross-Platform Exposure Study | FootprintIQ',d:'Our 2026 research report on username reuse reveals how cross-platform exposure creates traceable digital footprints.',og:'article'},
+          '/research/fact-sheet':{t:'FootprintIQ Fact Sheet – Platform Statistics & Capabilities | FootprintIQ',d:'Key facts about FootprintIQ: platform coverage, scan capabilities, accuracy metrics, and ethical OSINT methodology.',og:'article'},
+          /* ── Guides ── */
+          '/guides':{t:'OSINT & Privacy Guides | FootprintIQ',d:'Expert guides on OSINT, digital privacy, data broker removal, and understanding your online exposure.',og:'website'},
+          '/guides/how-username-search-tools-work':{t:'How Username Search Tools Work – Technical Guide | FootprintIQ',d:'Understand how username search tools enumerate profiles across platforms, their accuracy limitations, and false positive rates.',og:'article'},
+          '/guides/interpret-osint-results':{t:'How to Interpret OSINT Scan Results | FootprintIQ',d:'Learn to read and understand OSINT scan results. Distinguish real findings from false positives with confidence analysis.',og:'article'},
+          '/guides/what-osint-results-mean':{t:'What Do OSINT Results Mean? A Plain-English Guide | FootprintIQ',d:'A beginner-friendly explanation of OSINT scan results. Understand exposure levels, confidence scores, and next steps.',og:'article'},
+          '/guides/is-osint-scan-worth-it':{t:'Is an OSINT Scan Worth It? Costs vs Benefits | FootprintIQ',d:'Should you run an OSINT scan? We break down the value, what you will learn, and when a scan is most useful.',og:'article'},
+          '/guides/free-vs-paid-osint-tools':{t:'Free vs Paid OSINT Tools – Which Should You Use? | FootprintIQ',d:'Compare free and paid OSINT scanning tools. Understand the tradeoffs in accuracy, coverage, and false positive rates.',og:'article'},
+          '/guides/good-osint-scan-result':{t:'What Does a Good OSINT Scan Result Look Like? | FootprintIQ',d:'Learn what constitutes a good OSINT scan result. Understand quality indicators, verification steps, and actionable outputs.',og:'article'},
+          '/guides/check-whats-publicly-visible':{t:'How to Check What\u2019s Publicly Visible About You | FootprintIQ',d:'Step-by-step guide to discovering what personal information is publicly visible online. Free methods and tools explained.',og:'article'},
+          '/guides/employers-digital-footprint':{t:'How Employers Check Your Digital Footprint | FootprintIQ',d:'Learn what employers look for when checking your online presence and how to prepare your digital footprint for job searches.',og:'article'},
+          '/guides/clean-up-online-presence':{t:'How to Clean Up Your Online Presence | FootprintIQ',d:'A practical guide to cleaning up your digital footprint. Remove old accounts, update privacy settings, and reduce exposure.',og:'article'},
+          '/guides/remove-from-data-brokers':{t:'How to Remove Yourself from Data Brokers | FootprintIQ',d:'Step-by-step guide to opting out of major data broker sites. Protect your personal information from people-search aggregators.',og:'article'},
+          '/guides/monitor-online-exposure':{t:'How to Monitor Your Online Exposure Continuously | FootprintIQ',d:'Learn how to set up continuous monitoring of your digital footprint to catch new exposures as they appear.',og:'article'},
+          '/guides/what-google-knows-about-you':{t:'What Google Knows About You – Complete Guide | FootprintIQ',d:'Discover what data Google collects about you and how to review, limit, and delete your Google activity and profile data.',og:'article'},
+          /* ── Blog ── */
+          '/blog':{t:'Blog – Digital Privacy & OSINT Insights | FootprintIQ',d:'Expert articles on digital privacy, OSINT techniques, data broker removal, breach response, and online exposure management.',og:'website'},
+          '/blog/what-is-digital-footprint':{t:'What Is a Digital Footprint? Everything You Need to Know | FootprintIQ',d:'Your digital footprint is the trail of data you leave online. Learn what it includes, why it matters, and how to manage it.',og:'article'},
+          '/blog/check-email-breach':{t:'How to Check If Your Email Has Been Breached | FootprintIQ',d:'Learn how to check if your email address has appeared in known data breaches and what to do if it has.',og:'article'},
+          '/blog/osint-beginners-guide':{t:'OSINT for Beginners – Getting Started Guide | FootprintIQ',d:'A beginner-friendly introduction to Open-Source Intelligence. Learn the basics of OSINT and how to use it ethically.',og:'article'},
+          '/blog/remove-data-brokers':{t:'How to Remove Yourself from Data Brokers | FootprintIQ',d:'Step-by-step guide to removing your personal information from major data broker and people-search sites.',og:'article'},
+          '/blog/dark-web-monitoring-explained':{t:'Dark Web Monitoring Explained – What It Really Does | FootprintIQ',d:'Understand what dark web monitoring actually detects, its limitations, and how it fits into a broader privacy strategy.',og:'article'},
+          '/blog/what-is-osint-risk':{t:'What Is OSINT Risk? Understanding Your Exposure | FootprintIQ',d:'Learn what OSINT risk means, how publicly available information creates vulnerability, and how to assess your own risk level.',og:'article'},
+          '/blog/persona-dna-and-evidence-packs':{t:'Persona DNA & Evidence Packs – OSINT Investigation Tools | FootprintIQ',d:'How Persona DNA and Evidence Packs help investigators organise, verify, and present OSINT findings professionally.',og:'article'},
+          '/blog/social-media-privacy':{t:'Social Media Privacy – Protecting Your Accounts | FootprintIQ',d:'A guide to improving your social media privacy settings across major platforms. Reduce your public exposure today.',og:'article'},
+          '/blog/phone-number-privacy':{t:'Phone Number Privacy – Why Your Number Is a Risk | FootprintIQ',d:'Learn how your phone number can be used to find you online and what steps you can take to protect your privacy.',og:'article'},
+          '/blog/username-security':{t:'Username Security – How Your Username Creates Risk | FootprintIQ',d:'Understand how your username choices affect your online security and privacy. Learn best practices for username hygiene.',og:'article'},
+          '/blog/ip-address-security':{t:'IP Address Security – What Your IP Reveals About You | FootprintIQ',d:'Learn what your IP address reveals about you, how it can be used for tracking, and how to protect your IP privacy.',og:'article'},
+          '/blog/identity-theft-response':{t:'Identity Theft Response – What to Do If You\u2019re a Victim | FootprintIQ',d:'Step-by-step guide to responding to identity theft. From freezing credit to filing reports, protect yourself now.',og:'article'},
+          '/blog/password-security-guide':{t:'Password Security Guide – Create & Manage Strong Passwords | FootprintIQ',d:'A complete guide to password security. Learn about password managers, 2FA, and how to create unbreakable passwords.',og:'article'},
+          '/blog/vpn-privacy-guide':{t:'VPN Privacy Guide – Do VPNs Really Protect You? | FootprintIQ',d:'Understand what VPNs can and cannot do for your privacy. An honest guide to VPN capabilities and limitations.',og:'article'},
+          '/blog/two-factor-authentication':{t:'Two-Factor Authentication (2FA) – Complete Setup Guide | FootprintIQ',d:'Learn how to set up two-factor authentication on all your important accounts. Protect against unauthorized access.',og:'article'},
+          '/blog/secure-browsing-guide':{t:'Secure Browsing Guide – Protect Your Online Activity | FootprintIQ',d:'Tips for secure web browsing. From browser extensions to privacy settings, reduce your digital trail while browsing.',og:'article'},
+          '/blog/free-username-search':{t:'Free Username Search – Find Accounts Without Paying | FootprintIQ',d:'How to search for usernames across platforms for free. Understand the limitations and accuracy of free OSINT tools.',og:'article'},
+          '/blog/username-reuse':{t:'Username Reuse – The Hidden Privacy Risk | FootprintIQ',d:'Why reusing the same username across platforms is a significant privacy risk. Data from our 2026 research report.',og:'article'},
+          '/blog/what-is-digital-exposure':{t:'What Is Digital Exposure? Understanding Online Visibility | FootprintIQ',d:'Digital exposure is the extent of your publicly visible information online. Learn how to measure and reduce it.',og:'article'},
+          '/blog/username-search-misleading':{t:'Why Username Search Results Can Be Misleading | FootprintIQ',d:'Username search tools often produce false positives. Learn why results can be misleading and how LENS improves accuracy.',og:'article'},
+          '/blog/ai-in-osint-2025':{t:'AI in OSINT – How AI Is Changing Intelligence Gathering | FootprintIQ',d:'Explore how AI is transforming open-source intelligence. From automated scanning to false positive reduction.',og:'article'},
+          '/blog/osint-ai-era-2026':{t:'OSINT in the AI Era – 2026 Landscape Report | FootprintIQ',d:'How AI is reshaping the OSINT landscape in 2026. Trends, tools, and ethical considerations for the year ahead.',og:'article'},
+          '/blog/lens-introduction':{t:'Introducing LENS – AI Confidence Analysis for OSINT | FootprintIQ',d:'LENS is FootprintIQ\u2019s AI-powered confidence engine. Learn how it reduces false positives and improves scan accuracy.',og:'article'},
+          '/blog/lens-confidence-meaning':{t:'What LENS Confidence Scores Mean | FootprintIQ',d:'A guide to understanding LENS confidence scores. Learn what high, medium, and low confidence levels indicate.',og:'article'},
+          '/blog/lens-case-study-false-positive':{t:'LENS Case Study: Catching False Positives in OSINT | FootprintIQ',d:'A real-world case study showing how LENS identified and filtered false positives from username search results.',og:'article'},
+          '/blog/lens-osint-confidence-wrong':{t:'When OSINT Confidence Scores Go Wrong | FootprintIQ',d:'Explore the limitations of confidence scoring in OSINT. Why scores can be misleading and how LENS addresses this.',og:'article'},
+          '/blog/dark-web-scans-noise':{t:'Dark Web Scans: Separating Signal from Noise | FootprintIQ',d:'Most dark web scan results are noise. Learn how to identify actionable findings vs false alarms in dark web monitoring.',og:'article'},
+          '/blog/osint-to-insight':{t:'From OSINT to Insight – Turning Raw Data into Action | FootprintIQ',d:'How to transform raw OSINT data into actionable intelligence. A framework for making sense of scan results.',og:'article'},
+          '/blog/ethical-osint-exposure':{t:'Ethical OSINT & Digital Exposure – A Balanced Approach | FootprintIQ',d:'How ethical OSINT practices can help you understand digital exposure without crossing privacy boundaries.',og:'article'},
+          '/blog/what-is-osint':{t:'What Is OSINT? A Complete Beginner\u2019s Guide | FootprintIQ',d:'Learn what OSINT (Open-Source Intelligence) is, how it works, real-world examples, legal considerations, and how individuals can use it safely and ethically.',og:'article'},
+          '/blog/how-data-brokers-work':{t:'How Data Brokers Work: Collection, Aggregation & Removal | FootprintIQ',d:'Understand how data brokers collect, aggregate, and sell your personal information \u2014 and why removing yourself from their databases is an ongoing challenge.',og:'article'},
+          '/blog/how-exposed-am-i-online':{t:'How Exposed Am I Online? Find Out Now | FootprintIQ',d:'Discover how exposed your personal information is online. Run a free scan to measure your digital exposure level.',og:'article'},
+          '/blog/what-is-username-osint-scan':{t:'What Is a Username OSINT Scan? | FootprintIQ',d:'Learn what a username OSINT scan is, how it works, and what it can reveal about your online presence.',og:'article'},
+          '/blog/are-username-search-tools-accurate':{t:'Are Username Search Tools Accurate? The Truth | FootprintIQ',d:'An honest assessment of username search tool accuracy. Learn about false positive rates and verification methods.',og:'article'},
+          '/blog/remove-address-from-google':{t:'How to Remove Your Address from Google | FootprintIQ',d:'Step-by-step guide to removing your home address from Google Search results and Maps listings.',og:'article'},
+          '/blog/remove-from-data-brokers-uk':{t:'How to Remove Yourself from Data Brokers in the UK | FootprintIQ',d:'A UK-focused guide to removing your personal information from data broker sites and people-search engines.',og:'article'},
+          '/blog/delete-old-accounts':{t:'How to Delete Old Online Accounts You\u2019ve Forgotten | FootprintIQ',d:'Find and delete old online accounts you no longer use. Reduce your digital footprint and close security gaps.',og:'article'},
+          '/blog/what-is-digital-footprint-check':{t:'What Is a Digital Footprint Check? | FootprintIQ',d:'Understand what a digital footprint check involves, what it reveals, and why regular checks protect your privacy.',og:'article'},
+          '/blog/digital-exposure-report-2026':{t:'Digital Exposure Report 2026 – Key Findings | FootprintIQ',d:'Our 2026 Digital Exposure Report reveals trends in online visibility, data broker growth, and breach impact on individuals.',og:'article'},
+          '/blog/what-is-ethical-osint-scan':{t:'What Is an Ethical OSINT Scan? | FootprintIQ',d:'Learn what makes an OSINT scan ethical. Understand consent, public data boundaries, and responsible scanning practices.',og:'article'},
+          '/blog/exposure-mapping-before-removal':{t:'Exposure Mapping Before Removal – Why It Matters | FootprintIQ',d:'Why you should map your digital exposure before attempting removals. A strategic approach to privacy protection.',og:'article'},
+          '/blog/public-vs-private-data-osint':{t:'Public vs Private Data in OSINT – Where\u2019s the Line? | FootprintIQ',d:'Understanding the boundary between public and private data in OSINT. Legal and ethical considerations explained.',og:'article'},
+          '/blog/remove-from-data-brokers-guide':{t:'Complete Data Broker Removal Guide (2026) | FootprintIQ',d:'The most comprehensive guide to removing yourself from data brokers. Covers 50+ sites with step-by-step instructions.',og:'article'},
+          '/blog/is-footprintiq-data-broker':{t:'Is FootprintIQ a Data Broker? No – Here\u2019s Why | FootprintIQ',d:'FootprintIQ is not a data broker. Learn how we differ from people-search sites and why ethical OSINT is fundamentally different.',og:'article'},
+          /* ── Company & Trust ── */
+          '/trust':{t:'Trust Centre – Security & Privacy Commitments | FootprintIQ',d:'Our security practices, privacy commitments, and ethical standards. Learn how FootprintIQ protects your data.',og:'article'},
+          '/global-index':{t:'Global Platform Index – 500+ Sites We Scan | FootprintIQ',d:'Browse the full list of 500+ platforms FootprintIQ scans for username, email, and phone number exposure.',og:'article'},
+          '/partners':{t:'Partners & Integrations | FootprintIQ',d:'Explore FootprintIQ partnership opportunities and technology integrations for security professionals and organisations.',og:'article'},
+          '/contact':{t:'Contact Us | FootprintIQ',d:'Get in touch with the FootprintIQ team. Support, partnerships, press enquiries, and general questions.',og:'website'},
+          '/support':{t:'Support Centre | FootprintIQ',d:'Find help with your FootprintIQ account, scans, results, and billing. FAQs and contact options available.',og:'website'},
+          '/enterprise':{t:'Enterprise Digital Footprint Intelligence | FootprintIQ',d:'Enterprise-grade OSINT scanning for organisations. Protect your team, executives, and brand with bulk scanning and reporting.',og:'website'},
+          '/about':{t:'About FootprintIQ – Our Mission & Team | FootprintIQ',d:'Learn about FootprintIQ\u2019s mission to make ethical OSINT accessible. Meet the team building privacy-first intelligence tools.',og:'article'},
+          '/careers':{t:'Careers at FootprintIQ | FootprintIQ',d:'Join the FootprintIQ team. We\u2019re building ethical OSINT tools that help people understand and protect their digital identity.',og:'website'},
+          /* ── Resources ── */
+          '/resources':{t:'Resources – Guides, Webinars & Tools | FootprintIQ',d:'Privacy resources including guides, webinars, checklists, and tools to help you manage your digital footprint.',og:'website'},
+          '/resources/webinars':{t:'Webinars – Digital Privacy & OSINT Education | FootprintIQ',d:'Watch FootprintIQ webinars on digital privacy, OSINT techniques, and online exposure management.',og:'website'},
+          '/docs/api':{t:'API Documentation | FootprintIQ',d:'FootprintIQ API documentation for developers. Integrate OSINT scanning into your applications and workflows.',og:'article'},
+          '/sample-report':{t:'Sample Scan Report | FootprintIQ',d:'View a sample FootprintIQ scan report to understand what our scanning reveals about digital exposure.',og:'article'},
+          '/resources/2026-data-broker-removal-checklist':{t:'2026 Data Broker Removal Checklist | FootprintIQ',d:'Download our 2026 data broker removal checklist. Step-by-step opt-out instructions for 50+ people-search sites.',og:'article'},
+          /* ── AI Hub ── */
+          '/ai':{t:'AI Hub – OSINT & Privacy Intelligence | FootprintIQ',d:'AI-powered insights on digital privacy, OSINT, and online exposure. Get instant answers to your privacy questions.',og:'website'},
+          '/ai/digital-exposure':{t:'AI: What Is Digital Exposure? | FootprintIQ',d:'AI-generated answer explaining digital exposure, how it accumulates, and practical steps to reduce your online visibility.',og:'article'},
+          '/ai/digital-footprint':{t:'AI: Understanding Your Digital Footprint | FootprintIQ',d:'AI-generated guide to understanding your digital footprint. What it includes, why it matters, and how to manage it.',og:'article'},
+          '/ai/what-is-osint':{t:'AI: What Is OSINT? | FootprintIQ',d:'AI-generated explanation of Open-Source Intelligence. How OSINT works, its applications, and ethical considerations.',og:'article'},
+          '/ai/what-is-identity-profiling':{t:'AI: What Is Identity Profiling? | FootprintIQ',d:'AI-generated answer explaining identity profiling, how data brokers build profiles, and how to protect yourself.',og:'article'},
+          '/ai/what-are-data-brokers':{t:'AI: What Are Data Brokers? | FootprintIQ',d:'AI-generated explanation of data brokers. How they collect, aggregate, and sell your personal information.',og:'article'},
+          '/ai-answers-hub':{t:'AI Answers Hub – OSINT & Privacy Questions Answered | FootprintIQ',d:'Get AI-powered answers to your OSINT, digital privacy, and data exposure questions. Expert-level guidance made simple.',og:'article'},
+          '/ai-answers/what-is-a-username-osint-scan':{t:'AI: What Is a Username OSINT Scan? | FootprintIQ',d:'AI-generated answer explaining username OSINT scans, how they work, and what results to expect.',og:'article'},
+          '/ai-answers/why-username-reuse-is-risky':{t:'AI: Why Is Username Reuse Risky? | FootprintIQ',d:'AI-generated answer explaining the security risks of reusing usernames across platforms and how to mitigate them.',og:'article'},
+          '/ai-answers/are-username-search-tools-accurate':{t:'AI: Are Username Search Tools Accurate? | FootprintIQ',d:'AI-generated analysis of username search tool accuracy, false positive rates, and how to verify results.',og:'article'},
+          '/ai-answers/is-username-osint-legal':{t:'AI: Is Username OSINT Legal? | FootprintIQ',d:'AI-generated answer on the legality of username OSINT scanning. Covers UK, US, and EU legal frameworks.',og:'article'},
+          '/ai-answers/ethical-osint-tools':{t:'AI: What Are Ethical OSINT Tools? | FootprintIQ',d:'AI-generated guide to ethical OSINT tools. What makes a tool ethical and how to choose the right one.',og:'article'},
+          '/ai-answers/common-osint-misconceptions':{t:'AI: Common OSINT Misconceptions Debunked | FootprintIQ',d:'AI-generated article debunking common misconceptions about OSINT, privacy scanning, and digital exposure.',og:'article'},
+          '/ai-answers/when-not-to-use-osint':{t:'AI: When Should You NOT Use OSINT? | FootprintIQ',d:'AI-generated guide on when OSINT is inappropriate. Ethical boundaries, legal limits, and responsible use.',og:'article'},
+          '/ai-answers/what-is-an-identity-risk-score':{t:'AI: What Is an Identity Risk Score? | FootprintIQ',d:'AI-generated explanation of identity risk scores. How they are calculated and what they mean for your privacy.',og:'article'},
+          '/ai-answers/does-osint-include-dark-web-data':{t:'AI: Does OSINT Include Dark Web Data? | FootprintIQ',d:'AI-generated answer on whether OSINT covers dark web data. Understanding the scope and limitations of OSINT.',og:'article'},
+          /* ── Persona Landing Pages ── */
+          '/for/crypto':{t:'Digital Footprint Protection for Crypto Users | FootprintIQ',d:'Protect your crypto identity. Scan for username exposure, wallet-linked accounts, and social engineering risks.',og:'article'},
+          '/for/job-seekers':{t:'Digital Footprint Check for Job Seekers | FootprintIQ',d:'Clean up your digital footprint before your next job application. See what employers can find about you online.',og:'article'},
+          '/for/developers':{t:'OSINT & Privacy Tools for Developers | FootprintIQ',d:'Developer-focused digital footprint tools. Scan for exposed credentials, leaked code, and username exposure across dev platforms.',og:'article'},
+          '/for/executives':{t:'Executive Digital Risk Protection | FootprintIQ',d:'Protect executive digital identities. Scan for impersonation risks, data broker listings, and online exposure.',og:'article'},
+          /* ── Platform-Specific Search ── */
+          '/search-username':{t:'Search Username Across Platforms | FootprintIQ',d:'Search for any username across 500+ social media platforms and forums. Free ethical OSINT username enumeration.',og:'article'},
+          '/tiktok-username-search':{t:'TikTok Username Search – Find TikTok Profiles | FootprintIQ',d:'Search for TikTok profiles by username. Check if a TikTok account exists and discover associated online presence.',og:'article'},
+          '/instagram-username-search':{t:'Instagram Username Search – Find Instagram Profiles | FootprintIQ',d:'Search for Instagram profiles by username. Discover public Instagram accounts and related online presence.',og:'article'},
+          '/twitter-username-search':{t:'Twitter/X Username Search – Find Twitter Profiles | FootprintIQ',d:'Search for Twitter/X profiles by username. Discover public Twitter accounts and associated online presence.',og:'article'},
+          /* ── SEO Tool Pages ── */
+          '/social-media-finder':{t:'Social Media Finder – Search Public Profiles by Username | FootprintIQ',d:'Find public social media accounts linked to a username. Ethical OSINT-based profile search with privacy-focused results.',og:'article'},
           '/username-checker':{t:'Username Checker – Search Usernames Across 500+ Platforms | FootprintIQ',d:'Check if a username exists across 500+ social media platforms and forums. Free OSINT username search with privacy-first methodology.',og:'article'},
           '/profile-search':{t:'Profile Search – Find Public Profiles Online | FootprintIQ',d:'Search for public profiles across social media, forums, and developer platforms using ethical OSINT methods.',og:'article'},
           '/digital-footprint-check':{t:'Digital Footprint Check – See Your Online Exposure | FootprintIQ',d:'Run a free digital footprint check to discover what personal data is publicly visible online. Privacy-focused OSINT scanning.',og:'article'},
-          '/ai-answers-hub':{t:'AI Answers Hub – OSINT & Privacy Questions Answered | FootprintIQ',d:'Get AI-powered answers to your OSINT, digital privacy, and data exposure questions. Expert-level guidance made simple.',og:'article'},
-          '/reverse-username-search':{t:'Reverse Username Search – Find Public Accounts by Username | FootprintIQ',d:'Run a reverse username search to find public accounts and mentions across social platforms, forums, and communities. Privacy-first OSINT scanning.',og:'article'},
-          '/username-lookup':{t:'Username Lookup – Search Where a Username Appears Online | FootprintIQ',d:'Run a username lookup to find public profiles and mentions across social platforms, forums, and communities. Ethical OSINT scanning with verification guidance.',og:'article'},
-          '/account-finder':{t:'Account Finder – Search Public Online Accounts by Username | FootprintIQ',d:'Use our account finder to discover public online accounts linked to a username. Ethical OSINT-based scanning with verification guidance.',og:'article'},
-          '/find-social-media-accounts':{t:'Find Social Media Accounts by Username | FootprintIQ',d:'Discover public social media accounts linked to a username. Ethical OSINT scanning with verification guidance and privacy-first methodology.',og:'article'},
-          '/username-reuse-risk':{t:'Username Reuse Risk – Why Using the Same Username Is Dangerous',d:'Reusing the same username across platforms can expose your digital footprint. Learn the security risks and how to check your online exposure.',og:'article'},
-          '/remove-personal-information-from-internet':{t:'How to Remove Personal Information from the Internet (2026 Guide)',d:'Learn how to remove personal information from Google, social media, and data brokers. Step-by-step privacy protection guide.',og:'article'},
-          '/check-my-digital-footprint':{t:'Check My Digital Footprint – Free Online Exposure Scan',d:'Check your digital footprint and discover what personal data is publicly visible online. Run a free privacy exposure scan today.',og:'article'},
-          '/blog/what-is-osint':{t:'What Is OSINT? A Complete Beginner\u2019s Guide | FootprintIQ',d:'Learn what OSINT (Open-Source Intelligence) is, how it works, real-world examples, legal considerations, and how individuals can use it safely and ethically.',og:'article'},
-          '/blog/how-data-brokers-work':{t:'How Data Brokers Work: Collection, Aggregation & Removal | FootprintIQ',d:'Understand how data brokers collect, aggregate, and sell your personal information \u2014 and why removing yourself from their databases is an ongoing challenge.',og:'article'}
+          '/reverse-username-search':{t:'Reverse Username Search – Find Public Accounts by Username | FootprintIQ',d:'Run a reverse username search to find public accounts and mentions across social platforms, forums, and communities.',og:'article'},
+          '/username-lookup':{t:'Username Lookup – Search Where a Username Appears Online | FootprintIQ',d:'Run a username lookup to find public profiles and mentions across social platforms, forums, and communities.',og:'article'},
+          '/account-finder':{t:'Account Finder – Search Public Online Accounts by Username | FootprintIQ',d:'Use our account finder to discover public online accounts linked to a username. Ethical OSINT-based scanning.',og:'article'},
+          '/find-social-media-accounts':{t:'Find Social Media Accounts by Username | FootprintIQ',d:'Discover public social media accounts linked to a username. Ethical OSINT scanning with verification guidance.',og:'article'},
+          '/dark-web-monitoring':{t:'Dark Web Monitoring – Detect Leaked Credentials | FootprintIQ',d:'Monitor the dark web for your leaked credentials and personal data. Get alerts when your information appears in breaches.',og:'article'},
+          '/check-my-digital-footprint':{t:'Check My Digital Footprint – Free Online Exposure Scan | FootprintIQ',d:'Check your digital footprint and discover what personal data is publicly visible online. Run a free privacy scan today.',og:'article'},
+          '/remove-personal-information-from-internet':{t:'How to Remove Personal Information from the Internet (2026 Guide) | FootprintIQ',d:'Learn how to remove personal information from Google, social media, and data brokers. Step-by-step privacy protection guide.',og:'article'},
+          '/username-reuse-risk':{t:'Username Reuse Risk – Why Using the Same Username Is Dangerous | FootprintIQ',d:'Reusing the same username across platforms can expose your digital footprint. Learn the security risks and how to check.',og:'article'},
+          /* ── Breach & Exposure ── */
+          '/after-have-i-been-pwned-what-next':{t:'After Have I Been Pwned – What to Do Next | FootprintIQ',d:'Found your email in a breach? Here\u2019s what to do after checking Have I Been Pwned. Complete remediation guide.',og:'article'},
+          '/data-breach-cleanup-checklist':{t:'Data Breach Cleanup Checklist – Step-by-Step Recovery | FootprintIQ',d:'A complete checklist for cleaning up after a data breach. Secure accounts, monitor exposure, and prevent future damage.',og:'article'},
+          '/breach-vs-digital-footprint-risk':{t:'Breach Risk vs Digital Footprint Risk – What\u2019s the Difference? | FootprintIQ',d:'Understand the difference between data breach risk and digital footprint risk. Two distinct threats that require different responses.',og:'article'},
+          '/how-to-monitor-your-online-exposure-after-a-breach':{t:'How to Monitor Your Online Exposure After a Breach | FootprintIQ',d:'After a data breach, ongoing monitoring is essential. Learn how to track your exposure and catch new leaks early.',og:'article'},
+          '/best-way-to-monitor-your-online-exposure':{t:'Best Way to Monitor Your Online Exposure | FootprintIQ',d:'Compare the best methods for monitoring your online exposure. From manual checks to automated scanning tools.',og:'article'},
+          '/how-to-remove-yourself-from-data-brokers':{t:'How to Remove Yourself from Data Brokers (Complete Guide) | FootprintIQ',d:'The definitive guide to removing yourself from data broker sites. Step-by-step opt-out instructions for major people-search sites.',og:'article'},
+          '/data-broker-opt-out-guide':{t:'Data Broker Opt-Out Guide – Remove Your Personal Data | FootprintIQ',d:'A practical guide to opting out of data broker sites. Protect your privacy by removing your information from people-search databases.',og:'article'},
+          '/continuous-exposure-monitoring-explained':{t:'Continuous Exposure Monitoring Explained | FootprintIQ',d:'What is continuous exposure monitoring and why do you need it? Learn how ongoing scanning protects your digital identity.',og:'article'},
+          /* ── Mainstream Entry Pages ── */
+          '/how-to-check-whats-publicly-visible-about-you':{t:'How to Check What\u2019s Publicly Visible About You Online | FootprintIQ',d:'A step-by-step guide to discovering what personal information about you is publicly visible on the internet.',og:'article'},
+          '/how-employers-check-your-online-presence':{t:'How Employers Check Your Online Presence (2026) | FootprintIQ',d:'Learn exactly how employers screen your digital footprint and what you can do to prepare before your next job application.',og:'article'},
+          '/how-to-clean-up-your-digital-footprint':{t:'How to Clean Up Your Digital Footprint – Complete Guide | FootprintIQ',d:'A comprehensive guide to cleaning up your digital footprint. Delete old accounts, remove data broker listings, and more.',og:'article'},
+          '/see-what-google-knows-about-you':{t:'See What Google Knows About You | FootprintIQ',d:'Discover the surprising amount of data Google has about you. Check your Google activity, ad profile, and location history.',og:'article'},
+          /* ── Comparison Cluster ── */
+          '/best-digital-footprint-scanner':{t:'Best Digital Footprint Scanner in 2026 – Comparison | FootprintIQ',d:'Compare the best digital footprint scanners in 2026. Features, accuracy, pricing, and ethical considerations reviewed.',og:'article'},
+          '/aura-vs-footprintiq':{t:'Aura vs FootprintIQ – Digital Protection Comparison | FootprintIQ',d:'Compare Aura and FootprintIQ. Understand the differences in approach, features, and ethical methodology.',og:'article'},
+          '/deleteme-vs-footprintiq':{t:'DeleteMe vs FootprintIQ – Data Removal Comparison | FootprintIQ',d:'Compare DeleteMe and FootprintIQ. Understand how data removal services differ from digital footprint intelligence.',og:'article'},
+          '/incogni-vs-footprintiq':{t:'Incogni vs FootprintIQ – Privacy Tool Comparison | FootprintIQ',d:'Compare Incogni and FootprintIQ. Automated data removal vs ethical digital footprint intelligence.',og:'article'},
+          '/kanary-vs-footprintiq':{t:'Kanary vs FootprintIQ – Privacy Scanner Comparison | FootprintIQ',d:'Compare Kanary and FootprintIQ. Two different approaches to managing your digital exposure.',og:'article'},
+          '/usersearch-vs-footprintiq':{t:'UserSearch vs FootprintIQ – Username Tool Comparison | FootprintIQ',d:'Compare UserSearch.org and FootprintIQ. Free username lookup vs comprehensive digital footprint intelligence.',og:'article'},
+          /* ── Privacy & Removal ── */
+          '/privacy':{t:'Privacy Policy | FootprintIQ',d:'Read FootprintIQ\u2019s privacy policy. How we handle your data, what we collect, and your rights.',og:'article'},
+          '/terms':{t:'Terms of Service | FootprintIQ',d:'FootprintIQ terms of service. Usage guidelines, acceptable use policy, and legal terms.',og:'article'},
+          '/responsible-use':{t:'Responsible Use Policy | FootprintIQ',d:'FootprintIQ\u2019s responsible use policy. Guidelines for ethical use of our OSINT scanning tools.',og:'article'},
+          '/how-we-source-data':{t:'How We Source Data – Methodology | FootprintIQ',d:'Learn how FootprintIQ sources data ethically. Our methodology for collecting publicly available information.',og:'article'},
+          '/editorial-ethics-policy':{t:'Editorial Ethics Policy | FootprintIQ',d:'FootprintIQ\u2019s editorial ethics policy. How we ensure accuracy, fairness, and transparency in our content.',og:'article'},
+          '/ethical-osint':{t:'Ethical OSINT – Our Approach to Responsible Intelligence | FootprintIQ',d:'Learn about FootprintIQ\u2019s ethical approach to OSINT. Consent, transparency, and responsible scanning practices.',og:'article'},
+          '/ethical-osint-charter':{t:'Ethical OSINT Charter | FootprintIQ',d:'The FootprintIQ Ethical OSINT Charter. Our principles for responsible, transparent, and consent-based intelligence gathering.',og:'article'},
+          '/ethical-osint-principles':{t:'Ethical OSINT Principles | FootprintIQ',d:'Core ethical principles that guide FootprintIQ\u2019s approach to open-source intelligence and digital footprint scanning.',og:'article'},
+          '/press':{t:'Press & Media | FootprintIQ',d:'FootprintIQ press resources. Media kit, press releases, and contact information for journalists.',og:'article'},
+          '/privacy-centre':{t:'Privacy Centre – Manage Your Data | FootprintIQ',d:'Control your data with FootprintIQ\u2019s Privacy Centre. Access, download, or delete your information.',og:'article'},
+          '/data-broker-removal-guide':{t:'Data Broker Removal Guide (2026) | FootprintIQ',d:'Complete guide to removing yourself from data brokers. Covers Spokeo, BeenVerified, MyLife, and 50+ more.',og:'article'},
+          '/remove-spokeo-profile':{t:'How to Remove Your Spokeo Profile | FootprintIQ',d:'Step-by-step guide to removing your profile from Spokeo. Opt out of this data broker permanently.',og:'article'},
+          '/remove-beenverified-profile':{t:'How to Remove Your BeenVerified Profile | FootprintIQ',d:'Step-by-step guide to removing your profile from BeenVerified. Opt out of this people-search database.',og:'article'},
+          '/remove-mylife-profile':{t:'How to Remove Your MyLife Profile | FootprintIQ',d:'Step-by-step guide to removing your profile from MyLife. Opt out and protect your personal information.',og:'article'},
+          '/incogni-vs-diy-data-removal':{t:'Incogni vs DIY Data Removal – Which Is Better? | FootprintIQ',d:'Compare Incogni\u2019s automated service with DIY data broker removal. Costs, effectiveness, and time investment compared.',og:'article'},
+          '/remove-yourself-from-google-search':{t:'How to Remove Yourself from Google Search Results | FootprintIQ',d:'Step-by-step guide to removing your personal information from Google Search results. Content removal requests explained.',og:'article'},
+          '/how-to-remove-your-address-from-google':{t:'How to Remove Your Address from Google Maps & Search | FootprintIQ',d:'Remove your home address from Google Maps and Search results. Step-by-step instructions for protecting your location privacy.',og:'article'},
+          '/privacy/google-content-removal':{t:'Google Content Removal – How to Request Removal | FootprintIQ',d:'How to request removal of personal content from Google Search. Official processes and alternative approaches explained.',og:'article'},
+          '/privacy/data-broker-removal-guide':{t:'Privacy: Data Broker Removal Guide | FootprintIQ',d:'In-depth guide to data broker removal as part of your overall privacy protection strategy.',og:'article'},
+          '/digital-exposure-risk-explained':{t:'Digital Exposure Risk Explained | FootprintIQ',d:'Understand digital exposure risk: what it is, how it\u2019s measured, and what you can do to reduce your risk score.',og:'article'},
+          /* ── Features ── */
+          '/assistant':{t:'AI Privacy Assistant | FootprintIQ',d:'Get personalised privacy guidance from FootprintIQ\u2019s AI assistant. Ask questions about your digital exposure and get actionable advice.',og:'article'},
+          '/automated-removal':{t:'Automated Data Broker Removal | FootprintIQ',d:'Automatically remove your personal information from data broker sites. Set it and forget it privacy protection.',og:'article'},
+          '/how-it-works':{t:'How FootprintIQ Works – Our Scanning Process | FootprintIQ',d:'Learn how FootprintIQ scans, analyses, and reports on your digital footprint. Our ethical OSINT methodology explained.',og:'article'}
         };
         function setMeta(nameOrProp,value,isProperty){
           var attr=isProperty?'property':'name';
@@ -184,34 +358,61 @@
         <header style="max-width: 800px; margin: 0 auto; padding: 60px 20px; text-align: center; font-family: system-ui, sans-serif;">
           <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1a1a2e;">FootprintIQ — Ethical Digital Footprint Intelligence</h1>
           <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem;">
-            FootprintIQ is an ethical digital footprint scanner. We scan usernames across 500+ platforms, 
-            detect email breaches, identify data broker listings, and provide probability-based confidence 
-            analysis — all using publicly available data with full transparency.
+            FootprintIQ is an ethical digital footprint intelligence platform. We use open-source intelligence (OSINT) 
+            techniques to help people understand their online exposure — without surveillance, monitoring, or invasive 
+            data collection. Our platform scans usernames across 500+ social media platforms and forums, detects email 
+            breaches, identifies data broker listings, and provides probability-based confidence analysis using our 
+            proprietary LENS engine — all built on publicly available data with full transparency.
           </p>
           <nav style="margin: 2rem 0;">
             <a href="/scan" style="display: inline-block; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; margin: 0.5rem;">Run a Free Scan</a>
             <a href="/pricing" style="display: inline-block; padding: 12px 24px; border: 2px solid #7c3aed; color: #7c3aed; text-decoration: none; border-radius: 8px; margin: 0.5rem;">View Pricing</a>
           </nav>
           <section style="text-align: left; margin-top: 3rem;">
-            <h2 style="font-size: 1.5rem; color: #1a1a2e;">What We Scan</h2>
+            <h2 style="font-size: 1.5rem; color: #1a1a2e;">Scanning Capabilities</h2>
             <ul style="color: #475569; line-height: 1.8;">
-              <li>Username search across 500+ social platforms and forums</li>
-              <li>Email breach detection via Have I Been Pwned and other sources</li>
-              <li>Data broker exposure identification</li>
-              <li>Phone number lookups (Pro)</li>
-              <li>Name-based people search aggregation</li>
+              <li>Username search across 500+ social platforms, forums, and developer communities</li>
+              <li>Email breach detection using multiple data sources including Have I Been Pwned</li>
+              <li>Data broker exposure identification across major people-search aggregators</li>
+              <li>Phone number lookups and reverse phone intelligence (Pro plan)</li>
+              <li>Name-based people search aggregation and cross-referencing</li>
+              <li>Dark web mention monitoring for leaked credentials and personal data</li>
+              <li>LENS AI confidence scoring to reduce false positives and improve result accuracy</li>
             </ul>
-            <h2 style="font-size: 1.5rem; color: #1a1a2e; margin-top: 2rem;">Our Principles</h2>
+            <h2 style="font-size: 1.5rem; color: #1a1a2e; margin-top: 2rem;">Our Ethical Principles</h2>
             <ul style="color: #475569; line-height: 1.8;">
-              <li>Public data only — we never access private accounts</li>
-              <li>No surveillance or monitoring of individuals</li>
-              <li>User-initiated scans with full consent</li>
+              <li>Public data only — we never access private accounts or bypass authentication</li>
+              <li>No surveillance, monitoring, or tracking of individuals</li>
+              <li>User-initiated scans with full informed consent</li>
               <li>LENS provides probability-based analysis, not identity confirmation</li>
+              <li>Designed for ethical self-audit as the safest and most responsible use case</li>
+              <li>Transparent methodology — we explain exactly how our tools work</li>
             </ul>
+            <h2 style="font-size: 1.5rem; color: #1a1a2e; margin-top: 2rem;">Privacy & Data Removal Resources</h2>
+            <p style="color: #475569; line-height: 1.8;">
+              FootprintIQ provides comprehensive guides for removing personal information from the internet, 
+              including step-by-step data broker opt-out instructions for sites like Spokeo, BeenVerified, and MyLife. 
+              Our Privacy Centre gives you full control over your data, and our guides cover Google content removal, 
+              address removal from Google Maps, and strategies for cleaning up your digital footprint after a data breach.
+            </p>
+            <h2 style="font-size: 1.5rem; color: #1a1a2e; margin-top: 2rem;">Educational Content & Research</h2>
+            <p style="color: #475569; line-height: 1.8;">
+              Explore our blog covering topics like what is OSINT, how data brokers work, username reuse risks, 
+              identity theft prevention, and the role of AI in modern intelligence gathering. Our 2026 Username Reuse 
+              Report and Digital Exposure Report provide research-backed insights into online privacy trends. Visit our 
+              AI Answers Hub for instant, expert-level responses to your digital privacy and OSINT questions.
+            </p>
+            <h2 style="font-size: 1.5rem; color: #1a1a2e; margin-top: 2rem;">Who Uses FootprintIQ</h2>
+            <p style="color: #475569; line-height: 1.8;">
+              Individuals auditing their own digital footprint, job seekers preparing for employer background checks, 
+              developers checking for leaked credentials, crypto users protecting wallet-linked identities, executives 
+              managing impersonation risks, and security professionals conducting authorised investigations. 
+              FootprintIQ is not a data broker, people-search site, surveillance tool, or background check service.
+            </p>
           </section>
           <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 0.875rem;">
             <p>FootprintIQ — Ethical OSINT for personal awareness and education.</p>
-            <p><a href="/privacy-policy" style="color: #7c3aed;">Privacy Policy</a> · <a href="/terms-of-service" style="color: #7c3aed;">Terms of Service</a> · <a href="/responsible-use" style="color: #7c3aed;">Responsible Use</a></p>
+            <p><a href="/privacy" style="color: #7c3aed;">Privacy Policy</a> · <a href="/terms" style="color: #7c3aed;">Terms of Service</a> · <a href="/responsible-use" style="color: #7c3aed;">Responsible Use</a> · <a href="/ethical-osint-charter" style="color: #7c3aed;">Ethical OSINT Charter</a></p>
           </footer>
         </header>
       </noscript>
