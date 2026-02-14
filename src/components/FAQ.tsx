@@ -40,8 +40,8 @@ const faqs = [
     answer: "OSINT (Open Source Intelligence) refers to information collected from publicly available sources. Understanding what's publicly visible about you is the first step to managing your digital privacy and reducing potential risks."
   },
   {
-    question: "Can FootprintIQ remove my data?",
-    answer: "Free scans identify where your information is exposed. Pro provides detailed evidence and guidance you can use to submit removal requests to data brokers and platforms. We help you understand what exists so you can take action."
+    question: "Does FootprintIQ remove my data?",
+    answer: "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically."
   },
   {
     question: "Where do reputation signals come from?",

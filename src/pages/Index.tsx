@@ -115,6 +115,14 @@ export default function Home() {
           "@type": "Answer" as const,
           text: "Yes. FootprintIQ only accesses publicly available information using ethical OSINT techniques. We never access private accounts or bypass authentication."
         }
+      },
+      {
+        "@type": "Question" as const,
+        name: "Does FootprintIQ remove my data?",
+        acceptedAnswer: {
+          "@type": "Answer" as const,
+          text: "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically."
+        }
       }
     ]
   };

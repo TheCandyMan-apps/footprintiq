@@ -59,6 +59,11 @@ const RemovePersonalInformation = () => {
       answer:
         "Use a digital footprint scanner to periodically check where your username, email, or personal details appear publicly. FootprintIQ provides scanning tools that help you track your exposure over time and identify new listings.",
     },
+    {
+      question: "Does FootprintIQ remove my data?",
+      answer:
+        "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically.",
+    },
   ];
 
   const articleSchema = {

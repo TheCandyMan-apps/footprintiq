@@ -100,6 +100,10 @@ const PricingPage = () => {
     {
       q: "Do you store my data?",
       a: "Only what's required to generate your report. You control retention on paid plans."
+    },
+    {
+      q: "Does FootprintIQ remove my data?",
+      a: "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically."
     }
   ];
 

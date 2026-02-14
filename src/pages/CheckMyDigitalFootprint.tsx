@@ -24,6 +24,10 @@ const faqs = [
     q: "How accurate are the results?",
     a: "Results include confidence scores so you can evaluate each finding. We recommend manual verification for any match before taking action.",
   },
+  {
+    q: "Does FootprintIQ remove my data?",
+    a: "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically.",
+  },
 ];
 
 const CheckMyDigitalFootprint = () => {
