@@ -95,6 +95,9 @@ const HowExposedAmIOnline = lazy(() => import("./pages/blog/HowExposedAmIOnline"
 const WhatIsUsernameOsintScan = lazy(() => import("./pages/blog/WhatIsUsernameOsintScan"));
 const AreUsernameSearchToolsAccurate = lazy(() => import("./pages/blog/AreUsernameSearchToolsAccurate"));
 const RemoveAddressFromGoogleBlog = lazy(() => import("./pages/blog/RemoveAddressFromGoogle"));
+const RemoveFromDataBrokersUK = lazy(() => import("./pages/blog/RemoveFromDataBrokersUK"));
+const DeleteOldAccounts = lazy(() => import("./pages/blog/DeleteOldAccounts"));
+const WhatIsDigitalFootprintCheck = lazy(() => import("./pages/blog/WhatIsDigitalFootprintCheck"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -432,6 +435,9 @@ function RouterContent() {
           <Route path="/blog/what-is-username-osint-scan" element={<WhatIsUsernameOsintScan />} />
           <Route path="/blog/are-username-search-tools-accurate" element={<AreUsernameSearchToolsAccurate />} />
           <Route path="/blog/remove-address-from-google" element={<RemoveAddressFromGoogleBlog />} />
+          <Route path="/blog/remove-from-data-brokers-uk" element={<RemoveFromDataBrokersUK />} />
+          <Route path="/blog/delete-old-accounts" element={<DeleteOldAccounts />} />
+          <Route path="/blog/what-is-digital-footprint-check" element={<WhatIsDigitalFootprintCheck />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/remove-mylife-profile" element={<RemoveMyLifeProfile />} />
           <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
