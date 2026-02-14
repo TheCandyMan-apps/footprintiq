@@ -19,15 +19,18 @@ export const WhatWeDoSection = () => {
         <div className="grid sm:grid-cols-3 gap-6 mb-8">
           <div className="p-6 rounded-xl bg-card border border-border">
             <UserCheck className="w-6 h-6 text-primary mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">We don't label people</p>
+            <p className="text-sm font-medium text-foreground mb-1">We don't label people</p>
+            <p className="text-xs text-muted-foreground">No profiling, no judgments — just facts about what's publicly visible.</p>
           </div>
           <div className="p-6 rounded-xl bg-card border border-border">
             <Scale className="w-6 h-6 text-primary mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">We don't predict intent</p>
+            <p className="text-sm font-medium text-foreground mb-1">We don't predict intent</p>
+            <p className="text-xs text-muted-foreground">We show exposure signals, not behavioural predictions or risk labels.</p>
           </div>
           <div className="p-6 rounded-xl bg-card border border-border">
             <Brain className="w-6 h-6 text-primary mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">We don't replace human judgment</p>
+            <p className="text-sm font-medium text-foreground mb-1">We don't replace your judgment</p>
+            <p className="text-xs text-muted-foreground">You decide what matters and what to do about it. We just surface the data.</p>
           </div>
         </div>
         

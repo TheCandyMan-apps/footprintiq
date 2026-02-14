@@ -27,6 +27,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { PlatformCapabilities } from "@/components/PlatformCapabilities";
 import { ForProfessionals } from "@/components/ForProfessionals";
 import { ExposureIntelligenceSection } from "@/components/ExposureIntelligenceSection";
+import { EverydayUseCases } from "@/components/EverydayUseCases";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -195,6 +196,10 @@ export default function Home() {
       
       <div className="below-fold">
         <WhoItsFor />
+      </div>
+
+      <div className="below-fold">
+        <EverydayUseCases />
       </div>
       
       <div className="below-fold">
