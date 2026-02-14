@@ -105,6 +105,7 @@ const PublicVsPrivateDataOsint = lazy(() => import("./pages/blog/PublicVsPrivate
 const RemoveFromDataBrokersGuide = lazy(() => import("./pages/blog/RemoveFromDataBrokersGuide"));
 const IsFootprintiqDataBroker = lazy(() => import("./pages/blog/IsFootprintiqDataBroker"));
 const AfterHaveIBeenPwned = lazy(() => import("./pages/AfterHaveIBeenPwned"));
+const DataBreachCleanupChecklist = lazy(() => import("./pages/DataBreachCleanupChecklist"));
 const BestDigitalFootprintScanner = lazy(() => import("./pages/comparisons/BestDigitalFootprintScanner"));
 const AuraVsFootprintiq = lazy(() => import("./pages/comparisons/AuraVsFootprintiq"));
 const DeletemeVsFootprintiq = lazy(() => import("./pages/comparisons/DeletemeVsFootprintiq"));
@@ -634,6 +635,7 @@ function RouterContent() {
             <Route path="/find-social-media-accounts" element={<FindSocialMediaAccounts />} />
              <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
              <Route path="/after-have-i-been-pwned-what-next" element={<AfterHaveIBeenPwned />} />
+             <Route path="/data-breach-cleanup-checklist" element={<DataBreachCleanupChecklist />} />
              <Route path="/best-digital-footprint-scanner" element={<BestDigitalFootprintScanner />} />
              <Route path="/aura-vs-footprintiq" element={<AuraVsFootprintiq />} />
              <Route path="/deleteme-vs-footprintiq" element={<DeletemeVsFootprintiq />} />
