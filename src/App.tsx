@@ -99,6 +99,11 @@ const RemoveFromDataBrokersUK = lazy(() => import("./pages/blog/RemoveFromDataBr
 const DeleteOldAccounts = lazy(() => import("./pages/blog/DeleteOldAccounts"));
 const WhatIsDigitalFootprintCheck = lazy(() => import("./pages/blog/WhatIsDigitalFootprintCheck"));
 const DigitalExposureReport2026 = lazy(() => import("./pages/blog/DigitalExposureReport2026"));
+const WhatIsEthicalOsintScan = lazy(() => import("./pages/blog/WhatIsEthicalOsintScan"));
+const ExposureMappingBeforeRemoval = lazy(() => import("./pages/blog/ExposureMappingBeforeRemoval"));
+const PublicVsPrivateDataOsint = lazy(() => import("./pages/blog/PublicVsPrivateDataOsint"));
+const RemoveFromDataBrokersGuide = lazy(() => import("./pages/blog/RemoveFromDataBrokersGuide"));
+const IsFootprintiqDataBroker = lazy(() => import("./pages/blog/IsFootprintiqDataBroker"));
 const EthicalOsintCharter = lazy(() => import("./pages/EthicalOsintCharter"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
@@ -441,6 +446,11 @@ function RouterContent() {
           <Route path="/blog/delete-old-accounts" element={<DeleteOldAccounts />} />
           <Route path="/blog/what-is-digital-footprint-check" element={<WhatIsDigitalFootprintCheck />} />
           <Route path="/blog/digital-exposure-report-2026" element={<DigitalExposureReport2026 />} />
+          <Route path="/blog/what-is-ethical-osint-scan" element={<WhatIsEthicalOsintScan />} />
+          <Route path="/blog/exposure-mapping-before-removal" element={<ExposureMappingBeforeRemoval />} />
+          <Route path="/blog/public-vs-private-data-osint" element={<PublicVsPrivateDataOsint />} />
+          <Route path="/blog/remove-from-data-brokers-guide" element={<RemoveFromDataBrokersGuide />} />
+          <Route path="/blog/is-footprintiq-data-broker" element={<IsFootprintiqDataBroker />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/remove-mylife-profile" element={<RemoveMyLifeProfile />} />
           <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
