@@ -515,29 +515,30 @@ const PricingPage = () => {
           </div>
         </section>
 
-        {/* What You're Paying For */}
+        {/* Intelligence Layer */}
         <section className="py-16 px-4 bg-muted/30">
           <div className="container mx-auto max-w-3xl">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <Search className="w-6 h-6 text-primary" />
-                <h2 className="text-2xl font-bold">What you're paying for</h2>
+                <Database className="w-6 h-6 text-primary" />
+                <h2 className="text-2xl font-bold">The Intelligence Layer Above Removal</h2>
               </div>
               <p className="text-muted-foreground mb-6">
-                You're not paying for "magic" or secret data.
+                Most removal services attempt removal without mapping full exposure. FootprintIQ maps your digital footprint first — so remediation is strategic, efficient, and prioritised.
               </p>
             </div>
             
             <Card className="bg-card">
               <CardContent className="pt-6">
-                <p className="text-muted-foreground mb-4">You're paying for:</p>
+                <p className="text-muted-foreground mb-4">What you're paying for:</p>
                 <ul className="space-y-3">
                   {[
+                    "Exposure Prioritisation Score — know which findings matter most",
+                    "Remediation Pathway Links — direct routes to opt-out pages",
+                    "Curated Opt-Out Guides — step-by-step removal instructions",
                     "Correlation across hundreds of public sources",
-                    "Structured analysis",
-                    "Confidence scoring",
-                    "Clear reporting",
-                    "Time saved"
+                    "Confidence scoring & structured reporting",
+                    "Time saved vs manual OSINT research"
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-primary flex-shrink-0" />
@@ -546,7 +547,7 @@ const PricingPage = () => {
                   ))}
                 </ul>
                 <p className="mt-6 text-sm text-muted-foreground border-t pt-4">
-                  This is the same methodology used in professional OSINT work — without the manual effort.
+                  This is the same methodology used in professional OSINT work — intelligence before action.
                 </p>
               </CardContent>
             </Card>
