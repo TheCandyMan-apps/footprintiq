@@ -26,6 +26,7 @@ import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PlatformCapabilities } from "@/components/PlatformCapabilities";
 import { ForProfessionals } from "@/components/ForProfessionals";
+import { ExposureIntelligenceSection } from "@/components/ExposureIntelligenceSection";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -166,6 +167,10 @@ export default function Home() {
 
       <div className="below-fold">
         <PlatformCapabilities includeSchema />
+      </div>
+
+      <div className="below-fold">
+        <ExposureIntelligenceSection />
       </div>
       
       <div id="how-it-works" className="below-fold">

@@ -26,13 +26,13 @@ export const Hero = ({
 
         {/* Main headline */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight text-foreground">
-          Understand What's
-          <span className="block text-primary mt-2">Publicly Visible</span>
+          Map It. Prioritize It.
+          <span className="block text-primary mt-2">Reduce It.</span>
         </h1>
         
         {/* Subheading */}
         <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-          Manage your online footprint responsibly with ethical, open-source intelligence.
+          FootprintIQ is the ethical digital footprint intelligence platform that helps you understand and strategically reduce your online exposure.
         </p>
         
         {/* Transparency line */}
