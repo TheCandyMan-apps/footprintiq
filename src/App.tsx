@@ -111,6 +111,12 @@ const DeletemeVsFootprintiq = lazy(() => import("./pages/comparisons/DeletemeVsF
 const IncogniVsFootprintiq = lazy(() => import("./pages/comparisons/IncogniVsFootprintiq"));
 const KanaryVsFootprintiq = lazy(() => import("./pages/comparisons/KanaryVsFootprintiq"));
 const EthicalOsintCharter = lazy(() => import("./pages/EthicalOsintCharter"));
+const CheckWhatsPubliclyVisible = lazy(() => import("./pages/guides/CheckWhatsPubliclyVisible"));
+const EmployersDigitalFootprint = lazy(() => import("./pages/guides/EmployersDigitalFootprint"));
+const CleanUpOnlinePresence = lazy(() => import("./pages/guides/CleanUpOnlinePresence"));
+const RemoveFromDataBrokersGuideNew = lazy(() => import("./pages/guides/RemoveFromDataBrokers"));
+const MonitorOnlineExposure = lazy(() => import("./pages/guides/MonitorOnlineExposure"));
+const WhatGoogleKnowsAboutYou = lazy(() => import("./pages/guides/WhatGoogleKnowsAboutYou"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -633,6 +639,12 @@ function RouterContent() {
              <Route path="/deleteme-vs-footprintiq" element={<DeletemeVsFootprintiq />} />
              <Route path="/incogni-vs-footprintiq" element={<IncogniVsFootprintiq />} />
              <Route path="/kanary-vs-footprintiq" element={<KanaryVsFootprintiq />} />
+             <Route path="/guides/check-whats-publicly-visible" element={<CheckWhatsPubliclyVisible />} />
+             <Route path="/guides/employers-digital-footprint" element={<EmployersDigitalFootprint />} />
+             <Route path="/guides/clean-up-online-presence" element={<CleanUpOnlinePresence />} />
+             <Route path="/guides/remove-from-data-brokers" element={<RemoveFromDataBrokersGuideNew />} />
+             <Route path="/guides/monitor-online-exposure" element={<MonitorOnlineExposure />} />
+             <Route path="/guides/what-google-knows-about-you" element={<WhatGoogleKnowsAboutYou />} />
              <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
