@@ -110,6 +110,7 @@ const BreachVsDigitalFootprintRisk = lazy(() => import("./pages/BreachVsDigitalF
 const MonitorOnlineExposureAfterBreach = lazy(() => import("./pages/MonitorOnlineExposureAfterBreach"));
 const BestWayToMonitorOnlineExposure = lazy(() => import("./pages/BestWayToMonitorOnlineExposure"));
 const HowToRemoveFromDataBrokers = lazy(() => import("./pages/HowToRemoveFromDataBrokers"));
+const DataBrokerOptOutGuide = lazy(() => import("./pages/DataBrokerOptOutGuide"));
 const BestDigitalFootprintScanner = lazy(() => import("./pages/comparisons/BestDigitalFootprintScanner"));
 const AuraVsFootprintiq = lazy(() => import("./pages/comparisons/AuraVsFootprintiq"));
 const DeletemeVsFootprintiq = lazy(() => import("./pages/comparisons/DeletemeVsFootprintiq"));
@@ -645,6 +646,7 @@ function RouterContent() {
              <Route path="/how-to-monitor-your-online-exposure-after-a-breach" element={<MonitorOnlineExposureAfterBreach />} />
              <Route path="/best-way-to-monitor-your-online-exposure" element={<BestWayToMonitorOnlineExposure />} />
              <Route path="/how-to-remove-yourself-from-data-brokers" element={<HowToRemoveFromDataBrokers />} />
+             <Route path="/data-broker-opt-out-guide" element={<DataBrokerOptOutGuide />} />
              <Route path="/best-digital-footprint-scanner" element={<BestDigitalFootprintScanner />} />
              <Route path="/aura-vs-footprintiq" element={<AuraVsFootprintiq />} />
              <Route path="/deleteme-vs-footprintiq" element={<DeletemeVsFootprintiq />} />
