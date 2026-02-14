@@ -13,7 +13,7 @@ export const WhatWeDoSection = () => {
         </h2>
         
         <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-3xl mx-auto">
-          FootprintIQ helps individuals, professionals, and investigators understand where digital exposure exists across public platforms.
+          FootprintIQ helps you see where your personal information appears online — across social media, forums, data brokers, and breach databases.
         </p>
         
         <div className="grid sm:grid-cols-3 gap-6 mb-8">

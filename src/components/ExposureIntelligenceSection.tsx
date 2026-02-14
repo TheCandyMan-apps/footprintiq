@@ -20,11 +20,11 @@ export function ExposureIntelligenceSection() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <Shield className="w-6 h-6 text-primary" />
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              Exposure Intelligence Above Removal Services
+              Go Beyond Simple Removal
             </h2>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
-            Most removal services attempt blind takedowns. FootprintIQ maps your full exposure first — so every action is strategic and prioritized.
+            Removal services delete listings blindly. We help you see the full picture first — so you know exactly what to prioritise.
           </p>
         </motion.div>
 

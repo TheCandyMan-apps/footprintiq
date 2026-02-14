@@ -23,7 +23,14 @@ While it supports structured investigations through features like Cases, Footpri
  * Use for: Meta descriptions, schema descriptions, compact UI elements
  */
 export const PLATFORM_DESCRIPTION_SHORT = 
-  "FootprintIQ is an ethical digital footprint intelligence platform that uses open-source intelligence (OSINT) techniques to help people understand online exposure while avoiding surveillance, monitoring, or invasive data collection.";
+  "FootprintIQ is a free online privacy tool that shows you what anyone can find about you on the internet — and gives you a step-by-step plan to clean it up.";
+
+/**
+ * Mainstream description (consumer-friendly)
+ * Use for: Homepage hero, consumer-facing pages, AI citation anchors
+ */
+export const PLATFORM_DESCRIPTION_MAINSTREAM = 
+  "FootprintIQ is a free online privacy tool that shows you what anyone can find about you on the internet — and gives you a step-by-step plan to clean it up.";
 
 /**
  * Meta description for SEO (optimized for search engines)

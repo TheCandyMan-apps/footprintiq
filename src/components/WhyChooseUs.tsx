@@ -3,27 +3,27 @@ import { User, MessageSquare, Database, Link2, BarChart3, Globe } from "lucide-r
 const scanItems = [
   {
     icon: <User className="w-5 h-5" />,
-    title: "Identifier correlation",
+    title: "Username and email matching",
   },
   {
     icon: <MessageSquare className="w-5 h-5" />,
-    title: "Platform crossover",
+    title: "Where your accounts overlap",
   },
   {
     icon: <Database className="w-5 h-5" />,
-    title: "Exposure density",
+    title: "How visible you are",
   },
   {
     icon: <Link2 className="w-5 h-5" />,
-    title: "Temporal clustering",
+    title: "Account age and activity patterns",
   },
   {
     icon: <BarChart3 className="w-5 h-5" />,
-    title: "Anonymity degradation",
+    title: "How easy you are to find",
   },
   {
     icon: <Globe className="w-5 h-5" />,
-    title: "Public data correlation",
+    title: "Connections between your profiles",
   },
 ];
 
@@ -33,10 +33,10 @@ export const WhyChooseUs = () => {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-            What We Analyze
+            What We Check
           </h2>
           <p className="text-muted-foreground">
-            Exposure signals derived from publicly accessible sources
+            We scan publicly available information to show you what others can see
           </p>
         </div>
 

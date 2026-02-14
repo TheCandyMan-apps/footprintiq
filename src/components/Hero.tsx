@@ -21,7 +21,7 @@ export const Hero = ({
         {/* Main headline */}
         {/* Platform positioning */}
         <p className="text-sm font-medium uppercase tracking-widest text-primary mb-4">
-          Digital Exposure Intelligence Platform
+          Online Privacy Scanner
         </p>
 
         {/* Main headline */}
@@ -32,7 +32,7 @@ export const Hero = ({
         
         {/* Subheading */}
         <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-          FootprintIQ is the ethical digital footprint intelligence platform that helps you understand and strategically reduce your online exposure.
+          A free privacy tool that shows you what anyone can find about you online — and how to clean it up.
         </p>
         
         {/* Transparency line */}
@@ -40,7 +40,7 @@ export const Hero = ({
           We provide visibility. You make the decisions.
         </p>
         <p className="text-sm text-muted-foreground/60 mb-10 max-w-2xl mx-auto">
-          Built for individuals and professionals who value transparency over surveillance.
+          Used by over 2,000 people to understand their online visibility.
         </p>
         
         {/* Inline Hero Input - reduces friction */}
@@ -67,15 +67,15 @@ export const Hero = ({
         <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>Public-source intelligence only</span>
+            <span>Free to use</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>Ethical OSINT</span>
+            <span>No sign-up required</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>Transparent exposure analysis</span>
+            <span>Public data only</span>
           </div>
         </div>
       </div>

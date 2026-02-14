@@ -9,7 +9,7 @@ import { HelpCircle } from "lucide-react";
 const faqs = [
   {
     question: "What is FootprintIQ?",
-    answer: "FootprintIQ is an ethical digital footprint intelligence platform. It uses open-source intelligence (OSINT) techniques to help people understand online exposure while avoiding surveillance, monitoring, or invasive data collection."
+    answer: "FootprintIQ is a free online privacy tool that shows you what's publicly visible about you on the internet. It checks usernames, emails, and phone numbers across hundreds of public sources to help you understand your exposure and take action."
   },
   {
     question: "What does FootprintIQ scan?",
@@ -37,7 +37,7 @@ const faqs = [
   },
   {
     question: "What is OSINT and why does it matter?",
-    answer: "OSINT (Open Source Intelligence) refers to information collected from publicly available sources. Understanding what's publicly visible about you is the first step to managing your digital privacy and reducing potential risks."
+    answer: "OSINT stands for Open Source Intelligence — it simply means searching publicly available information. Think of it like Googling yourself, but across hundreds of sources at once. Understanding what's publicly visible about you is the first step to managing your digital privacy."
   },
   {
     question: "Does FootprintIQ remove my data?",
