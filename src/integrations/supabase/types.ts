@@ -7165,6 +7165,7 @@ export type Database = {
         Row: {
           artifact_type: string
           created_at: string
+          data: Json
           downloaded_at: string | null
           file_size_bytes: number | null
           file_url: string
@@ -7173,11 +7174,14 @@ export type Database = {
           scan_id: string
           signed_url: string | null
           signed_url_expires_at: string | null
+          source: string | null
           updated_at: string
+          visibility: string
         }
         Insert: {
           artifact_type: string
           created_at?: string
+          data?: Json
           downloaded_at?: string | null
           file_size_bytes?: number | null
           file_url: string
@@ -7186,11 +7190,14 @@ export type Database = {
           scan_id: string
           signed_url?: string | null
           signed_url_expires_at?: string | null
+          source?: string | null
           updated_at?: string
+          visibility?: string
         }
         Update: {
           artifact_type?: string
           created_at?: string
+          data?: Json
           downloaded_at?: string | null
           file_size_bytes?: number | null
           file_url?: string
@@ -7199,7 +7206,9 @@ export type Database = {
           scan_id?: string
           signed_url?: string | null
           signed_url_expires_at?: string | null
+          source?: string | null
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {

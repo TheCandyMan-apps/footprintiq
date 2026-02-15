@@ -302,7 +302,7 @@ serve(async (req: Request) => {
     }
 
     // ── Parse and return findings ──
-    let result: { ok: boolean; findings?: unknown[]; error?: string };
+    let result: { ok: boolean; findings?: unknown[]; messages?: unknown[]; graph?: unknown; error?: string };
     try {
       result = JSON.parse(workerBody);
     } catch {
@@ -313,12 +313,71 @@ serve(async (req: Request) => {
       return json({ ok: false, scanId, error: result.error || "Worker reported failure" }, 502);
     }
 
-    console.log(`[telegram-proxy] Success for scan ${scanId}: ${(result.findings || []).length} findings`);
+    // ── Store large payloads in scan_artifacts, keep summaries in findings ──
+    const svc = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const artifactInserts: Promise<unknown>[] = [];
+
+    // Messages payload → artifact
+    if (result.messages && Array.isArray(result.messages) && result.messages.length > 0) {
+      artifactInserts.push(
+        svc.from("scan_artifacts").insert({
+          scan_id: scanId,
+          source: "telegram",
+          artifact_type: "messages",
+          visibility: "private",
+          data: { messages: result.messages },
+        }),
+      );
+      console.log(`[telegram-proxy] Storing ${result.messages.length} messages as artifact for scan ${scanId}`);
+    }
+
+    // Graph payload → artifact
+    if (result.graph && typeof result.graph === "object") {
+      artifactInserts.push(
+        svc.from("scan_artifacts").insert({
+          scan_id: scanId,
+          source: "telegram",
+          artifact_type: "graph",
+          visibility: "private",
+          data: result.graph,
+        }),
+      );
+      console.log(`[telegram-proxy] Storing graph data as artifact for scan ${scanId}`);
+    }
+
+    // Wait for artifact inserts (non-blocking for response)
+    if (artifactInserts.length > 0) {
+      const artifactResults = await Promise.allSettled(artifactInserts);
+      for (const r of artifactResults) {
+        if (r.status === "rejected") {
+          console.error("[telegram-proxy] Artifact insert failed:", r.reason);
+        }
+      }
+    }
+
+    // Strip large payloads from findings response (summaries only)
+    const findings = (result.findings || []).map((f: any) => {
+      // If a finding itself contains large nested data, summarize it
+      if (f?.evidence?.messages) {
+        return { ...f, evidence: { ...f.evidence, messages: undefined, message_count: f.evidence.messages.length } };
+      }
+      if (f?.evidence?.graph) {
+        return { ...f, evidence: { ...f.evidence, graph: undefined, has_graph: true } };
+      }
+      return f;
+    });
+
+    console.log(`[telegram-proxy] Success for scan ${scanId}: ${findings.length} findings, ${artifactInserts.length} artifacts stored`);
 
     return json({
       ok: true,
       scanId,
-      findings: result.findings || [],
+      findings,
+      artifacts_stored: artifactInserts.length,
     });
   } catch (err) {
     console.error("[telegram-proxy] Unhandled error:", err);
