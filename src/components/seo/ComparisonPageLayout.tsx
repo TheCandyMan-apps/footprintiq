@@ -32,6 +32,7 @@ const comparisonPages = [
   { to: "/people-search-vs-footprintiq", label: "People-Search Sites vs FootprintIQ" },
   { to: "/osint-suites-vs-footprintiq", label: "OSINT Suites vs FootprintIQ" },
   { to: "/comparisons/pimeyes-alternative", label: "PimEyes Alternative" },
+  { to: "/comparisons/sherlock-vs-footprintiq", label: "Sherlock vs FootprintIQ" },
 ];
 
 export interface ComparisonRow {

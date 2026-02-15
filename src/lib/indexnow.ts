@@ -170,6 +170,11 @@ export const INDEXNOW_URLS = [
   "/best-osint-tools",
   "/how-to-find-someone-online",
   "/comparisons/pimeyes-alternative",
+  // Keyword Gap Pages (Batch 2)
+  "/osint-techniques",
+  "/check-username-across-platforms",
+  "/comparisons/sherlock-vs-footprintiq",
+  "/credential-reuse-risk",
 ];
 
 /**
