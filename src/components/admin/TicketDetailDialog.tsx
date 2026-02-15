@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Send, User, Calendar, Tag } from 'lucide-react';
+import { Send, User, Calendar, Tag, CreditCard, MessageSquarePlus } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 
 interface TicketMessage {
@@ -152,6 +153,15 @@ export function TicketDetailDialog({ ticket, open, onOpenChange, onUpdate }: Tic
           <DialogDescription>
             Created {formatDate(ticket.created_at)} • Category: {ticket.category}
           </DialogDescription>
+          {(ticket.profiles?.full_name || ticket.profiles?.email) && (
+            <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50 text-sm">
+              <User className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="font-medium">{ticket.profiles.full_name || 'Unknown User'}</span>
+              {ticket.profiles.email && (
+                <span className="text-muted-foreground">({ticket.profiles.email})</span>
+              )}
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-6">
@@ -230,7 +240,27 @@ export function TicketDetailDialog({ ticket, open, onOpenChange, onUpdate }: Tic
 
           {/* New Message */}
           <div className="space-y-3">
-            <Label>New Message</Label>
+            <div className="flex items-center justify-between">
+              <Label>New Message</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <MessageSquarePlus className="w-3.5 h-3.5" />
+                    Canned Replies
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuItem onClick={() => setNewMessage("You can remove your payment method by going to Settings > Subscription and clicking 'Manage Subscription'. This will open a secure portal where you can update or remove your card.")}>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Card removal instructions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNewMessage("To manage your subscription (upgrade, downgrade, or cancel), go to Settings > Subscription and click 'Manage Subscription'. You'll be able to make changes in the secure billing portal.")}>
+                    <Tag className="w-4 h-4 mr-2" />
+                    Subscription management help
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             <Textarea
               placeholder="Type your message..."
               value={newMessage}

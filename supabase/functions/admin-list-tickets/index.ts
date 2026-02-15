@@ -68,7 +68,7 @@ serve(async (req) => {
 
     let query = supabase
       .from('support_tickets')
-      .select('*')
+      .select('*, profiles!support_tickets_user_id_fkey(email, full_name)')
       .order('created_at', { ascending: false })
       .limit(100);
 

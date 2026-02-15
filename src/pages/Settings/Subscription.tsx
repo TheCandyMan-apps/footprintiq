@@ -97,10 +97,16 @@ export default function SubscriptionSettings() {
           </div>
 
           {subscriptionTier !== 'free' && (
-            <Button onClick={handleManageSubscription} variant="outline" className="gap-2">
-              Manage Subscription
-              <ExternalLink className="w-4 h-4" />
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={handleManageSubscription} variant="outline" className="gap-2">
+                Manage Subscription
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+              <Button onClick={handleManageSubscription} variant="ghost" className="gap-2 text-muted-foreground">
+                Update or Remove Payment Method
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
           )}
         </div>
       </Card>

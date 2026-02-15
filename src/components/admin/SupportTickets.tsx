@@ -24,6 +24,10 @@ interface SupportTicket {
   description: string;
   assigned_to?: string;
   last_reply_at?: string;
+  profiles?: {
+    email: string | null;
+    full_name: string | null;
+  };
 }
 
 export function SupportTickets() {
@@ -81,7 +85,9 @@ export function SupportTickets() {
         t =>
           (t.ticket_number || '').toLowerCase().includes(lower) ||
           (t.subject || '').toLowerCase().includes(lower) ||
-          (t.description || '').toLowerCase().includes(lower)
+          (t.description || '').toLowerCase().includes(lower) ||
+          (t.profiles?.full_name || '').toLowerCase().includes(lower) ||
+          (t.profiles?.email || '').toLowerCase().includes(lower)
       );
     }
 
@@ -254,6 +260,14 @@ export function SupportTickets() {
                     <h4 className="font-medium mb-1 truncate">{ticket.subject}</h4>
                     <p className="text-sm text-muted-foreground">
                       Created {formatDate(ticket.created_at)}
+                      {ticket.profiles?.full_name || ticket.profiles?.email ? (
+                        <span className="ml-2">
+                          · Submitted by: {ticket.profiles.full_name || 'Unknown'}{' '}
+                          {ticket.profiles.email && (
+                            <span className="text-xs">({ticket.profiles.email})</span>
+                          )}
+                        </span>
+                      ) : null}
                     </p>
                   </div>
                   <Button
