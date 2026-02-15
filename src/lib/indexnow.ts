@@ -166,6 +166,10 @@ export const INDEXNOW_URLS = [
   "/blog/remove-from-data-brokers-guide",
   "/blog/is-footprintiq-data-broker",
   "/blog/remove-address-from-google",
+  // Keyword Gap Pages (Batch 1)
+  "/best-osint-tools",
+  "/how-to-find-someone-online",
+  "/comparisons/pimeyes-alternative",
 ];
 
 /**

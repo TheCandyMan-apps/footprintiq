@@ -330,6 +330,9 @@ const FindSocialMediaAccounts = lazy(() => import("./pages/FindSocialMediaAccoun
 const UsernameReuseRisk = lazy(() => import("./pages/UsernameReuseRisk"));
 const RemovePersonalInformation = lazy(() => import("./pages/RemovePersonalInformation"));
 const CheckMyDigitalFootprint = lazy(() => import("./pages/CheckMyDigitalFootprint"));
+const BestOsintTools = lazy(() => import("./pages/BestOsintTools"));
+const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
+const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -677,6 +680,9 @@ function RouterContent() {
              <Route path="/guides/what-google-knows-about-you" element={<WhatGoogleKnowsAboutYou />} />
              <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
+             <Route path="/best-osint-tools" element={<BestOsintTools />} />
+             <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
+             <Route path="/comparisons/pimeyes-alternative" element={<PimeyesAlternative />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
