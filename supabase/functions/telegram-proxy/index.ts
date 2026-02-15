@@ -229,8 +229,10 @@ serve(async (req: Request) => {
       if (consentConfirmed !== true) {
         return json({ ok: false, error: "consentConfirmed must be true for phone_presence" }, 400);
       }
-      if (tier !== "pro" && tier !== "business" && tier !== "enterprise") {
-        return json({ ok: false, error: "phone_presence requires Pro tier or above" }, 400);
+      // Allowed tiers for phone_presence (extend this set as new tiers launch)
+      const phoneTiers: ReadonlySet<string> = new Set(["pro"]);
+      if (!phoneTiers.has(tier)) {
+        return json({ ok: false, error: "phone_presence requires Pro tier" }, 400);
       }
     }
 
