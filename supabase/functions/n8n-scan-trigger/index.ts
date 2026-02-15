@@ -392,6 +392,16 @@ serve(async (req) => {
       callbackToken: callbackToken || "",
       progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
       resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
+      // Telegram OSINT proxy options for n8n workflow
+      telegramOptions: {
+        enabled: true,
+        action: scanType === 'phone' && effectiveTier !== 'free' ? 'phone_presence' : 'username',
+        username: scanType === 'username' ? targetValue : undefined,
+        phoneE164: scanType === 'phone' ? targetValue : null,
+        consentConfirmed: scanType === 'phone' && effectiveTier !== 'free',
+        lawfulBasis: scanType === 'phone' && effectiveTier !== 'free' ? 'legitimate_interest' : null,
+      },
+      telegramProxyUrl: `${supabaseUrl}/functions/v1/telegram-proxy`,
     };
     
     // Select webhook URL based on tier

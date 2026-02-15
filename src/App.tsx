@@ -196,6 +196,7 @@ const QualityLab = lazy(() => import("./pages/admin/QualityLab"));
 const ObservabilityDashboard = lazy(() => import("./pages/admin/ObservabilityDashboard"));
 const CircuitBreakers = lazy(() => import("./pages/admin/CircuitBreakers"));
 const CostTracking = lazy(() => import("./pages/admin/CostTracking"));
+const TelegramIntegration = lazy(() => import("./pages/admin/TelegramIntegration"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const ErrorViewer = lazy(() => import("./pages/admin/ErrorViewer"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
@@ -623,6 +624,7 @@ function RouterContent() {
           <Route path="/admin/incidents" element={<ObservabilityDashboard />} />
           <Route path="/admin/circuit-breakers" element={<CircuitBreakers />} />
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
+          <Route path="/admin/integrations/telegram" element={<TelegramIntegration />} />
           <Route path="/admin/workspace-audit" element={<WorkspaceAudit />} />
           <Route path="/admin/performance" element={<Performance />} />
           <Route path="/admin/errors" element={<ErrorViewer />} />
