@@ -38,6 +38,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -165,12 +166,40 @@ serve(async (req: Request) => {
   }
 
   try {
-    // ── Auth: shared n8n gateway key ──
+    // ── Auth: n8n gateway key OR admin JWT ──
     const gatewayKey = Deno.env.get("N8N_GATEWAY_KEY");
     const providedKey = req.headers.get("x-n8n-key");
+    const hasValidGatewayKey = gatewayKey && providedKey && providedKey === gatewayKey;
 
-    if (!gatewayKey || !providedKey || providedKey !== gatewayKey) {
-      return json({ ok: false, error: "Forbidden – invalid x-n8n-key" }, 403);
+    let isAdminCaller = false;
+    if (!hasValidGatewayKey) {
+      // Check if caller is an authenticated admin via Supabase JWT
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+        const { data, error } = await supabase.auth.getUser();
+        if (!error && data?.user) {
+          // Check admin role via service client (RLS bypass)
+          const svc = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+          );
+          const { data: roleData } = await svc
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id)
+            .single();
+          isAdminCaller = roleData?.role === "admin";
+        }
+      }
+    }
+
+    if (!hasValidGatewayKey && !isAdminCaller) {
+      return json({ ok: false, error: "Forbidden – invalid credentials" }, 403);
     }
 
     // ── Parse & validate body ──
