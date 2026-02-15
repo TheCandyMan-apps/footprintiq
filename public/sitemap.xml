@@ -1149,4 +1149,18 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- AI Visibility Gap Pages (Batch 2) -->
+  <url>
+    <loc>https://footprintiq.app/audit-your-digital-footprint</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/personal-data-exposure-scan</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>
