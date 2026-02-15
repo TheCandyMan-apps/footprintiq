@@ -1,0 +1,1 @@
+ALTER TABLE public.scans ADD COLUMN IF NOT EXISTS telegram_triggered_at TIMESTAMPTZ DEFAULT NULL;

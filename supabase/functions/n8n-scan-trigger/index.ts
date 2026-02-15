@@ -43,6 +43,7 @@ serve(async (req) => {
     const n8nWebhookUrl = Deno.env.get("N8N_SCAN_WEBHOOK_URL");
     const n8nFreeScanWebhookUrl = Deno.env.get("N8N_FREE_SCAN_WEBHOOK_URL");
     const n8nTelegramWebhookUrl = Deno.env.get("N8N_TELEGRAM_WEBHOOK_URL");
+    const n8nTelegramUsernameWebhookUrl = Deno.env.get("N8N_TELEGRAM_USERNAME_WEBHOOK_URL");
     const workerUrl = Deno.env.get("OSINT_WORKER_URL");
     const workerToken = Deno.env.get("OSINT_WORKER_TOKEN");
 
@@ -568,39 +569,57 @@ serve(async (req) => {
       }
     }
 
-    // ==================== TELEGRAM N8N WORKFLOW (fire-and-forget) ====================
-    // If telegramOptions are enabled, trigger the dedicated Telegram n8n workflow
-    const telegramOpts = n8nPayload.telegramOptions;
-    if (n8nTelegramWebhookUrl && telegramOpts?.enabled === true) {
-      console.log(`[n8n-scan-trigger] Triggering Telegram n8n workflow for scan ${scan.id}`);
+    // ==================== TELEGRAM USERNAME WORKFLOW (fire-and-forget, idempotent) ====================
+    // For username scans only, trigger the dedicated Telegram username n8n workflow.
+    // Idempotency: only trigger once per scan (check telegram_triggered_at).
+    if (scanType === 'username' && n8nTelegramUsernameWebhookUrl && targetValue) {
+      // Check idempotency – skip if already triggered
+      const { data: scanRow } = await serviceClient
+        .from('scans')
+        .select('telegram_triggered_at')
+        .eq('id', scan.id)
+        .single();
 
-      try {
-        fetch(n8nTelegramWebhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            scanId: scan.id,
-            workspaceId: workspaceId,
-            userId: user.id,
-            tier: effectiveTier,
-            entityType: scanType,
-            query: targetValue,
-            telegramOptions: telegramOpts,
-            progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
-            resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
-          }),
-        })
-          .then((res) => {
-            console.log(`[n8n-scan-trigger] Telegram workflow responded: ${res.status}`);
+      if (scanRow?.telegram_triggered_at) {
+        console.log(`[n8n-scan-trigger] Telegram username workflow already triggered for scan ${scan.id}, skipping`);
+      } else {
+        console.log(`[n8n-scan-trigger] Triggering Telegram username workflow for scan ${scan.id}`);
+
+        // Stamp idempotency marker immediately
+        const triggeredAt = new Date().toISOString();
+        await serviceClient
+          .from('scans')
+          .update({ telegram_triggered_at: triggeredAt })
+          .eq('id', scan.id);
+
+        try {
+          fetch(n8nTelegramUsernameWebhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              scanId: scan.id,
+              workspaceId: workspaceId,
+              userId: user.id,
+              tier: effectiveTier,
+              entityType: scanType,
+              query: targetValue,
+              telegramOptions: { enabled: true },
+              progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
+              resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
+            }),
           })
-          .catch((err) => {
-            console.error(`[n8n-scan-trigger] Telegram workflow error: ${err.message}`);
-          });
+            .then((res) => {
+              console.log(`[n8n-scan-trigger] Telegram username workflow responded: ${res.status}`);
+            })
+            .catch((err) => {
+              console.error(`[n8n-scan-trigger] Telegram username workflow error: ${err.message}`);
+            });
 
-        console.log(`[n8n-scan-trigger] Telegram workflow triggered (fire-and-forget)`);
-      } catch (telegramError) {
-        // Silent failure – never block the main scan
-        console.error("[n8n-scan-trigger] Failed to trigger Telegram workflow:", telegramError);
+          console.log(`[n8n-scan-trigger] Telegram username workflow triggered (fire-and-forget)`);
+        } catch (telegramError) {
+          // Silent failure – never block the main scan
+          console.error("[n8n-scan-trigger] Failed to trigger Telegram username workflow:", telegramError);
+        }
       }
     }
 
