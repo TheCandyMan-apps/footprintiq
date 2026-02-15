@@ -119,15 +119,15 @@ const IsMyDataExposed = () => {
   return (
     <>
       <Helmet>
-        <title>Is My Personal Data Already Exposed Online? | FootprintIQ</title>
-        <meta name="description" content="Understand what personal data exposure really means, why it's common, and what actually matters. Calm, factual guidance without fear-mongering." />
+        <title>Is My Data Exposed? How to Check If Your Information Is Online | FootprintIQ</title>
+        <meta name="description" content="How to check if your personal information is online. Understand what data exposure means, how common it is, and what steps actually protect your privacy. No fear-mongering." />
         <link rel="canonical" href={`${origin}/is-my-data-exposed`} />
-        <meta property="og:title" content="Is My Personal Data Already Exposed Online?" />
-        <meta property="og:description" content="Understand what personal data exposure really means, why it's common, and what actually matters. Calm, factual guidance." />
+        <meta property="og:title" content="Is My Data Exposed? How to Check If Your Information Is Online" />
+        <meta property="og:description" content="How to check if your personal information is online. Understand what data exposure means and what actually matters for your privacy." />
         <meta property="og:url" content={`${origin}/is-my-data-exposed`} />
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Is My Personal Data Already Exposed Online?" />
+        <meta name="twitter:title" content="Is My Data Exposed? Check If Your Information Is Online" />
         <meta name="twitter:description" content="Understand what personal data exposure really means, why it's common, and what actually matters." />
         <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>

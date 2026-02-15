@@ -140,21 +140,21 @@ const DataBrokerRemovalGuide = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <Helmet>
-        <title>Complete Guide to Data Broker Removal (GDPR &amp; CCPA)</title>
+        <title>Data Broker Removal Guide – How to Remove Your Data (GDPR & CCPA) | FootprintIQ</title>
         <meta
           name="description"
-          content="Learn how to remove your personal data from data broker websites. Step-by-step guide with GDPR and CCPA templates."
+          content="Complete guide to data broker removal. Step-by-step instructions with free GDPR and CCPA templates to remove your personal data from Spokeo, BeenVerified, MyLife, and more."
         />
         <link rel="canonical" href="https://footprintiq.app/data-broker-removal-guide" />
-        <meta property="og:title" content="Complete Guide to Data Broker Removal (GDPR & CCPA)" />
-        <meta property="og:description" content="Learn how to remove your personal data from data broker websites. Step-by-step guide with GDPR and CCPA templates." />
+        <meta property="og:title" content="Data Broker Removal Guide – GDPR & CCPA Templates | FootprintIQ" />
+        <meta property="og:description" content="Step-by-step guide to removing your personal data from data broker websites. Free GDPR and CCPA templates included." />
         <meta property="og:url" content="https://footprintiq.app/data-broker-removal-guide" />
         <meta property="og:type" content="article" />
         <meta property="og:image" content="https://footprintiq.app/og-image.jpg" />
         <meta property="og:site_name" content="FootprintIQ" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Complete Guide to Data Broker Removal (GDPR & CCPA)" />
-        <meta name="twitter:description" content="Learn how to remove your personal data from data broker websites. Step-by-step guide with GDPR and CCPA templates." />
+        <meta name="twitter:title" content="Data Broker Removal Guide | FootprintIQ" />
+        <meta name="twitter:description" content="Remove your personal data from data broker websites. Free GDPR and CCPA templates and step-by-step instructions." />
       </Helmet>
       <JsonLd data={faqJsonLd} />
       <JsonLd data={articleJsonLd} />

@@ -35,6 +35,7 @@ export const INDEXNOW_URLS = [
   "/sample-report",
   // Pillar pages
   "/digital-footprint-scanner",
+  "/digital-footprint-check",
   "/username-search",
   "/email-breach-check",
   "/username-search-tools",

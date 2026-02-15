@@ -189,22 +189,22 @@ const DigitalFootprintScanner = () => {
   return (
     <>
       <Helmet>
-        <title>How to Find Your Digital Footprint — Free Digital Footprint Checker | FootprintIQ</title>
+        <title>Digital Footprint Check – Free Online Exposure Scanner | FootprintIQ</title>
         <meta 
           name="description" 
-          content="Learn how to find your digital footprint with our free digital footprint checker. Discover how to find the digital footprint of someone using ethical OSINT methods. Scans 500+ sources for social media, email breaches, and data exposure." 
+          content="Run a free digital footprint check to see what's publicly visible about you online. Scans 500+ sources for social media accounts, email breaches, and data broker exposure using ethical OSINT methods." 
         />
-        <meta name="keywords" content="how to find digital footprint, find your digital footprint, how to find digital footprint of someone, free digital footprint checker, digital footprint finder, find my digital footprint, digital footprint intelligence, personal data exposure, trail of data, ethical OSINT tools, username scanner, email breach scanner" />
+        <meta name="keywords" content="digital footprint check, how to find digital footprint, free digital footprint checker, check my digital footprint, digital footprint finder, find my digital footprint, digital footprint intelligence, personal data exposure, ethical OSINT tools, username scanner, email breach scanner" />
         <link rel="canonical" href="https://footprintiq.app/digital-footprint-scanner" />
         
-        <meta property="og:title" content="How to Find Your Digital Footprint — Free Digital Footprint Checker" />
-        <meta property="og:description" content="Learn how to find your digital footprint and how to find the digital footprint of someone. Free checker scans 500+ sources for social media, email breaches, and data exposure." />
+        <meta property="og:title" content="Digital Footprint Check – Free Online Exposure Scanner | FootprintIQ" />
+        <meta property="og:description" content="Run a free digital footprint check to see what's publicly visible about you. Scans 500+ sources for social media, email breaches, and data exposure." />
         <meta property="og:url" content="https://footprintiq.app/digital-footprint-scanner" />
         <meta property="og:type" content="website" />
         
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="How to Find Your Digital Footprint — Free Checker" />
-        <meta name="twitter:description" content="Learn how to find digital footprint traces with our free checker. Discover how to find the digital footprint of someone using ethical OSINT methods." />
+        <meta name="twitter:title" content="Digital Footprint Check – Free Scanner | FootprintIQ" />
+        <meta name="twitter:description" content="Run a free digital footprint check. Discover what personal data is publicly visible about you using ethical OSINT methods." />
         
         <script type="application/ld+json">{JSON.stringify(schemaFAQ)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaBreadcrumb)}</script>
