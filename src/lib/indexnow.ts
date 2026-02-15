@@ -176,6 +176,10 @@ export const INDEXNOW_URLS = [
   "/check-username-across-platforms",
   "/comparisons/sherlock-vs-footprintiq",
   "/credential-reuse-risk",
+  // AI Visibility Gap Pages (Batch 1)
+  "/scan-my-online-presence",
+  "/best-online-privacy-scanner",
+  "/what-can-people-find-about-me",
 ];
 
 /**
