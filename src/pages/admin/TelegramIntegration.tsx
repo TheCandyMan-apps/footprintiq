@@ -84,11 +84,9 @@ export default function TelegramIntegration() {
     setTestResult(null);
 
     try {
+      // Admin JWT is sent automatically by supabase.functions.invoke via the session
       const { data, error } = await supabase.functions.invoke('telegram-proxy', {
         method: 'POST',
-        headers: {
-          'x-n8n-key': '__admin_test__', // This won't match — admin test uses a separate path
-        },
         body: {
           action: 'username',
           username: testUsername.trim(),
@@ -232,8 +230,8 @@ export default function TelegramIntegration() {
               )}
 
               <div className="text-xs text-muted-foreground space-y-1">
-                <p><strong>Note:</strong> The test calls the proxy without a valid <code>x-n8n-key</code>, so it will return 403 unless you're testing from the backend directly.</p>
-                <p>To do a true end-to-end test, trigger the proxy from n8n with the correct gateway key.</p>
+                <p><strong>Note:</strong> This test uses your admin session to authenticate — no gateway key needed. The proxy verifies your admin role via JWT.</p>
+                <p>n8n workflows still use <code>x-n8n-key</code> for authentication.</p>
               </div>
             </CardContent>
           </Card>
