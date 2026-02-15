@@ -337,6 +337,9 @@ const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
 const CheckUsernameAcrossPlatforms = lazy(() => import("./pages/CheckUsernameAcrossPlatforms"));
 const SherlockVsFootprintiq = lazy(() => import("./pages/comparisons/SherlockVsFootprintiq"));
 const CredentialReuseRisk = lazy(() => import("./pages/CredentialReuseRisk"));
+const ScanMyOnlinePresence = lazy(() => import("./pages/ScanMyOnlinePresence"));
+const BestOnlinePrivacyScanner = lazy(() => import("./pages/BestOnlinePrivacyScanner"));
+const WhatCanPeopleFindAboutMe = lazy(() => import("./pages/WhatCanPeopleFindAboutMe"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -690,7 +693,10 @@ function RouterContent() {
               <Route path="/osint-techniques" element={<OsintTechniques />} />
               <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
               <Route path="/comparisons/sherlock-vs-footprintiq" element={<SherlockVsFootprintiq />} />
-              <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
+               <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
+               <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
+               <Route path="/best-online-privacy-scanner" element={<BestOnlinePrivacyScanner />} />
+               <Route path="/what-can-people-find-about-me" element={<WhatCanPeopleFindAboutMe />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
