@@ -42,6 +42,7 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const n8nWebhookUrl = Deno.env.get("N8N_SCAN_WEBHOOK_URL");
     const n8nFreeScanWebhookUrl = Deno.env.get("N8N_FREE_SCAN_WEBHOOK_URL");
+    const n8nTelegramWebhookUrl = Deno.env.get("N8N_TELEGRAM_WEBHOOK_URL");
     const workerUrl = Deno.env.get("OSINT_WORKER_URL");
     const workerToken = Deno.env.get("OSINT_WORKER_TOKEN");
 
@@ -564,6 +565,42 @@ serve(async (req) => {
       } catch (phoneIntelError) {
         console.error('[n8n-scan-trigger] Failed to trigger phone-intel:', phoneIntelError);
         // Don't fail the whole scan - n8n/PhoneInfoga can still run
+      }
+    }
+
+    // ==================== TELEGRAM N8N WORKFLOW (fire-and-forget) ====================
+    // If telegramOptions are enabled, trigger the dedicated Telegram n8n workflow
+    const telegramOpts = n8nPayload.telegramOptions;
+    if (n8nTelegramWebhookUrl && telegramOpts?.enabled === true) {
+      console.log(`[n8n-scan-trigger] Triggering Telegram n8n workflow for scan ${scan.id}`);
+
+      try {
+        fetch(n8nTelegramWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            scanId: scan.id,
+            workspaceId: workspaceId,
+            userId: user.id,
+            tier: effectiveTier,
+            entityType: scanType,
+            query: targetValue,
+            telegramOptions: telegramOpts,
+            progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
+            resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
+          }),
+        })
+          .then((res) => {
+            console.log(`[n8n-scan-trigger] Telegram workflow responded: ${res.status}`);
+          })
+          .catch((err) => {
+            console.error(`[n8n-scan-trigger] Telegram workflow error: ${err.message}`);
+          });
+
+        console.log(`[n8n-scan-trigger] Telegram workflow triggered (fire-and-forget)`);
+      } catch (telegramError) {
+        // Silent failure – never block the main scan
+        console.error("[n8n-scan-trigger] Failed to trigger Telegram workflow:", telegramError);
       }
     }
 
