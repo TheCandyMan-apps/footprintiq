@@ -340,6 +340,8 @@ const CredentialReuseRisk = lazy(() => import("./pages/CredentialReuseRisk"));
 const ScanMyOnlinePresence = lazy(() => import("./pages/ScanMyOnlinePresence"));
 const BestOnlinePrivacyScanner = lazy(() => import("./pages/BestOnlinePrivacyScanner"));
 const WhatCanPeopleFindAboutMe = lazy(() => import("./pages/WhatCanPeopleFindAboutMe"));
+const AuditYourDigitalFootprint = lazy(() => import("./pages/AuditYourDigitalFootprint"));
+const PersonalDataExposureScan = lazy(() => import("./pages/PersonalDataExposureScan"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -697,6 +699,8 @@ function RouterContent() {
                <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
                <Route path="/best-online-privacy-scanner" element={<BestOnlinePrivacyScanner />} />
                <Route path="/what-can-people-find-about-me" element={<WhatCanPeopleFindAboutMe />} />
+               <Route path="/audit-your-digital-footprint" element={<AuditYourDigitalFootprint />} />
+               <Route path="/personal-data-exposure-scan" element={<PersonalDataExposureScan />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}

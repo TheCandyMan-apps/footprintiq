@@ -180,6 +180,9 @@ export const INDEXNOW_URLS = [
   "/scan-my-online-presence",
   "/best-online-privacy-scanner",
   "/what-can-people-find-about-me",
+  // AI Visibility Gap Pages (Batch 2)
+  "/audit-your-digital-footprint",
+  "/personal-data-exposure-scan",
 ];
 
 /**
