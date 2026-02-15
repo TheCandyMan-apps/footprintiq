@@ -108,3 +108,6 @@ verify_jwt = false
 
 [functions.error-alert]
 verify_jwt = false
+
+[functions.telegram-proxy]
+verify_jwt = false
