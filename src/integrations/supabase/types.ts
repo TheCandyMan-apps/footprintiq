@@ -7659,6 +7659,7 @@ export type Database = {
           results_route: string
           scan_type: Database["public"]["Enums"]["scan_type"]
           status: string | null
+          telegram_triggered_at: string | null
           total_sources_found: number | null
           used_free_any_credit: boolean | null
           user_id: string
@@ -7695,6 +7696,7 @@ export type Database = {
           results_route?: string
           scan_type: Database["public"]["Enums"]["scan_type"]
           status?: string | null
+          telegram_triggered_at?: string | null
           total_sources_found?: number | null
           used_free_any_credit?: boolean | null
           user_id: string
@@ -7731,6 +7733,7 @@ export type Database = {
           results_route?: string
           scan_type?: Database["public"]["Enums"]["scan_type"]
           status?: string | null
+          telegram_triggered_at?: string | null
           total_sources_found?: number | null
           used_free_any_credit?: boolean | null
           user_id?: string
