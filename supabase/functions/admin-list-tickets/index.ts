@@ -68,7 +68,7 @@ serve(async (req) => {
 
     let query = supabase
       .from('support_tickets')
-      .select('*, profiles!support_tickets_user_id_fkey(email, full_name)')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -83,7 +83,29 @@ serve(async (req) => {
       return errorResponse(fetchError, 500, 'SERVER_ERROR', corsHeaders);
     }
 
-    return new Response(JSON.stringify({ tickets }), {
+    // Enrich tickets with submitter profile info
+    const userIds = [...new Set((tickets || []).map((t: any) => t.user_id).filter(Boolean))];
+    let profilesMap: Record<string, { email: string | null; full_name: string | null }> = {};
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, email, full_name')
+        .in('user_id', userIds);
+
+      if (profiles) {
+        for (const p of profiles) {
+          profilesMap[p.user_id] = { email: p.email, full_name: p.full_name };
+        }
+      }
+    }
+
+    const enrichedTickets = (tickets || []).map((t: any) => ({
+      ...t,
+      profiles: profilesMap[t.user_id] || null,
+    }));
+
+    return new Response(JSON.stringify({ tickets: enrichedTickets }), {
       status: 200,
       headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
     });
