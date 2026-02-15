@@ -71,7 +71,7 @@ import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsD
 import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { ScanProgress } from './ScanProgress';
 import { LowResultsNotice } from './LowResultsNotice';
-import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink, Clock, TrendingUp, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink, Clock, TrendingUp, BarChart3, CheckCircle2, Send } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
@@ -959,6 +959,33 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </CardContent>
               </Card>
             )}
+
+            {/* ===== TELEGRAM TEASER ===== */}
+            <Card className="overflow-hidden border-border/50 relative">
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-2">
+                <Lock className="h-5 w-5 text-muted-foreground/60" />
+                <p className="text-xs font-medium text-muted-foreground">Telegram Intelligence — Pro only</p>
+                <Button size="sm" variant="outline" className="text-xs h-7" onClick={handleUpgradeClick}>
+                  Unlock
+                </Button>
+              </div>
+              <CardContent className="p-4 opacity-40">
+                <div className="flex items-center gap-2 mb-1">
+                  <Send className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-semibold">Telegram Intelligence</h3>
+                  <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-green-500/30 text-green-600 dark:text-green-400">
+                    <Shield className="h-2.5 w-2.5 mr-0.5" />Public data only
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Profile, channels, entities, and phone presence from public Telegram data.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-14 rounded bg-muted/30" />
+                  <div className="h-14 rounded bg-muted/30" />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* ===== STRATEGIC NEXT STEPS ===== */}
             <StrategicNextSteps />
