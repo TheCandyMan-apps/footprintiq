@@ -333,6 +333,10 @@ const CheckMyDigitalFootprint = lazy(() => import("./pages/CheckMyDigitalFootpri
 const BestOsintTools = lazy(() => import("./pages/BestOsintTools"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
+const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
+const CheckUsernameAcrossPlatforms = lazy(() => import("./pages/CheckUsernameAcrossPlatforms"));
+const SherlockVsFootprintiq = lazy(() => import("./pages/comparisons/SherlockVsFootprintiq"));
+const CredentialReuseRisk = lazy(() => import("./pages/CredentialReuseRisk"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -682,7 +686,11 @@ function RouterContent() {
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
              <Route path="/best-osint-tools" element={<BestOsintTools />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
-             <Route path="/comparisons/pimeyes-alternative" element={<PimeyesAlternative />} />
+              <Route path="/comparisons/pimeyes-alternative" element={<PimeyesAlternative />} />
+              <Route path="/osint-techniques" element={<OsintTechniques />} />
+              <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
+              <Route path="/comparisons/sherlock-vs-footprintiq" element={<SherlockVsFootprintiq />} />
+              <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
