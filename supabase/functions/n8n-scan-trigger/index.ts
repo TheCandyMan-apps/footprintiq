@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enforceTurnstile } from "../_shared/turnstile.ts";
 import { normalizePlanTier } from "../_shared/planCapabilities.ts";
+import { signFpiqHmac } from "../_shared/hmacAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -431,10 +432,12 @@ serve(async (req) => {
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for initial connection
 
       try {
+        const n8nBody = JSON.stringify(n8nPayload);
+        const hmacHeaders = await signFpiqHmac(n8nBody);
         const n8nResponse = await fetch(webhookUrl!, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(n8nPayload),
+          headers: { "Content-Type": "application/json", ...hmacHeaders },
+          body: n8nBody,
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
@@ -593,10 +596,7 @@ serve(async (req) => {
           .eq('id', scan.id);
 
         try {
-          fetch(n8nTelegramUsernameWebhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+        const telegramBody = JSON.stringify({
               scanId: scan.id,
               workspaceId: workspaceId,
               userId: user.id,
@@ -606,7 +606,12 @@ serve(async (req) => {
               telegramOptions: { enabled: true },
               progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
               resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
-            }),
+            });
+        const telegramHmacHeaders = await signFpiqHmac(telegramBody);
+        fetch(n8nTelegramUsernameWebhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...telegramHmacHeaders },
+            body: telegramBody,
           })
             .then((res) => {
               console.log(`[n8n-scan-trigger] Telegram username workflow responded: ${res.status}`);

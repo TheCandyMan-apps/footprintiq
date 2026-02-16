@@ -47,6 +47,39 @@ export interface HmacResult {
  * Only call this when both headers are present – the caller decides whether
  * to fall back to other auth methods when the headers are absent.
  */
+/**
+ * Generate HMAC-SHA256 signing headers for outbound requests.
+ * Returns `{ 'x-fpiq-ts': string, 'x-fpiq-sig': string }` or `{}` if secret is not configured.
+ */
+export async function signFpiqHmac(body: string): Promise<Record<string, string>> {
+  const secret = Deno.env.get('N8N_WEBHOOK_HMAC_SECRET');
+  if (!secret) return {};
+
+  const ts = String(Math.floor(Date.now() / 1000));
+  const message = `${ts}.${body}`;
+  const encoder = new TextEncoder();
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  const sig = bufToHex(signatureBuffer);
+
+  return { 'x-fpiq-ts': ts, 'x-fpiq-sig': sig };
+}
+
+/**
+ * Verify HMAC-SHA256 signature from x-fpiq-ts / x-fpiq-sig headers.
+ * Returns `{ authenticated: true }` on success, or `{ authenticated: false, error }` on failure.
+ *
+ * Only call this when both headers are present – the caller decides whether
+ * to fall back to other auth methods when the headers are absent.
+ */
 export async function verifyFpiqHmac(
   rawBody: string,
   headers: Headers,
