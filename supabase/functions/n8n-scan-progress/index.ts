@@ -1,15 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sanitizeScanId } from "../_shared/sanitizeIds.ts";
+import { verifyFpiqHmac } from "../_shared/hmacAuth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-callback-token, x-n8n-key',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-callback-token, x-n8n-key, x-fpiq-ts, x-fpiq-sig',
 };
 
 /**
  * Intermediate progress update endpoint for n8n to call during scan execution.
  * Allows updating scan progress as each provider starts/completes.
+ *
+ * Auth priority: HMAC (x-fpiq-ts + x-fpiq-sig) → x-n8n-key → x-callback-token
  */
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,26 +20,47 @@ serve(async (req) => {
   }
 
   try {
-    // ── Auth: x-n8n-key (shared secret) OR legacy x-callback-token ──
-    // x-n8n-key takes priority; if present and valid, skip legacy check.
-    const n8nKey = req.headers.get('x-n8n-key');
-    const expectedN8nKey = Deno.env.get('N8N_WEBHOOK_KEY');
+    // Read raw body BEFORE any JSON parsing (required for HMAC verification)
+    const rawBody = await req.text();
 
+    // ── Auth priority: 1) HMAC  2) x-n8n-key  3) legacy token ──
     let authenticated = false;
 
-    if (expectedN8nKey && n8nKey) {
-      if (n8nKey === expectedN8nKey) {
-        authenticated = true;
-      } else {
-        console.error('[n8n-scan-progress] x-n8n-key mismatch');
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    // 1. HMAC signature verification (preferred)
+    const fpiqTs = req.headers.get('x-fpiq-ts');
+    const fpiqSig = req.headers.get('x-fpiq-sig');
+
+    if (fpiqTs && fpiqSig) {
+      const hmacResult = await verifyFpiqHmac(rawBody, req.headers);
+      if (!hmacResult.authenticated) {
+        console.error(`[n8n-scan-progress] HMAC failed: ${hmacResult.error}`);
+        return new Response(JSON.stringify({ error: hmacResult.error }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      authenticated = true;
     }
 
-    // Fallback: legacy x-callback-token / Authorization header
+    // 2. x-n8n-key shared secret
+    if (!authenticated) {
+      const n8nKey = req.headers.get('x-n8n-key');
+      const expectedN8nKey = Deno.env.get('N8N_WEBHOOK_KEY');
+
+      if (expectedN8nKey && n8nKey) {
+        if (n8nKey === expectedN8nKey) {
+          authenticated = true;
+        } else {
+          console.error('[n8n-scan-progress] x-n8n-key mismatch');
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+    }
+
+    // 3. Fallback: legacy x-callback-token / Authorization header
     if (!authenticated) {
       let callbackToken = 
         req.headers.get('x-callback-token') || 
@@ -47,9 +71,10 @@ serve(async (req) => {
       }
       
       const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
+      const expectedN8nKey = Deno.env.get('N8N_WEBHOOK_KEY');
       
       if (!expectedToken && !expectedN8nKey) {
-        console.error('[n8n-scan-progress] No auth secrets configured (N8N_WEBHOOK_KEY / N8N_CALLBACK_TOKEN)');
+        console.error('[n8n-scan-progress] No auth secrets configured');
         return new Response(JSON.stringify({ error: 'Server misconfiguration' }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -69,7 +94,8 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const body = await req.json();
+    // Parse JSON from raw body string (already read for HMAC)
+    const body = JSON.parse(rawBody);
     const { 
       scanId: rawScanId, 
       provider, 
