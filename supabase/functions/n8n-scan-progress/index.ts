@@ -4,7 +4,7 @@ import { sanitizeScanId } from "../_shared/sanitizeIds.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-callback-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-callback-token, x-n8n-key',
 };
 
 /**
@@ -17,33 +17,52 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authentication token - accept both x-callback-token and Authorization headers
-    // for compatibility with different n8n workflow configurations
-    let callbackToken = 
-      req.headers.get('x-callback-token') || 
-      req.headers.get('Authorization');
-    
-    // Strip "Bearer " prefix if present for flexibility with different n8n configurations
-    if (callbackToken?.startsWith('Bearer ')) {
-      callbackToken = callbackToken.slice(7);
+    // ── Auth: x-n8n-key (shared secret) OR legacy x-callback-token ──
+    // x-n8n-key takes priority; if present and valid, skip legacy check.
+    const n8nKey = req.headers.get('x-n8n-key');
+    const expectedN8nKey = Deno.env.get('N8N_WEBHOOK_KEY');
+
+    let authenticated = false;
+
+    if (expectedN8nKey && n8nKey) {
+      if (n8nKey === expectedN8nKey) {
+        authenticated = true;
+      } else {
+        console.error('[n8n-scan-progress] x-n8n-key mismatch');
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
-    
-    const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
-    
-    if (!expectedToken) {
-      console.error('[n8n-scan-progress] N8N_CALLBACK_TOKEN not configured');
-      return new Response(JSON.stringify({ error: 'Server misconfiguration' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    
-    if (!callbackToken || callbackToken !== expectedToken) {
-      console.error('[n8n-scan-progress] Token mismatch. Received:', callbackToken?.substring(0, 10) + '...');
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+
+    // Fallback: legacy x-callback-token / Authorization header
+    if (!authenticated) {
+      let callbackToken = 
+        req.headers.get('x-callback-token') || 
+        req.headers.get('Authorization');
+      
+      if (callbackToken?.startsWith('Bearer ')) {
+        callbackToken = callbackToken.slice(7);
+      }
+      
+      const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
+      
+      if (!expectedToken && !expectedN8nKey) {
+        console.error('[n8n-scan-progress] No auth secrets configured (N8N_WEBHOOK_KEY / N8N_CALLBACK_TOKEN)');
+        return new Response(JSON.stringify({ error: 'Server misconfiguration' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      if (!callbackToken || callbackToken !== expectedToken) {
+        console.error('[n8n-scan-progress] Token mismatch');
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
