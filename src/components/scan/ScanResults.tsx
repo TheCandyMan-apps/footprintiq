@@ -330,11 +330,10 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     const target = job.target ?? job.username ?? '';
     const scanType = job.scan_type || 'username';
     
-    if (scanType === 'email') {
-      window.location.href = `/email-breach-check?q=${encodeURIComponent(target)}`;
-    } else {
-      window.location.href = `/scan/usernames?q=${encodeURIComponent(target)}`;
-    }
+    const params = new URLSearchParams();
+    if (target) params.set('q', target);
+    if (scanType) params.set('type', scanType);
+    window.location.href = `/scan?${params.toString()}`;
   };
 
   return (
