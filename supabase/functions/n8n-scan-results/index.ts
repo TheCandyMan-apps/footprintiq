@@ -217,22 +217,44 @@ serve(async (req) => {
         // Filter out negative results (found === false)
         .filter((finding: Record<string, unknown>) => finding.found !== false)
         .map((finding: Record<string, unknown>) => {
+          // ── Detect Telegram-format findings ──
+          // Telegram proxy sends: { source, finding_type, confidence (0-100), summary, data: {...} }
+          const isTelegramFormat = finding.source === 'telegram' || finding.finding_type;
+
           // Normalize kind - account.profile should become profile_presence
-          const normalizedKind = finding.kind === 'account.profile' ? 'profile_presence' : (finding.kind || 'profile_presence');
+          const normalizedKind = isTelegramFormat
+            ? (finding.finding_type as string || 'telegram_username')
+            : (finding.kind === 'account.profile' ? 'profile_presence' : (finding.kind || 'profile_presence'));
           
           // Extract provider from meta or default to tool name or 'whatsmyname'
           const provider = finding.provider || 
+            finding.source ||  // Telegram uses 'source' field
             (finding.meta as Record<string, unknown>)?.provider || 
             body.results?.tool ||  // n8n Quick Scan includes tool name
+            body.source ||  // Top-level source field from Telegram callback
             'whatsmyname';
           
           // Build evidence array, only including non-empty values
           const evidenceArray: Array<{key: string, value: string}> = [];
-          const urlValue = finding.url || finding.primary_url;
-          if (urlValue) evidenceArray.push({ key: 'url', value: String(urlValue) });
-          if (finding.site) evidenceArray.push({ key: 'site', value: String(finding.site) });
-          if (finding.username || body.username) {
-            evidenceArray.push({ key: 'username', value: String(finding.username || body.username) });
+
+          // For Telegram-format findings, extract evidence from the 'data' object
+          if (isTelegramFormat && finding.data && typeof finding.data === 'object') {
+            const data = finding.data as Record<string, unknown>;
+            for (const [key, value] of Object.entries(data)) {
+              if (value !== null && value !== undefined && value !== '') {
+                evidenceArray.push({ key, value: String(value) });
+              }
+            }
+            if (finding.summary) {
+              evidenceArray.push({ key: 'summary', value: String(finding.summary) });
+            }
+          } else {
+            const urlValue = finding.url || finding.primary_url;
+            if (urlValue) evidenceArray.push({ key: 'url', value: String(urlValue) });
+            if (finding.site) evidenceArray.push({ key: 'site', value: String(finding.site) });
+            if (finding.username || body.username) {
+              evidenceArray.push({ key: 'username', value: String(finding.username || body.username) });
+            }
           }
           
           // Append any additional evidence from n8n, filtering empty values
@@ -244,27 +266,44 @@ serve(async (req) => {
             }
           }
           
+          // Normalize confidence: Telegram sends 0-100, standard sends 0-1
+          const rawConfidence = finding.confidence;
+          const confidence = isTelegramFormat && typeof rawConfidence === 'number' && rawConfidence > 1
+            ? normalizeConfidence(rawConfidence / 100)
+            : normalizeConfidence(rawConfidence);
+
           // Determine severity based on NSFW flag
           const severity = finding.nsfw ? 'warning' : (finding.severity || 'info');
           
+          // Build meta object
+          const metaObj: Record<string, unknown> = isTelegramFormat
+            ? {
+                ...(finding.data as Record<string, unknown> || {}),
+                title: finding.summary || `Telegram: ${normalizedKind}`,
+                description: finding.summary || `Telegram finding for scan`,
+                source: 'telegram',
+                visibility: finding.visibility || 'free',
+              }
+            : {
+                ...(finding.meta as Record<string, unknown> || {}),
+                title: finding.title || finding.site || 'Unknown',
+                description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
+                url: finding.url || finding.primary_url,
+                site: finding.site,
+                nsfw: finding.nsfw || false,
+                source: 'n8n',
+              };
+
           return {
             scan_id: scanId,
             workspace_id: scan.workspace_id,
             provider: provider,
             kind: normalizedKind,
             severity: severity,
-            confidence: normalizeConfidence(finding.confidence),
+            confidence: confidence,
             observed_at: new Date().toISOString(),
             evidence: evidenceArray,
-            meta: {
-              ...(finding.meta as Record<string, unknown> || {}),
-              title: finding.title || finding.site || 'Unknown',
-              description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
-              url: finding.url || finding.primary_url,
-              site: finding.site,
-              nsfw: finding.nsfw || false,
-              source: 'n8n',
-            },
+            meta: metaObj,
             created_at: new Date().toISOString(),
           };
         });
