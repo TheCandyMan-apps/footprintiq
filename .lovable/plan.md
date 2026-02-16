@@ -1,70 +1,46 @@
 
 
-## HMAC Signature Verification for n8n Webhook Functions
+## Fix Telegram Proxy Validation + n8n Field Reference
 
-### Overview
-Add optional HMAC-SHA256 signing verification to `n8n-scan-progress` and `n8n-scan-results`. When the `x-fpiq-ts` and `x-fpiq-sig` headers are present, the function validates the signature before processing. Existing `x-n8n-key` and `x-callback-token` auth remain as fallbacks.
+### Problem
+The Telegram Proxy node call fails with "Missing required fields: scanId, workspaceId, userId, tier" because:
 
-### New Secret
-- `N8N_WEBHOOK_HMAC_SECRET` — shared HMAC signing key between n8n and FootprintIQ
+1. **`tier` reference is wrong in n8n**: The Proxy node uses `$('SET - Defaults').item.json.tier` but the data is nested at `$('SET - Defaults').item.json.body.tier`
+2. **`workspaceId` is empty string**: The edge function validation `!workspaceId` treats `""` as falsy/missing
 
-### Authentication Priority (updated)
-1. **HMAC** (preferred) — if `x-fpiq-ts` + `x-fpiq-sig` headers are present, verify signature; reject on mismatch or clock drift > 300s
-2. **x-n8n-key** — existing shared secret check (unchanged)
-3. **x-callback-token / Authorization** — legacy fallback (unchanged)
+### Fix 1: Update `telegram-proxy` edge function validation (code change)
 
-### Signature Scheme
-```text
-message  = "${x-fpiq-ts}.${rawBody}"
-expected = HMAC-SHA256(N8N_WEBHOOK_HMAC_SECRET, message) → hex
-compare  = x-fpiq-sig === expected
-reject if |Date.now()/1000 - x-fpiq-ts| > 300
+In `supabase/functions/telegram-proxy/index.ts`, change the validation to allow empty `workspaceId`:
+
+```typescript
+// Before:
+if (!scanId || !workspaceId || !userId || !tier) {
+
+// After:
+if (!scanId || workspaceId === undefined || workspaceId === null || !userId || !tier) {
 ```
 
-### Technical Changes
+Or more simply, just remove `workspaceId` from the required check since it can legitimately be empty.
 
-**1. Create shared HMAC utility** (`supabase/functions/_shared/hmacAuth.ts`)
-- `verifyFpiqHmac(rawBody, headers)` function that:
-  - Reads `x-fpiq-ts` and `x-fpiq-sig` from headers
-  - Reads `N8N_WEBHOOK_HMAC_SECRET` from env
-  - Returns `{ authenticated: true }` or `{ authenticated: false, error: string }`
-  - Checks timestamp drift (rejects if > 300 seconds)
-  - Computes HMAC-SHA256 using Web Crypto API (`crypto.subtle`)
-  - Uses constant-time comparison where possible
+### Fix 2: Update n8n Proxy node `tier` reference (user action in n8n)
 
-**2. Update `n8n-scan-progress/index.ts`**
-- Add `x-fpiq-ts, x-fpiq-sig` to CORS `Access-Control-Allow-Headers`
-- Read raw body with `await req.text()` BEFORE any JSON parsing
-- Insert HMAC check as the first auth method (before `x-n8n-key`)
-- Parse JSON from the raw body string (`JSON.parse(rawBody)`) instead of `req.json()`
+In the **HTTP - Telegram Proxy (username)** node, update the JSON body `tier` field:
 
-**3. Update `n8n-scan-results/index.ts`**
-- Same CORS, raw body, and HMAC changes as progress function
-- Replace `await req.json()` with `JSON.parse(rawBody)`
+```
+// Before:
+"tier": "{{ $('SET - Defaults').item.json.tier }}"
 
-**4. Add secret**
-- Use the secrets tool to request `N8N_WEBHOOK_HMAC_SECRET` from the user
-
-### Auth Flow (both functions)
-
-```text
-1. Read rawBody = await req.text()
-2. If x-fpiq-ts AND x-fpiq-sig present:
-     - If N8N_WEBHOOK_HMAC_SECRET not set → 401 "HMAC secret not configured"
-     - If |now - ts| > 300s → 401 "Timestamp expired"
-     - Compute expected sig, compare → 401 "Signature mismatch" or pass
-3. Else if x-n8n-key present → existing check (unchanged)
-4. Else → legacy x-callback-token check (unchanged)
-5. body = JSON.parse(rawBody) — rest of function unchanged
+// After:
+"tier": "{{ $('SET - Defaults').item.json.body.tier }}"
 ```
 
-### Error Responses (401)
-- `"HMAC verification failed: secret not configured"` — secret missing on server
-- `"HMAC verification failed: timestamp expired"` — clock drift > 5 minutes
-- `"HMAC verification failed: signature mismatch"` — bad signature
+### Steps
 
-### What Stays the Same
-- All downstream logic (DB writes, broadcasts, payload extraction)
-- Existing `x-n8n-key` and `x-callback-token` auth paths
-- CORS preflight handling
+1. Update the `telegram-proxy` edge function to relax the `workspaceId` validation
+2. User updates the n8n Proxy node `tier` reference to `body.tier` and publishes
+3. Re-trigger the workflow to verify end-to-end success
+
+### Technical Detail
+
+The SET - Defaults node passes through the webhook body as-is under `.body`, so all fields from the trigger payload are at `item.json.body.*`. The Proxy node correctly references `body.username`, `body.scanId`, `body.userId`, `body.workspaceId` — but `tier` was incorrectly referenced at the root level without `body.`.
 
