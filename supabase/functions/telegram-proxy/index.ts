@@ -207,7 +207,7 @@ serve(async (req: Request) => {
     const { action, username, phoneE164, consentConfirmed, lawfulBasis, scanId, workspaceId, userId, tier } = body;
 
     // Required for all actions
-    if (!scanId || !workspaceId || !userId || !tier) {
+    if (!scanId || workspaceId === undefined || workspaceId === null || !userId || !tier) {
       return json({ ok: false, error: "Missing required fields: scanId, workspaceId, userId, tier" }, 400);
     }
 
