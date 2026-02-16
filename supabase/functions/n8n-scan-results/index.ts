@@ -47,8 +47,8 @@ serve(async (req) => {
     if (fpiqTs && fpiqSig) {
       const hmacResult = await verifyFpiqHmac(rawBody, req.headers);
       if (!hmacResult.authenticated) {
-        console.error(`[n8n-scan-results] HMAC failed: ${hmacResult.error}`);
-        return new Response(JSON.stringify({ error: hmacResult.error }), {
+        console.error(`[n8n-scan-results] HMAC auth failed: ${hmacResult.internalReason}`);
+        return new Response(JSON.stringify({ error: 'Authentication failed', code: hmacResult.code }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -66,7 +66,7 @@ serve(async (req) => {
           authenticated = true;
         } else {
           console.error('[n8n-scan-results] x-n8n-key mismatch');
-          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          return new Response(JSON.stringify({ error: 'Authentication failed', code: 'AUTH_KEY_INVALID' }), {
             status: 401,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -96,8 +96,8 @@ serve(async (req) => {
       }
       
       if (!callbackToken || callbackToken !== expectedToken) {
-        console.error('[n8n-scan-results] Token mismatch');
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        console.error('[n8n-scan-results] Legacy token mismatch');
+        return new Response(JSON.stringify({ error: 'Authentication failed', code: 'AUTH_KEY_INVALID' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
