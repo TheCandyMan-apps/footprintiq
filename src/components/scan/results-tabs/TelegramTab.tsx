@@ -52,9 +52,10 @@ function ProfileCard({ findings }: { findings: TelegramFinding[] }) {
   if (!f) return null;
 
   const username = getEv(f, 'username') || f.meta?.username || '—';
-  const displayName = getEv(f, 'display_name') || f.meta?.display_name || '';
+  const displayName = getEv(f, 'display_name') || getEv(f, 'full_name') || f.meta?.display_name || f.meta?.full_name || '';
   const bio = getEv(f, 'bio') || f.meta?.bio || '';
   const photoUrl = getEv(f, 'photo_url') || f.meta?.photo_url || '';
+  const summary = getEv(f, 'summary') || f.meta?.description || '';
 
   return (
     <Card className="border-border/40">
@@ -81,6 +82,7 @@ function ProfileCard({ findings }: { findings: TelegramFinding[] }) {
           </div>
         </div>
         {bio && <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{bio}</p>}
+        {!bio && summary && <p className="text-xs text-muted-foreground mt-1">{summary}</p>}
       </CardContent>
     </Card>
   );
@@ -344,7 +346,7 @@ export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
     );
   }
 
-  const profileFindings = grouped['profile'] || grouped['profile_presence'] || [];
+  const profileFindings = grouped['profile'] || grouped['profile_presence'] || grouped['telegram_username'] || [];
   const channelFindings = grouped['channel'] || grouped['channel_footprint'] || [];
   const entityFindings = grouped['entity'] || grouped['related_entity'] || [];
   const phoneFindings = grouped['phone_presence'] || [];
