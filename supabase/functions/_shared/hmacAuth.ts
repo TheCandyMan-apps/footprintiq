@@ -30,9 +30,14 @@ function bufToHex(buf: ArrayBuffer): string {
     .join('');
 }
 
+export type HmacErrorCode = 'AUTH_MISSING' | 'AUTH_HMAC_SECRET_MISSING' | 'AUTH_HMAC_BAD_TS' | 'AUTH_HMAC_MISMATCH';
+
 export interface HmacResult {
   authenticated: boolean;
-  error?: string;
+  /** Machine-readable error code for 401 responses */
+  code?: HmacErrorCode;
+  /** Detailed reason – log server-side only, never send to client */
+  internalReason?: string;
 }
 
 /**
@@ -50,24 +55,24 @@ export async function verifyFpiqHmac(
   const sig = headers.get('x-fpiq-sig');
 
   if (!ts || !sig) {
-    return { authenticated: false, error: 'Missing HMAC headers' };
+    return { authenticated: false, code: 'AUTH_MISSING', internalReason: 'Missing HMAC headers (x-fpiq-ts / x-fpiq-sig)' };
   }
 
   // Check secret is configured
   const secret = Deno.env.get('N8N_WEBHOOK_HMAC_SECRET');
   if (!secret) {
-    return { authenticated: false, error: 'HMAC verification failed: secret not configured' };
+    return { authenticated: false, code: 'AUTH_HMAC_SECRET_MISSING', internalReason: 'N8N_WEBHOOK_HMAC_SECRET env var not set' };
   }
 
   // Check timestamp drift
   const tsNum = Number(ts);
   if (isNaN(tsNum)) {
-    return { authenticated: false, error: 'HMAC verification failed: invalid timestamp' };
+    return { authenticated: false, code: 'AUTH_HMAC_BAD_TS', internalReason: `Invalid timestamp value: "${ts}"` };
   }
 
   const nowSeconds = Math.floor(Date.now() / 1000);
   if (Math.abs(nowSeconds - tsNum) > MAX_CLOCK_DRIFT_SECONDS) {
-    return { authenticated: false, error: 'HMAC verification failed: timestamp expired' };
+    return { authenticated: false, code: 'AUTH_HMAC_BAD_TS', internalReason: `Timestamp drift ${Math.abs(nowSeconds - tsNum)}s exceeds ${MAX_CLOCK_DRIFT_SECONDS}s limit` };
   }
 
   // Compute expected signature
@@ -87,7 +92,7 @@ export async function verifyFpiqHmac(
 
   // Constant-time comparison
   if (!timingSafeEqual(sig.toLowerCase(), expectedSig)) {
-    return { authenticated: false, error: 'HMAC verification failed: signature mismatch' };
+    return { authenticated: false, code: 'AUTH_HMAC_MISMATCH', internalReason: 'Signature does not match expected HMAC-SHA256 value' };
   }
 
   return { authenticated: true };

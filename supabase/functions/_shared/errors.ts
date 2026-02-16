@@ -5,6 +5,11 @@
 
 export const ERROR_CODES = {
   AUTH_FAILED: 'Authentication failed',
+  AUTH_MISSING: 'Authentication failed',
+  AUTH_HMAC_BAD_TS: 'Authentication failed',
+  AUTH_HMAC_MISMATCH: 'Authentication failed',
+  AUTH_HMAC_SECRET_MISSING: 'Authentication failed',
+  AUTH_KEY_INVALID: 'Authentication failed',
   INVALID_INPUT: 'Invalid request data',
   INVALID_API_KEY: 'Invalid or missing API key',
   RATE_LIMITED: 'Too many requests. Please try again later',
