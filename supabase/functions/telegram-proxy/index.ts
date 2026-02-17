@@ -243,13 +243,19 @@ serve(async (req: Request) => {
       phoneE164,
       consentConfirmed,
       lawfulBasis,
-      channel,        // for channel_scrape / activity_intel
-      messageLimit,   // optional: default 25 for scrape, 200 for intel
+      channel: rawChannel,  // for channel_scrape / activity_intel
+      query,                // alias for channel (n8n sends query)
+      messageLimit,         // optional: default 25 for scrape, 200 for intel
+      maxMessages,          // alias for messageLimit
       scanId,
       workspaceId,
       userId,
       tier,
     } = body;
+
+    // Normalize: accept query as alias for channel, maxMessages as alias for messageLimit
+    const channel = rawChannel || query || "";
+    const resolvedMessageLimit = messageLimit ?? maxMessages;
 
     // Required for all actions
     if (!scanId || workspaceId === undefined || workspaceId === null || !userId || !tier) {
@@ -332,11 +338,11 @@ serve(async (req: Request) => {
         break;
       case "channel_scrape":
         workerPayload.channel = channel.trim();
-        workerPayload.messageLimit = Math.min(Math.max(messageLimit || 25, 1), 200);
+        workerPayload.messageLimit = Math.min(Math.max(resolvedMessageLimit || 25, 1), 200);
         break;
       case "activity_intel":
         workerPayload.channel = channel.trim();
-        workerPayload.messageLimit = Math.min(Math.max(messageLimit || 200, 1), 200);
+        workerPayload.messageLimit = Math.min(Math.max(resolvedMessageLimit || 200, 1), 200);
         break;
     }
 
