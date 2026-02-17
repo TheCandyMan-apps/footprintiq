@@ -12,16 +12,21 @@ import { CreateRequestDialog } from '@/components/sovereignty/CreateRequestDialo
 import { SovereigntyTimeline } from '@/components/sovereignty/SovereigntyTimeline';
 import { JurisdictionBreakdown } from '@/components/sovereignty/JurisdictionBreakdown';
 import { DeadlineAlerts } from '@/components/sovereignty/DeadlineAlerts';
+import { DeadlineNotifications } from '@/components/sovereignty/DeadlineNotifications';
 import { TemplatePreviewDialog } from '@/components/sovereignty/TemplatePreviewDialog';
 import { SovereigntyPdfExport } from '@/components/sovereignty/SovereigntyPdfExport';
 import { BulkActions } from '@/components/sovereignty/BulkActions';
 import { ReVerificationPanel } from '@/components/sovereignty/ReVerificationPanel';
 import { ScoreHistoryChart } from '@/components/sovereignty/ScoreHistoryChart';
 import { DarkWebCrossRef } from '@/components/sovereignty/DarkWebCrossRef';
+import { PersonaSimulation } from '@/components/sovereignty/PersonaSimulation';
+import { DeepfakeDefense } from '@/components/sovereignty/DeepfakeDefense';
+import { CultureCoins } from '@/components/sovereignty/CultureCoins';
+import { ScoreHeroSkeleton, StatsRowSkeleton, PipelineSkeleton, EmptyState } from '@/components/sovereignty/SovereigntySkeleton';
 import { useSovereignty, SovereigntyRequest, SovereigntyStatus } from '@/hooks/useSovereignty';
 import { useProUnlock } from '@/hooks/useProUnlock';
 import { LockedSection } from '@/components/results/LockedSection';
-import { Shield, Plus, Send, CheckCircle, AlertTriangle, Clock, TrendingUp, FileText } from 'lucide-react';
+import { Shield, Plus, Send, CheckCircle, AlertTriangle, Clock, TrendingUp, FileText, Inbox } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SovereigntyDashboard() {
@@ -75,6 +80,9 @@ export default function SovereigntyDashboard() {
       />
       <Header />
 
+      {/* Deadline toast notifications (render-less) */}
+      {isPro && <DeadlineNotifications requests={requests} />}
+
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Hero header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -98,9 +106,13 @@ export default function SovereigntyDashboard() {
           )}
         </div>
 
-        {/* Score hero card */}
+        {/* Score hero card with skeleton */}
         <div className="mb-8">
-          <SovereigntyScoreHero score={calculatedScore} stats={stats} />
+          {requestsLoading ? (
+            <ScoreHeroSkeleton />
+          ) : (
+            <SovereigntyScoreHero score={calculatedScore} stats={stats} />
+          )}
         </div>
 
         {/* Score history trend */}
@@ -110,12 +122,18 @@ export default function SovereigntyDashboard() {
           </div>
         )}
 
-        {/* Quick stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={<Send className="h-4 w-4 text-primary" />} label="Active" value={stats.active} />
-          <StatCard icon={<CheckCircle className="h-4 w-4 text-primary" />} label="Removed" value={stats.completed} />
-          <StatCard icon={<Clock className="h-4 w-4 text-muted-foreground" />} label="Pending" value={stats.pending} />
-          <StatCard icon={<AlertTriangle className="h-4 w-4 text-destructive" />} label="Overdue" value={stats.overdue} highlight={stats.overdue > 0} />
+        {/* Quick stats row with skeleton */}
+        <div className="mb-8">
+          {requestsLoading ? (
+            <StatsRowSkeleton />
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard icon={<Send className="h-4 w-4 text-primary" />} label="Active" value={stats.active} />
+              <StatCard icon={<CheckCircle className="h-4 w-4 text-primary" />} label="Removed" value={stats.completed} />
+              <StatCard icon={<Clock className="h-4 w-4 text-muted-foreground" />} label="Pending" value={stats.pending} />
+              <StatCard icon={<AlertTriangle className="h-4 w-4 text-destructive" />} label="Overdue" value={stats.overdue} highlight={stats.overdue > 0} />
+            </div>
+          )}
         </div>
 
         {/* Success rate bar */}
@@ -137,16 +155,23 @@ export default function SovereigntyDashboard() {
           </Card>
         )}
 
-        {/* Timeline + Sidebar */}
+        {/* Timeline + Sidebar with new panels */}
         {isPro && requests.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-4">
               <SovereigntyTimeline requests={requests} />
+              <PersonaSimulation
+                requests={requests}
+                exposureCount={stats.total}
+                score={calculatedScore}
+              />
             </div>
             <div className="space-y-4">
               <JurisdictionBreakdown requests={requests} />
               <DeadlineAlerts requests={requests} />
               <DarkWebCrossRef requests={requests} onCreateRequest={handleCreateFromExposure} />
+              <DeepfakeDefense score={calculatedScore} />
+              <CultureCoins requests={requests} score={calculatedScore} />
             </div>
           </div>
         )}
@@ -185,14 +210,24 @@ export default function SovereigntyDashboard() {
                 onClearSelection={clearSelection}
                 onBulkUpdate={handleBulkUpdate}
               />
-              <RequestPipeline
-                requests={activeRequests}
-                onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
-                onViewTemplate={setTemplateRequest}
-                selectedIds={selectedIds}
-                onToggleSelect={toggleSelect}
-                showCheckboxes={true}
-              />
+              {requestsLoading ? (
+                <PipelineSkeleton />
+              ) : activeRequests.length === 0 ? (
+                <EmptyState
+                  title="No active requests"
+                  description="All caught up! Create a new erasure request to start tracking."
+                  icon={<Inbox className="h-6 w-6" />}
+                />
+              ) : (
+                <RequestPipeline
+                  requests={activeRequests}
+                  onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+                  onViewTemplate={setTemplateRequest}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelect}
+                  showCheckboxes={true}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="completed">
@@ -204,14 +239,24 @@ export default function SovereigntyDashboard() {
                 onClearSelection={clearSelection}
                 onBulkUpdate={handleBulkUpdate}
               />
-              <RequestPipeline
-                requests={completedRequests}
-                onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
-                onViewTemplate={setTemplateRequest}
-                selectedIds={selectedIds}
-                onToggleSelect={toggleSelect}
-                showCheckboxes={true}
-              />
+              {requestsLoading ? (
+                <PipelineSkeleton />
+              ) : completedRequests.length === 0 ? (
+                <EmptyState
+                  title="No completed removals yet"
+                  description="Once your erasure requests are fulfilled, they'll appear here."
+                  icon={<CheckCircle className="h-6 w-6" />}
+                />
+              ) : (
+                <RequestPipeline
+                  requests={completedRequests}
+                  onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+                  onViewTemplate={setTemplateRequest}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelect}
+                  showCheckboxes={true}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="all">
@@ -223,14 +268,24 @@ export default function SovereigntyDashboard() {
                 onClearSelection={clearSelection}
                 onBulkUpdate={handleBulkUpdate}
               />
-              <RequestPipeline
-                requests={allRequests}
-                onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
-                onViewTemplate={setTemplateRequest}
-                selectedIds={selectedIds}
-                onToggleSelect={toggleSelect}
-                showCheckboxes={true}
-              />
+              {requestsLoading ? (
+                <PipelineSkeleton />
+              ) : allRequests.length === 0 ? (
+                <EmptyState
+                  title="No requests yet"
+                  description="Start by creating your first erasure request to take control of your data."
+                  icon={<Shield className="h-6 w-6" />}
+                />
+              ) : (
+                <RequestPipeline
+                  requests={allRequests}
+                  onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+                  onViewTemplate={setTemplateRequest}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelect}
+                  showCheckboxes={true}
+                />
+              )}
             </TabsContent>
           </Tabs>
         ) : (
