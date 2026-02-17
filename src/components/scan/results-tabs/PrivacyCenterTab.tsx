@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTierGating } from '@/hooks/useTierGating';
+import { useSovereignty } from '@/hooks/useSovereignty';
 import { BrokerExposureSummary, type BrokerEntry } from './privacy-center/BrokerExposureSummary';
 import { RemovalWorkflowModal } from './privacy-center/RemovalWorkflowModal';
 import { RemovalTracker } from './privacy-center/RemovalTracker';
@@ -69,6 +70,7 @@ function LockedPrivacyCenter() {
 
 export function PrivacyCenterTab({ scanId }: PrivacyCenterTabProps) {
   const { isFree, isLoading: tierLoading } = useTierGating();
+  const { createRequest } = useSovereignty();
   const [brokers, setBrokers] = useState<BrokerEntry[]>([]);
   const [removalRequests, setRemovalRequests] = useState<any[]>([]);
   const [identityProfile, setIdentityProfile] = useState<IdentityProfile | null>(null);
@@ -208,6 +210,18 @@ export function PrivacyCenterTab({ scanId }: PrivacyCenterTabProps) {
           identity_profile_id: profileId,
         }]);
     }
+
+    // Also create a sovereignty request for tracking across jurisdictions
+    createRequest.mutate({
+      target_entity: broker.name,
+      target_url: broker.removal_url || undefined,
+      jurisdiction: identityProfile?.region?.toLowerCase().includes('california') ? 'ccpa'
+        : identityProfile?.region?.toLowerCase().includes('uk') ? 'uk_sds'
+        : 'gdpr',
+      request_type: 'erasure',
+      notes: `Auto-created from Privacy Center broker removal for ${broker.name}`,
+      scan_id: scanId,
+    });
 
     await loadData();
   };
