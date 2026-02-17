@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SovereigntyScoreGauge } from '@/components/sovereignty/SovereigntyScoreGauge';
+import { SovereigntyScoreHero } from '@/components/sovereignty/SovereigntyScoreHero';
 import { RequestPipeline } from '@/components/sovereignty/RequestPipeline';
 import { CreateRequestDialog } from '@/components/sovereignty/CreateRequestDialog';
 import { SovereigntyTimeline } from '@/components/sovereignty/SovereigntyTimeline';
 import { JurisdictionBreakdown } from '@/components/sovereignty/JurisdictionBreakdown';
 import { DeadlineAlerts } from '@/components/sovereignty/DeadlineAlerts';
 import { TemplatePreviewDialog } from '@/components/sovereignty/TemplatePreviewDialog';
+import { SovereigntyPdfExport } from '@/components/sovereignty/SovereigntyPdfExport';
 import { useSovereignty, SovereigntyRequest, SovereigntyStatus } from '@/hooks/useSovereignty';
 import { useProUnlock } from '@/hooks/useProUnlock';
 import { LockedSection } from '@/components/results/LockedSection';
@@ -50,20 +52,23 @@ export default function SovereigntyDashboard() {
             </p>
           </div>
           {isPro && (
-            <Button onClick={() => setCreateOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Request
-            </Button>
+            <div className="flex items-center gap-2">
+              <SovereigntyPdfExport requests={requests} stats={stats} score={calculatedScore} />
+              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                New Request
+              </Button>
+            </div>
           )}
         </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <Card className="col-span-2 md:col-span-1 flex flex-col items-center justify-center p-4">
-            <SovereigntyScoreGauge score={calculatedScore} size={120} />
-            <p className="text-xs text-muted-foreground mt-1">Sovereignty Score</p>
-          </Card>
+        {/* Score hero card */}
+        <div className="mb-8">
+          <SovereigntyScoreHero score={calculatedScore} stats={stats} />
+        </div>
 
+        {/* Quick stats row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <StatCard
             icon={<Send className="h-4 w-4 text-primary" />}
             label="Active"
