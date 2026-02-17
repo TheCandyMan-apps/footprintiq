@@ -14,6 +14,7 @@ import {
 interface RequestPipelineProps {
   requests: SovereigntyRequest[];
   onUpdateStatus: (id: string, status: SovereigntyStatus) => void;
+  onViewTemplate?: (request: SovereigntyRequest) => void;
 }
 
 const STATUS_CONFIG: Record<SovereigntyStatus, { label: string; icon: React.ReactNode; variant: string }> = {
@@ -42,7 +43,7 @@ const NEXT_STATUSES: Record<SovereigntyStatus, SovereigntyStatus[]> = {
   expired: [],
 };
 
-export function RequestPipeline({ requests, onUpdateStatus }: RequestPipelineProps) {
+export function RequestPipeline({ requests, onUpdateStatus, onViewTemplate }: RequestPipelineProps) {
   if (requests.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -102,14 +103,22 @@ export function RequestPipeline({ requests, onUpdateStatus }: RequestPipelinePro
                 )}
               </div>
 
-              {nextStatuses.length > 0 && (
+              {(nextStatuses.length > 0 || onViewTemplate) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                   <DropdownMenuContent align="end">
+                    {onViewTemplate && (
+                      <DropdownMenuItem onClick={() => onViewTemplate(req)}>
+                        <span className="flex items-center gap-2">
+                          <Eye className="h-3.5 w-3.5" />
+                          View Template
+                        </span>
+                      </DropdownMenuItem>
+                    )}
                     {nextStatuses.map((next) => (
                       <DropdownMenuItem key={next} onClick={() => onUpdateStatus(req.id, next)}>
                         <span className="flex items-center gap-2">
