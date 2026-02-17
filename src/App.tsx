@@ -58,6 +58,7 @@ const WorkflowNew = lazy(() => import("./pages/WorkflowNew"));
 const Security = lazy(() => import("./pages/Security"));
 const PluginMarketplace = lazy(() => import("./pages/PluginMarketplace"));
 const PredictiveAnalytics = lazy(() => import("./pages/PredictiveAnalytics"));
+const SovereigntyDashboard = lazy(() => import("./pages/SovereigntyDashboard"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
 const PersonaDnaLaunch = lazy(() => import("./pages/blog/PersonaDnaLaunch"));
 const WhatIsOsintRisk = lazy(() => import("./pages/blog/WhatIsOsintRisk"));
@@ -567,7 +568,8 @@ function RouterContent() {
           <Route path="/organization" element={<Organization />} />
           <Route path="/threat-intel" element={<ThreatIntel />} />
           <Route path="/compliance" element={<Compliance />} />
-          <Route path="/automated-removal" element={<AutomatedRemoval />} />
+           <Route path="/automated-removal" element={<AutomatedRemoval />} />
+           <Route path="/sovereignty" element={<SovereigntyDashboard />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/analytics/executive" element={<ExecutiveDashboard />} />

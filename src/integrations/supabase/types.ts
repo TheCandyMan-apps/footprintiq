@@ -8382,6 +8382,134 @@ export type Database = {
           },
         ]
       }
+      sovereignty_requests: {
+        Row: {
+          acknowledged_at: string | null
+          completed_at: string | null
+          created_at: string
+          deadline_at: string | null
+          evidence_url: string | null
+          finding_id: string | null
+          id: string
+          jurisdiction: string
+          metadata: Json | null
+          notes: string | null
+          request_type: string
+          scan_id: string | null
+          status: string
+          submitted_at: string | null
+          target_entity: string
+          target_url: string | null
+          template_data: Json | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deadline_at?: string | null
+          evidence_url?: string | null
+          finding_id?: string | null
+          id?: string
+          jurisdiction?: string
+          metadata?: Json | null
+          notes?: string | null
+          request_type?: string
+          scan_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          target_entity: string
+          target_url?: string | null
+          template_data?: Json | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          deadline_at?: string | null
+          evidence_url?: string | null
+          finding_id?: string | null
+          id?: string
+          jurisdiction?: string
+          metadata?: Json | null
+          notes?: string | null
+          request_type?: string
+          scan_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          target_entity?: string
+          target_url?: string | null
+          template_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sovereignty_requests_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sovereignty_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sovereignty_scores: {
+        Row: {
+          calculated_at: string
+          exposure_count: number | null
+          factors: Json
+          id: string
+          overall_score: number
+          removals_completed: number | null
+          removals_pending: number | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          calculated_at?: string
+          exposure_count?: number | null
+          factors?: Json
+          id?: string
+          overall_score?: number
+          removals_completed?: number | null
+          removals_pending?: number | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          calculated_at?: string
+          exposure_count?: number | null
+          factors?: Json
+          id?: string
+          overall_score?: number
+          removals_completed?: number | null
+          removals_pending?: number | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sovereignty_scores_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spamhaus_audit: {
         Row: {
           action: string
