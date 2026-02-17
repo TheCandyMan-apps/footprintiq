@@ -111,3 +111,6 @@ verify_jwt = false
 
 [functions.telegram-proxy]
 verify_jwt = false
+
+[functions.persona-simulation]
+verify_jwt = true
