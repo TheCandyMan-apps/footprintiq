@@ -77,6 +77,40 @@ export function useTelegramFindings(scanId: string | null): TelegramData {
     };
 
     load();
+
+    // Realtime subscription for new/updated telegram findings
+    const channel = supabase
+      .channel(`telegram-findings-${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'findings',
+          filter: `scan_id=eq.${scanId}`,
+        },
+        (payload) => {
+          const row = payload.new as any;
+          if (row?.provider === 'telegram') {
+            if (payload.eventType === 'INSERT') {
+              setFindings(prev => {
+                if (prev.some(f => f.id === row.id)) return prev;
+                return [...prev, row];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              setFindings(prev => prev.map(f => f.id === row.id ? row : f));
+            } else if (payload.eventType === 'DELETE') {
+              const old = payload.old as any;
+              setFindings(prev => prev.filter(f => f.id !== old.id));
+            }
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [scanId]);
 
   // Lazy-load a specific artifact type from scan_artifacts
