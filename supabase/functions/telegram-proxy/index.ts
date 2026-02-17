@@ -303,7 +303,7 @@ serve(async (req: Request) => {
     const workerUrl = serviceMapping.serviceUrlEnv
       ? Deno.env.get(serviceMapping.serviceUrlEnv) || Deno.env.get("TELEGRAM_WORKER_URL")
       : Deno.env.get("TELEGRAM_WORKER_URL");
-    const workerKey = Deno.env.get("TELEGRAM_WORKER_KEY");
+    const workerKey = Deno.env.get("OSINT_WORKER_TOKEN");
 
     if (!workerUrl) {
       return json({ ok: false, error: "TELEGRAM_WORKER_URL not configured" }, 500);
@@ -369,7 +369,7 @@ serve(async (req: Request) => {
     const workerBody = await workerRes.text();
 
     // ── Parse worker response ──
-    let result: { ok: boolean; findings?: unknown[]; messages?: unknown[]; graph?: unknown; error?: string };
+    let result: Record<string, any>;
 
     if (!workerRes.ok) {
       console.warn(`[telegram-proxy] Worker returned ${workerRes.status}: ${workerBody}`);
@@ -425,88 +425,64 @@ serve(async (req: Request) => {
 
     const artifactInserts: Promise<unknown>[] = [];
 
-    // Messages payload → artifact (username, channel_scrape, activity_intel)
-    if (result.messages && Array.isArray(result.messages) && result.messages.length > 0) {
-      artifactInserts.push(
-        svc.from("scan_artifacts").insert({
-          scan_id: scanId,
-          source: "telegram",
-          artifact_type: typedAction === "channel_scrape" ? "channel_messages" : "messages",
-          visibility: "private",
-          data: { messages: result.messages, action: typedAction },
-        }),
-      );
-      console.log(`[telegram-proxy] Storing ${result.messages.length} messages as artifact for scan ${scanId}`);
+    // New actions return { ok, findings, artifacts: { key: data } }
+    // Legacy actions (username) return top-level messages/graph
+    const artifacts = (result as any).artifacts || {};
+
+    // ── Artifacts from result.artifacts.* (new actions: channel_scrape, activity_intel) ──
+    const ARTIFACT_KEYS: Array<{ key: string; type: string }> = [
+      { key: "channel_metadata", type: "channel_metadata" },
+      { key: "channel_messages", type: "channel_messages" },
+      { key: "linked_channels", type: "linked_channels" },
+      { key: "activity_analysis", type: "activity_analysis" },
+      { key: "risk_indicators", type: "risk_indicators" },
+      { key: "relationship_graph", type: "relationship_graph" },
+    ];
+
+    for (const { key, type } of ARTIFACT_KEYS) {
+      const data = artifacts[key];
+      if (data && (typeof data === "object" || Array.isArray(data))) {
+        const wrappedData = Array.isArray(data) ? { [key]: data } : data;
+        artifactInserts.push(
+          svc.from("scan_artifacts").insert({
+            scan_id: scanId,
+            source: "telegram",
+            artifact_type: type,
+            visibility: "private",
+            data: wrappedData,
+          }),
+        );
+        console.log(`[telegram-proxy] Storing artifact '${type}' for scan ${scanId}`);
+      }
     }
 
-    // Graph payload → artifact (username, activity_intel)
-    if (result.graph && typeof result.graph === "object") {
-      artifactInserts.push(
-        svc.from("scan_artifacts").insert({
-          scan_id: scanId,
-          source: "telegram",
-          artifact_type: typedAction === "activity_intel" ? "relationship_graph" : "graph",
-          visibility: "private",
-          data: result.graph,
-        }),
-      );
-      console.log(`[telegram-proxy] Storing graph data as artifact for scan ${scanId}`);
-    }
+    // ── Backward compat: legacy top-level messages/graph (username action) ──
+    if (!artifacts || Object.keys(artifacts).length === 0) {
+      if (result.messages && Array.isArray(result.messages) && result.messages.length > 0) {
+        artifactInserts.push(
+          svc.from("scan_artifacts").insert({
+            scan_id: scanId,
+            source: "telegram",
+            artifact_type: "messages",
+            visibility: "private",
+            data: { messages: result.messages, action: typedAction },
+          }),
+        );
+        console.log(`[telegram-proxy] Storing ${result.messages.length} messages (legacy) as artifact for scan ${scanId}`);
+      }
 
-    // Channel metadata → artifact (channel_scrape)
-    if (result.channel_metadata && typeof result.channel_metadata === "object") {
-      artifactInserts.push(
-        svc.from("scan_artifacts").insert({
-          scan_id: scanId,
-          source: "telegram",
-          artifact_type: "channel_metadata",
-          visibility: "private",
-          data: result.channel_metadata,
-        }),
-      );
-      console.log(`[telegram-proxy] Storing channel metadata as artifact for scan ${scanId}`);
-    }
-
-    // Linked channels → artifact (channel_scrape)
-    if (result.linked_channels && Array.isArray(result.linked_channels) && result.linked_channels.length > 0) {
-      artifactInserts.push(
-        svc.from("scan_artifacts").insert({
-          scan_id: scanId,
-          source: "telegram",
-          artifact_type: "linked_channels",
-          visibility: "private",
-          data: { linked_channels: result.linked_channels },
-        }),
-      );
-      console.log(`[telegram-proxy] Storing ${result.linked_channels.length} linked channels as artifact`);
-    }
-
-    // Activity intel → artifact (activity_intel)
-    if (result.activity_analysis && typeof result.activity_analysis === "object") {
-      artifactInserts.push(
-        svc.from("scan_artifacts").insert({
-          scan_id: scanId,
-          source: "telegram",
-          artifact_type: "activity_analysis",
-          visibility: "private",
-          data: result.activity_analysis,
-        }),
-      );
-      console.log(`[telegram-proxy] Storing activity analysis as artifact for scan ${scanId}`);
-    }
-
-    // Risk indicators → artifact (activity_intel)
-    if (result.risk_indicators && typeof result.risk_indicators === "object") {
-      artifactInserts.push(
-        svc.from("scan_artifacts").insert({
-          scan_id: scanId,
-          source: "telegram",
-          artifact_type: "risk_indicators",
-          visibility: "private",
-          data: result.risk_indicators,
-        }),
-      );
-      console.log(`[telegram-proxy] Storing risk indicators as artifact for scan ${scanId}`);
+      if (result.graph && typeof result.graph === "object") {
+        artifactInserts.push(
+          svc.from("scan_artifacts").insert({
+            scan_id: scanId,
+            source: "telegram",
+            artifact_type: "graph",
+            visibility: "private",
+            data: result.graph,
+          }),
+        );
+        console.log(`[telegram-proxy] Storing graph (legacy) as artifact for scan ${scanId}`);
+      }
     }
 
     // Wait for artifact inserts
