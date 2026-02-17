@@ -291,8 +291,31 @@ serve(async (req: Request) => {
 
     const workerBody = await workerRes.text();
 
+    // ── Parse worker response ──
+    let result: { ok: boolean; findings?: unknown[]; messages?: unknown[]; graph?: unknown; error?: string };
+
     if (!workerRes.ok) {
-      console.error(`[telegram-proxy] Worker returned ${workerRes.status}: ${workerBody}`);
+      console.warn(`[telegram-proxy] Worker returned ${workerRes.status}: ${workerBody}`);
+
+      // Check if this is a "not found" error — treat as empty results, not a failure
+      const isNotFound =
+        workerRes.status === 404 ||
+        /cannot find any entity/i.test(workerBody) ||
+        /not found/i.test(workerBody) ||
+        /no (such |telegram )?user/i.test(workerBody);
+
+      if (isNotFound) {
+        console.log(`[telegram-proxy] Entity not found for scan ${scanId} — returning empty results`);
+        return json({
+          ok: true,
+          scanId,
+          findings: [],
+          artifacts_stored: 0,
+          note: "No Telegram entity found for this username",
+        });
+      }
+
+      // Genuine errors still return 502
       return json({
         ok: false,
         scanId,
@@ -301,8 +324,6 @@ serve(async (req: Request) => {
       }, 502);
     }
 
-    // ── Parse and return findings ──
-    let result: { ok: boolean; findings?: unknown[]; messages?: unknown[]; graph?: unknown; error?: string };
     try {
       result = JSON.parse(workerBody);
     } catch {
@@ -310,7 +331,13 @@ serve(async (req: Request) => {
     }
 
     if (!result.ok) {
-      return json({ ok: false, scanId, error: result.error || "Worker reported failure" }, 502);
+      // Also check for not-found in parsed response
+      const errMsg = result.error || "";
+      if (/cannot find|not found|no such user/i.test(errMsg)) {
+        console.log(`[telegram-proxy] Entity not found (parsed) for scan ${scanId}`);
+        return json({ ok: true, scanId, findings: [], artifacts_stored: 0, note: errMsg });
+      }
+      return json({ ok: false, scanId, error: errMsg || "Worker reported failure" }, 502);
     }
 
     // ── Store large payloads in scan_artifacts, keep summaries in findings ──
