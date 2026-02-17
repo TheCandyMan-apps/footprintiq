@@ -12,7 +12,8 @@ import { CreateRequestDialog } from '@/components/sovereignty/CreateRequestDialo
 import { SovereigntyTimeline } from '@/components/sovereignty/SovereigntyTimeline';
 import { JurisdictionBreakdown } from '@/components/sovereignty/JurisdictionBreakdown';
 import { DeadlineAlerts } from '@/components/sovereignty/DeadlineAlerts';
-import { useSovereignty, SovereigntyStatus } from '@/hooks/useSovereignty';
+import { TemplatePreviewDialog } from '@/components/sovereignty/TemplatePreviewDialog';
+import { useSovereignty, SovereigntyRequest, SovereigntyStatus } from '@/hooks/useSovereignty';
 import { useProUnlock } from '@/hooks/useProUnlock';
 import { LockedSection } from '@/components/results/LockedSection';
 import { Shield, Plus, Send, CheckCircle, AlertTriangle, Clock, TrendingUp, FileText } from 'lucide-react';
@@ -21,6 +22,7 @@ export default function SovereigntyDashboard() {
   const { requests, requestsLoading, stats, calculatedScore, createRequest, updateStatus } = useSovereignty();
   const { currentPlan } = useProUnlock();
   const [createOpen, setCreateOpen] = useState(false);
+  const [templateRequest, setTemplateRequest] = useState<SovereigntyRequest | null>(null);
   const isPro = currentPlan.id !== 'free';
 
   const activeRequests = requests.filter(r => ['submitted', 'acknowledged', 'processing'].includes(r.status));
@@ -139,6 +141,7 @@ export default function SovereigntyDashboard() {
               <RequestPipeline
                 requests={activeRequests}
                 onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+                onViewTemplate={setTemplateRequest}
               />
             </TabsContent>
 
@@ -146,6 +149,7 @@ export default function SovereigntyDashboard() {
               <RequestPipeline
                 requests={completedRequests}
                 onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+                onViewTemplate={setTemplateRequest}
               />
             </TabsContent>
 
@@ -153,6 +157,7 @@ export default function SovereigntyDashboard() {
               <RequestPipeline
                 requests={allRequests}
                 onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+                onViewTemplate={setTemplateRequest}
               />
             </TabsContent>
           </Tabs>
@@ -184,6 +189,12 @@ export default function SovereigntyDashboard() {
         onOpenChange={setCreateOpen}
         onSubmit={(input) => createRequest.mutate(input)}
         isSubmitting={createRequest.isPending}
+      />
+
+      <TemplatePreviewDialog
+        open={!!templateRequest}
+        onOpenChange={(open) => !open && setTemplateRequest(null)}
+        request={templateRequest}
       />
 
       <Footer />
