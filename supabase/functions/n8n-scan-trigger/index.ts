@@ -602,6 +602,7 @@ serve(async (req) => {
               userId: user.id,
               tier: effectiveTier,
               entityType: scanType,
+              username: targetValue,
               query: targetValue,
               telegramOptions: { enabled: true },
               progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
