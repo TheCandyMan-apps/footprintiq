@@ -9,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SovereigntyScoreGauge } from '@/components/sovereignty/SovereigntyScoreGauge';
 import { RequestPipeline } from '@/components/sovereignty/RequestPipeline';
 import { CreateRequestDialog } from '@/components/sovereignty/CreateRequestDialog';
+import { SovereigntyTimeline } from '@/components/sovereignty/SovereigntyTimeline';
+import { JurisdictionBreakdown } from '@/components/sovereignty/JurisdictionBreakdown';
+import { DeadlineAlerts } from '@/components/sovereignty/DeadlineAlerts';
 import { useSovereignty, SovereigntyStatus } from '@/hooks/useSovereignty';
 import { useProUnlock } from '@/hooks/useProUnlock';
 import { LockedSection } from '@/components/results/LockedSection';
@@ -99,6 +102,19 @@ export default function SovereigntyDashboard() {
               />
             </div>
           </Card>
+        )}
+
+        {/* Timeline + Jurisdiction sidebar */}
+        {isPro && requests.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+            <div className="lg:col-span-2">
+              <SovereigntyTimeline requests={requests} />
+            </div>
+            <div className="space-y-4">
+              <JurisdictionBreakdown requests={requests} />
+              <DeadlineAlerts requests={requests} />
+            </div>
+          </div>
         )}
 
         {/* Main content */}
