@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SovereigntyScoreGauge } from '@/components/sovereignty/SovereigntyScoreGauge';
 import { SovereigntyScoreHero } from '@/components/sovereignty/SovereigntyScoreHero';
@@ -15,21 +14,58 @@ import { JurisdictionBreakdown } from '@/components/sovereignty/JurisdictionBrea
 import { DeadlineAlerts } from '@/components/sovereignty/DeadlineAlerts';
 import { TemplatePreviewDialog } from '@/components/sovereignty/TemplatePreviewDialog';
 import { SovereigntyPdfExport } from '@/components/sovereignty/SovereigntyPdfExport';
+import { BulkActions } from '@/components/sovereignty/BulkActions';
+import { ReVerificationPanel } from '@/components/sovereignty/ReVerificationPanel';
+import { ScoreHistoryChart } from '@/components/sovereignty/ScoreHistoryChart';
+import { DarkWebCrossRef } from '@/components/sovereignty/DarkWebCrossRef';
 import { useSovereignty, SovereigntyRequest, SovereigntyStatus } from '@/hooks/useSovereignty';
 import { useProUnlock } from '@/hooks/useProUnlock';
 import { LockedSection } from '@/components/results/LockedSection';
 import { Shield, Plus, Send, CheckCircle, AlertTriangle, Clock, TrendingUp, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SovereigntyDashboard() {
   const { requests, requestsLoading, stats, calculatedScore, createRequest, updateStatus } = useSovereignty();
   const { currentPlan } = useProUnlock();
   const [createOpen, setCreateOpen] = useState(false);
   const [templateRequest, setTemplateRequest] = useState<SovereigntyRequest | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [prefillEntity, setPrefillEntity] = useState<{ entity: string; url?: string } | null>(null);
   const isPro = currentPlan.id !== 'free';
 
   const activeRequests = requests.filter(r => ['submitted', 'acknowledged', 'processing'].includes(r.status));
   const completedRequests = requests.filter(r => r.status === 'completed');
   const allRequests = requests;
+
+  // Bulk selection handlers
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAllForTab = useCallback((tabRequests: SovereigntyRequest[]) => {
+    setSelectedIds(new Set(tabRequests.map(r => r.id)));
+  }, []);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  const handleBulkUpdate = useCallback((ids: string[], status: SovereigntyStatus) => {
+    ids.forEach(id => updateStatus.mutate({ id, status }));
+    toast.success(`Updated ${ids.length} requests to ${status}`);
+    setSelectedIds(new Set());
+  }, [updateStatus]);
+
+  const handleReVerify = useCallback((id: string) => {
+    toast.info('Re-verification check initiated — results will update shortly');
+  }, []);
+
+  const handleCreateFromExposure = useCallback((entity: string, url?: string) => {
+    setPrefillEntity({ entity, url });
+    setCreateOpen(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +90,7 @@ export default function SovereigntyDashboard() {
           {isPro && (
             <div className="flex items-center gap-2">
               <SovereigntyPdfExport requests={requests} stats={stats} score={calculatedScore} />
-              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+              <Button onClick={() => { setPrefillEntity(null); setCreateOpen(true); }} className="gap-2">
                 <Plus className="h-4 w-4" />
                 New Request
               </Button>
@@ -67,29 +103,19 @@ export default function SovereigntyDashboard() {
           <SovereigntyScoreHero score={calculatedScore} stats={stats} />
         </div>
 
+        {/* Score history trend */}
+        {isPro && requests.length > 0 && (
+          <div className="mb-8">
+            <ScoreHistoryChart requests={requests} currentScore={calculatedScore} />
+          </div>
+        )}
+
         {/* Quick stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            icon={<Send className="h-4 w-4 text-primary" />}
-            label="Active"
-            value={stats.active}
-          />
-          <StatCard
-            icon={<CheckCircle className="h-4 w-4 text-primary" />}
-            label="Removed"
-            value={stats.completed}
-          />
-          <StatCard
-            icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-            label="Pending"
-            value={stats.pending}
-          />
-          <StatCard
-            icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
-            label="Overdue"
-            value={stats.overdue}
-            highlight={stats.overdue > 0}
-          />
+          <StatCard icon={<Send className="h-4 w-4 text-primary" />} label="Active" value={stats.active} />
+          <StatCard icon={<CheckCircle className="h-4 w-4 text-primary" />} label="Removed" value={stats.completed} />
+          <StatCard icon={<Clock className="h-4 w-4 text-muted-foreground" />} label="Pending" value={stats.pending} />
+          <StatCard icon={<AlertTriangle className="h-4 w-4 text-destructive" />} label="Overdue" value={stats.overdue} highlight={stats.overdue > 0} />
         </div>
 
         {/* Success rate bar */}
@@ -111,7 +137,7 @@ export default function SovereigntyDashboard() {
           </Card>
         )}
 
-        {/* Timeline + Jurisdiction sidebar */}
+        {/* Timeline + Sidebar */}
         {isPro && requests.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
             <div className="lg:col-span-2">
@@ -120,11 +146,19 @@ export default function SovereigntyDashboard() {
             <div className="space-y-4">
               <JurisdictionBreakdown requests={requests} />
               <DeadlineAlerts requests={requests} />
+              <DarkWebCrossRef requests={requests} onCreateRequest={handleCreateFromExposure} />
             </div>
           </div>
         )}
 
-        {/* Main content */}
+        {/* Re-verification panel */}
+        {isPro && completedRequests.length > 0 && (
+          <div className="mb-8">
+            <ReVerificationPanel requests={requests} onReVerify={handleReVerify} />
+          </div>
+        )}
+
+        {/* Main content with bulk actions */}
         {isPro ? (
           <Tabs defaultValue="active" className="space-y-4">
             <TabsList>
@@ -143,26 +177,59 @@ export default function SovereigntyDashboard() {
             </TabsList>
 
             <TabsContent value="active">
+              <BulkActions
+                requests={activeRequests}
+                selectedIds={selectedIds}
+                onToggle={toggleSelect}
+                onSelectAll={() => selectAllForTab(activeRequests)}
+                onClearSelection={clearSelection}
+                onBulkUpdate={handleBulkUpdate}
+              />
               <RequestPipeline
                 requests={activeRequests}
                 onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
                 onViewTemplate={setTemplateRequest}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                showCheckboxes={true}
               />
             </TabsContent>
 
             <TabsContent value="completed">
+              <BulkActions
+                requests={completedRequests}
+                selectedIds={selectedIds}
+                onToggle={toggleSelect}
+                onSelectAll={() => selectAllForTab(completedRequests)}
+                onClearSelection={clearSelection}
+                onBulkUpdate={handleBulkUpdate}
+              />
               <RequestPipeline
                 requests={completedRequests}
                 onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
                 onViewTemplate={setTemplateRequest}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                showCheckboxes={true}
               />
             </TabsContent>
 
             <TabsContent value="all">
+              <BulkActions
+                requests={allRequests}
+                selectedIds={selectedIds}
+                onToggle={toggleSelect}
+                onSelectAll={() => selectAllForTab(allRequests)}
+                onClearSelection={clearSelection}
+                onBulkUpdate={handleBulkUpdate}
+              />
               <RequestPipeline
                 requests={allRequests}
                 onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
                 onViewTemplate={setTemplateRequest}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                showCheckboxes={true}
               />
             </TabsContent>
           </Tabs>

@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format, formatDistanceToNow } from 'date-fns';
 import { CheckCircle, Clock, AlertTriangle, XCircle, Send, Eye, MoreHorizontal } from 'lucide-react';
 import { SovereigntyRequest, SovereigntyStatus } from '@/hooks/useSovereignty';
@@ -15,6 +16,9 @@ interface RequestPipelineProps {
   requests: SovereigntyRequest[];
   onUpdateStatus: (id: string, status: SovereigntyStatus) => void;
   onViewTemplate?: (request: SovereigntyRequest) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  showCheckboxes?: boolean;
 }
 
 const STATUS_CONFIG: Record<SovereigntyStatus, { label: string; icon: React.ReactNode; variant: string }> = {
@@ -43,7 +47,7 @@ const NEXT_STATUSES: Record<SovereigntyStatus, SovereigntyStatus[]> = {
   expired: [],
 };
 
-export function RequestPipeline({ requests, onUpdateStatus, onViewTemplate }: RequestPipelineProps) {
+export function RequestPipeline({ requests, onUpdateStatus, onViewTemplate, selectedIds, onToggleSelect, showCheckboxes }: RequestPipelineProps) {
   if (requests.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -65,7 +69,15 @@ export function RequestPipeline({ requests, onUpdateStatus, onViewTemplate }: Re
         return (
           <Card key={req.id} className={`p-4 ${isOverdue ? 'border-destructive/50' : ''}`}>
             <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                {showCheckboxes && onToggleSelect && selectedIds && (
+                  <Checkbox
+                    checked={selectedIds.has(req.id)}
+                    onCheckedChange={() => onToggleSelect(req.id)}
+                    className="mt-0.5 shrink-0"
+                  />
+                )}
+                <div className="flex-1 min-w-0 space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="font-semibold text-sm truncate">{req.target_entity}</h4>
                   <Badge variant={config.variant as any} className="gap-1 text-xs">
@@ -101,6 +113,7 @@ export function RequestPipeline({ requests, onUpdateStatus, onViewTemplate }: Re
                 {req.notes && (
                   <p className="text-xs text-muted-foreground line-clamp-1">{req.notes}</p>
                 )}
+              </div>
               </div>
 
               {(nextStatuses.length > 0 || onViewTemplate) && (
