@@ -1,39 +1,37 @@
 /**
  * telegram-proxy – Supabase Edge Function
  *
- * Secure proxy that allows n8n Cloud to trigger Telegram OSINT checks
- * against a *private* Google Cloud Run `telegram-worker` service.
+ * Secure proxy that allows n8n Cloud (or admin UI) to trigger Telegram
+ * OSINT actions against private Google Cloud Run worker(s).
  *
  * ──────────────────────────────────────────────────────────────────
- * n8n INTEGRATION INSTRUCTIONS
+ * SUPPORTED ACTIONS
  * ──────────────────────────────────────────────────────────────────
- * URL:     https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/telegram-proxy
- * Method:  POST
+ * | action           | tier   | description                         |
+ * |------------------|--------|-------------------------------------|
+ * | username         | free+  | Basic profile lookup                |
+ * | phone_presence   | pro+   | Phone→Telegram presence check       |
+ * | channel_scrape   | free+  | Channel metadata + recent messages  |
+ * | activity_intel   | pro+   | Posting cadence, NER, risk scores   |
+ *
+ * Body (common fields for ALL actions):
+ *   {
+ *     "action":      "<action>",
+ *     "scanId":      "<uuid>",
+ *     "workspaceId": "<uuid | ''>",
+ *     "userId":      "<uuid>",
+ *     "tier":        "free" | "pro" | "business"
+ *   }
+ *
+ * Action-specific fields:
+ *   username:        { "username": "target" }
+ *   phone_presence:  { "phoneE164": "+44…", "consentConfirmed": true, "lawfulBasis": "…" }
+ *   channel_scrape:  { "channel": "@channelusername", "messageLimit": 25 }
+ *   activity_intel:  { "channel": "@channelusername", "messageLimit": 200 }
+ *
  * Headers:
  *   Content-Type: application/json
- *   x-n8n-key:    <N8N_GATEWAY_KEY secret value>
- *
- * Body (username action):
- *   {
- *     "action":      "username",
- *     "username":    "target_username",
- *     "scanId":      "<uuid>",
- *     "workspaceId": "<uuid>",
- *     "userId":      "<uuid>",
- *     "tier":        "free"
- *   }
- *
- * Body (phone_presence action – Pro+ only):
- *   {
- *     "action":           "phone_presence",
- *     "phoneE164":        "+447700900000",
- *     "consentConfirmed": true,
- *     "lawfulBasis":      "legitimate_interest",
- *     "scanId":           "<uuid>",
- *     "workspaceId":      "<uuid>",
- *     "userId":           "<uuid>",
- *     "tier":             "pro"
- *   }
+ *   x-n8n-key:    <N8N_GATEWAY_KEY>   (or Authorization: Bearer <JWT> for admin)
  * ──────────────────────────────────────────────────────────────────
  */
 
@@ -45,6 +43,41 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-n8n-key",
 };
+
+// ── Types & Constants ────────────────────────────────────────────
+
+type TelegramAction = "username" | "phone_presence" | "channel_scrape" | "activity_intel";
+
+const VALID_ACTIONS: readonly TelegramAction[] = [
+  "username",
+  "phone_presence",
+  "channel_scrape",
+  "activity_intel",
+] as const;
+
+/** Minimum tier required for each action */
+const ACTION_TIER_GATE: Record<TelegramAction, "free" | "pro"> = {
+  username: "free",
+  phone_presence: "pro",
+  channel_scrape: "free",
+  activity_intel: "pro",
+};
+
+/** Worker path for each action (allows future split to separate services) */
+const ACTION_SERVICE_MAP: Record<TelegramAction, { path: string; serviceUrlEnv?: string }> = {
+  username:        { path: "/telegram/username" },
+  phone_presence:  { path: "/telegram/phone-presence" },
+  channel_scrape:  { path: "/telegram/channel-scrape" },
+  activity_intel:  { path: "/telegram/activity-intel" },
+  // To split channel_scrape to a separate service later, add:
+  // channel_scrape: { path: "/telegram/channel-scrape", serviceUrlEnv: "TELEGRAM_CHANNEL_WORKER_URL" },
+};
+
+const TIER_RANK: Record<string, number> = { free: 0, pro: 1, business: 2 };
+
+function meetsTier(userTier: string, required: string): boolean {
+  return (TIER_RANK[userTier] ?? 0) >= (TIER_RANK[required] ?? 0);
+}
 
 // ── helpers ──────────────────────────────────────────────────────
 
@@ -204,63 +237,107 @@ serve(async (req: Request) => {
 
     // ── Parse & validate body ──
     const body = await req.json();
-    const { action, username, phoneE164, consentConfirmed, lawfulBasis, scanId, workspaceId, userId, tier } = body;
+    const {
+      action,
+      username,
+      phoneE164,
+      consentConfirmed,
+      lawfulBasis,
+      channel,        // for channel_scrape / activity_intel
+      messageLimit,   // optional: default 25 for scrape, 200 for intel
+      scanId,
+      workspaceId,
+      userId,
+      tier,
+    } = body;
 
     // Required for all actions
     if (!scanId || workspaceId === undefined || workspaceId === null || !userId || !tier) {
       return json({ ok: false, error: "Missing required fields: scanId, workspaceId, userId, tier" }, 400);
     }
 
-    if (!action || !["username", "phone_presence"].includes(action)) {
-      return json({ ok: false, error: 'Invalid action. Must be "username" or "phone_presence"' }, 400);
+    if (!action || !VALID_ACTIONS.includes(action as TelegramAction)) {
+      return json({
+        ok: false,
+        error: `Invalid action "${action}". Must be one of: ${VALID_ACTIONS.join(", ")}`,
+      }, 400);
     }
 
-    // Action-specific validation
-    if (action === "username") {
+    const typedAction = action as TelegramAction;
+
+    // ── Tier gating ──
+    const requiredTier = ACTION_TIER_GATE[typedAction];
+    if (!meetsTier(tier, requiredTier)) {
+      const tierLabel = requiredTier === "pro" ? "Pro" : "Business";
+      return json({
+        ok: false,
+        error: `${typedAction} requires ${tierLabel} tier`,
+        requiredTier,
+      }, 403);
+    }
+
+    // ── Action-specific validation ──
+    if (typedAction === "username") {
       if (!username || typeof username !== "string" || username.trim().length === 0) {
         return json({ ok: false, error: "username is required for action=username" }, 400);
       }
     }
 
-    if (action === "phone_presence") {
+    if (typedAction === "phone_presence") {
       if (!phoneE164 || typeof phoneE164 !== "string" || !/^\+[1-9]\d{1,14}$/.test(phoneE164)) {
         return json({ ok: false, error: "Valid E.164 phoneE164 is required for action=phone_presence" }, 400);
       }
       if (consentConfirmed !== true) {
         return json({ ok: false, error: "consentConfirmed must be true for phone_presence" }, 400);
       }
-      // Allowed tiers for phone_presence (extend this set as new tiers launch)
-      const phoneTiers: ReadonlySet<string> = new Set(["pro"]);
-      if (!phoneTiers.has(tier)) {
-        return json({ ok: false, error: "phone_presence requires Pro tier" }, 400);
+    }
+
+    if (typedAction === "channel_scrape" || typedAction === "activity_intel") {
+      if (!channel || typeof channel !== "string" || channel.trim().length === 0) {
+        return json({ ok: false, error: `channel is required for action=${typedAction}` }, 400);
       }
     }
 
-    // ── Build Cloud Run request ──
-    const workerUrl = Deno.env.get("TELEGRAM_WORKER_URL");
+    // ── Resolve worker service URL via action→service map ──
+    const serviceMapping = ACTION_SERVICE_MAP[typedAction];
+    const workerUrl = serviceMapping.serviceUrlEnv
+      ? Deno.env.get(serviceMapping.serviceUrlEnv) || Deno.env.get("TELEGRAM_WORKER_URL")
+      : Deno.env.get("TELEGRAM_WORKER_URL");
     const workerKey = Deno.env.get("TELEGRAM_WORKER_KEY");
 
     if (!workerUrl) {
       return json({ ok: false, error: "TELEGRAM_WORKER_URL not configured" }, 500);
     }
 
-    const path = action === "username" ? "/telegram/username" : "/telegram/phone-presence";
-    const targetUrl = `${workerUrl.replace(/\/$/, "")}${path}`;
+    const targetUrl = `${workerUrl.replace(/\/$/, "")}${serviceMapping.path}`;
 
-    // Build worker payload
+    // Build worker payload (common fields)
     const workerPayload: Record<string, unknown> = {
       scanId,
       workspaceId,
       userId,
       tier,
+      action: typedAction,
     };
 
-    if (action === "username") {
-      workerPayload.username = username.trim();
-    } else {
-      workerPayload.phoneE164 = phoneE164;
-      workerPayload.consentConfirmed = true;
-      workerPayload.lawfulBasis = lawfulBasis || "legitimate_interest";
+    // Action-specific payload fields
+    switch (typedAction) {
+      case "username":
+        workerPayload.username = username.trim();
+        break;
+      case "phone_presence":
+        workerPayload.phoneE164 = phoneE164;
+        workerPayload.consentConfirmed = true;
+        workerPayload.lawfulBasis = lawfulBasis || "legitimate_interest";
+        break;
+      case "channel_scrape":
+        workerPayload.channel = channel.trim();
+        workerPayload.messageLimit = Math.min(Math.max(messageLimit || 25, 1), 200);
+        break;
+      case "activity_intel":
+        workerPayload.channel = channel.trim();
+        workerPayload.messageLimit = Math.min(Math.max(messageLimit || 200, 1), 200);
+        break;
     }
 
     // ── Get GCP ID token for private Cloud Run ──
@@ -348,27 +425,27 @@ serve(async (req: Request) => {
 
     const artifactInserts: Promise<unknown>[] = [];
 
-    // Messages payload → artifact
+    // Messages payload → artifact (username, channel_scrape, activity_intel)
     if (result.messages && Array.isArray(result.messages) && result.messages.length > 0) {
       artifactInserts.push(
         svc.from("scan_artifacts").insert({
           scan_id: scanId,
           source: "telegram",
-          artifact_type: "messages",
+          artifact_type: typedAction === "channel_scrape" ? "channel_messages" : "messages",
           visibility: "private",
-          data: { messages: result.messages },
+          data: { messages: result.messages, action: typedAction },
         }),
       );
       console.log(`[telegram-proxy] Storing ${result.messages.length} messages as artifact for scan ${scanId}`);
     }
 
-    // Graph payload → artifact
+    // Graph payload → artifact (username, activity_intel)
     if (result.graph && typeof result.graph === "object") {
       artifactInserts.push(
         svc.from("scan_artifacts").insert({
           scan_id: scanId,
           source: "telegram",
-          artifact_type: "graph",
+          artifact_type: typedAction === "activity_intel" ? "relationship_graph" : "graph",
           visibility: "private",
           data: result.graph,
         }),
@@ -376,7 +453,63 @@ serve(async (req: Request) => {
       console.log(`[telegram-proxy] Storing graph data as artifact for scan ${scanId}`);
     }
 
-    // Wait for artifact inserts (non-blocking for response)
+    // Channel metadata → artifact (channel_scrape)
+    if (result.channel_metadata && typeof result.channel_metadata === "object") {
+      artifactInserts.push(
+        svc.from("scan_artifacts").insert({
+          scan_id: scanId,
+          source: "telegram",
+          artifact_type: "channel_metadata",
+          visibility: "private",
+          data: result.channel_metadata,
+        }),
+      );
+      console.log(`[telegram-proxy] Storing channel metadata as artifact for scan ${scanId}`);
+    }
+
+    // Linked channels → artifact (channel_scrape)
+    if (result.linked_channels && Array.isArray(result.linked_channels) && result.linked_channels.length > 0) {
+      artifactInserts.push(
+        svc.from("scan_artifacts").insert({
+          scan_id: scanId,
+          source: "telegram",
+          artifact_type: "linked_channels",
+          visibility: "private",
+          data: { linked_channels: result.linked_channels },
+        }),
+      );
+      console.log(`[telegram-proxy] Storing ${result.linked_channels.length} linked channels as artifact`);
+    }
+
+    // Activity intel → artifact (activity_intel)
+    if (result.activity_analysis && typeof result.activity_analysis === "object") {
+      artifactInserts.push(
+        svc.from("scan_artifacts").insert({
+          scan_id: scanId,
+          source: "telegram",
+          artifact_type: "activity_analysis",
+          visibility: "private",
+          data: result.activity_analysis,
+        }),
+      );
+      console.log(`[telegram-proxy] Storing activity analysis as artifact for scan ${scanId}`);
+    }
+
+    // Risk indicators → artifact (activity_intel)
+    if (result.risk_indicators && typeof result.risk_indicators === "object") {
+      artifactInserts.push(
+        svc.from("scan_artifacts").insert({
+          scan_id: scanId,
+          source: "telegram",
+          artifact_type: "risk_indicators",
+          visibility: "private",
+          data: result.risk_indicators,
+        }),
+      );
+      console.log(`[telegram-proxy] Storing risk indicators as artifact for scan ${scanId}`);
+    }
+
+    // Wait for artifact inserts
     if (artifactInserts.length > 0) {
       const artifactResults = await Promise.allSettled(artifactInserts);
       for (const r of artifactResults) {
@@ -388,7 +521,6 @@ serve(async (req: Request) => {
 
     // Strip large payloads from findings response (summaries only)
     const findings = (result.findings || []).map((f: any) => {
-      // If a finding itself contains large nested data, summarize it
       if (f?.evidence?.messages) {
         return { ...f, evidence: { ...f.evidence, messages: undefined, message_count: f.evidence.messages.length } };
       }
@@ -398,11 +530,12 @@ serve(async (req: Request) => {
       return f;
     });
 
-    console.log(`[telegram-proxy] Success for scan ${scanId}: ${findings.length} findings, ${artifactInserts.length} artifacts stored`);
+    console.log(`[telegram-proxy] Success [${typedAction}] scan ${scanId}: ${findings.length} findings, ${artifactInserts.length} artifacts`);
 
     return json({
       ok: true,
       scanId,
+      action: typedAction,
       findings,
       artifacts_stored: artifactInserts.length,
     });
