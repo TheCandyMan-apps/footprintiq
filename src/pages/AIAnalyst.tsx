@@ -316,6 +316,16 @@ Finding References: ${report.provenance.findingIds.length} findings cited
               </Button>
             </div>
 
+            <div className="mb-6 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground mb-1">First time here? Update your index first</p>
+                <p className="text-muted-foreground">
+                  Click <strong>"Update Index"</strong> above before generating analysis. This indexes your scan data so the AI can reference it. You should re-index after running new scans.
+                </p>
+              </div>
+            </div>
+
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Left: Configuration */}
               <Card className="p-6">
