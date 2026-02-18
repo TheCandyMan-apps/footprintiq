@@ -1,85 +1,60 @@
 
-## Root Cause: Premature Scan Completion
+## Root Cause: `/telegram/username` Route Missing from Worker
 
-The diagnosis is definitive. The scan for "jayquee" completed in **4 seconds** while n8n was still running for 2+ minutes. There are **two separate bugs** causing this.
+The Telegram worker (`server.py`) only registers two routes in its `ROUTES` dictionary:
+
+```
+ROUTES = {
+    "/telegram/channel-scrape": handle_channel_scrape,
+    "/telegram/activity-intel": handle_activity_intel,
+}
+```
+
+When the n8n Telegram Username workflow calls `telegram-proxy` with `action: "username"`, the proxy maps it to `/telegram/username` — which doesn't exist. The worker returns a `404`, which the proxy interprets as "entity not found" and returns empty findings. This is why the Telegram tab always shows "No Telegram data found."
 
 ---
 
-### Bug 1: `finalize_scan_if_complete` references a non-existent column
+### Evidence
 
-The PostgreSQL trigger function that finalises scans contains this query:
-
-```sql
-SELECT scan_type, started_at  -- ❌ "started_at" does not exist on the scans table
-  INTO v_scan_type, v_scan_started_at
-FROM public.scans
-WHERE id = NEW.scan_id;
-```
-
-The `scans` table only has `created_at`, not `started_at`. Because of this:
-
-- `v_scan_started_at` is **always NULL**
-- The 120-second grace period check evaluates as: `NULL IS NOT NULL` → **FALSE**
-- The grace period is **never enforced**
-- As soon as the first provider posts a `complete` event, the trigger bypasses the minimum wait and checks if `v_completed_count >= v_started_count`
-
-### Bug 2: The `stage` value for `started` events doesn't match the trigger's check
-
-The trigger queries for providers that have started:
-```sql
-AND stage = 'start'
-```
-
-But `n8n-scan-progress` inserts events with stage mapped as:
-```ts
-stage: status === 'started' ? 'start' : status === 'completed' ? 'complete' : status
-```
-
-For the "jayquee" scan, the scan events at the time of premature completion were **only `start` events** (Sherlock started, GoSearch started, Maigret started). There were **zero `complete` events**. Yet the scan was marked completed.
-
-**The actual trigger path:**
-
-Looking at the 4-second completion, no `complete` stage event existed at all when the scan finalised. Something **else** set `status = 'completed'` directly — likely a cached scan lookup or a race from `n8n-scan-progress` posting `status: 'completed'` on the **scan** (not a provider), which directly updates `scan_progress` with `status: completed`, and the frontend treats that as terminal.
-
-The `ScanProgress` component watches `scan_progress.status` via realtime. When n8n sends `{ status: 'completed', provider: undefined }`, the progress record becomes `status: completed`, and the UI treats it as done.
+- `telegram-proxy` logs at `00:55:03Z`: **Worker returned 404** for scan `6c0f0f78-e99c-49c1-8443-6e9fb71a965e`
+- Database: `telegram_findings_count: 0`, `total_findings_count: 179` — other providers worked, Telegram did not
+- `scan_artifacts` table: empty for this scan
+- `server.py` line 680–683: `ROUTES` only contains `channel-scrape` and `activity-intel`
 
 ---
 
 ### The Fix (Two Parts)
 
-**Part 1 — Database migration: Fix `finalize_scan_if_complete`**
+**Part 1 — `workers/telegram-worker/server.py`**
 
-Replace `started_at` with `created_at` in the trigger (which is the actual column). This restores the 120-second minimum grace period so the trigger cannot finalise a scan before the n8n workflow has had time to even start its providers.
+Add `/telegram/username` to the `ROUTES` dictionary, aliased to `handle_channel_scrape`. A username on Telegram is treated the same as a channel handle — the `channel_scrape` handler already normalises `@handle` targets and resolves them via Telethon. No new handler code needed.
 
-```sql
-CREATE OR REPLACE FUNCTION public.finalize_scan_if_complete()
-RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
-DECLARE
-  v_scan_type text;
-  v_scan_started_at timestamptz;
-  v_expected_providers integer;
-  v_started_count integer;
-  v_completed_count integer;
-  v_total_findings integer;
-  v_min_wait_seconds integer := 120;
-BEGIN
-  IF NEW.stage IS DISTINCT FROM 'complete' THEN
-    RETURN NEW;
-  END IF;
-
-  -- FIX: Use created_at (the actual column) instead of the non-existent started_at
-  SELECT scan_type, created_at
-    INTO v_scan_type, v_scan_started_at
-  FROM public.scans WHERE id = NEW.scan_id;
-
-  -- ... rest unchanged
+```python
+ROUTES = {
+    "/telegram/username":        handle_channel_scrape,   # ← ADD THIS
+    "/telegram/channel-scrape":  handle_channel_scrape,
+    "/telegram/activity-intel":  handle_activity_intel,
+}
 ```
 
-**Part 2 — Guard `n8n-scan-progress` against scan-level "completed" broadcasting prematurely**
+This means the n8n username workflow will now correctly resolve a username as a public profile and return `channel_profile` findings + artifacts — which the existing `ChannelProfileCard` UI component already renders.
 
-When n8n sends `status: 'completed'` without a `provider`, it means the **entire workflow** is done. But right now, `n8n-scan-progress` sets `scan_progress.status = 'completed'` immediately, which the frontend treats as terminal — even though provider `complete` events haven't arrived yet via the separate `n8n-scan-results` webhook.
+**Part 2 — `supabase/functions/n8n-scan-trigger/index.ts`**
 
-The fix: only write `status: 'completed'` to `scan_progress` when it comes from the **`n8n-scan-results`** endpoint (which has the actual findings), not from intermediate `n8n-scan-progress` calls. For `n8n-scan-progress`, when `provider` is null/undefined and `status === 'completed'`, we should ignore or convert it to `running` (the results webhook will handle finalisation).
+The payload sent to the Telegram username n8n workflow currently only includes `username` and `query` fields. The `telegram-proxy` edge function requires a `channel` field for `channel_scrape`-style actions. When the proxy receives `action: "username"`, it looks for `body.username` ✅ — this is already handled in the proxy. No change needed here.
+
+However, confirm the `workerPayload` in `telegram-proxy` for `action: "username"` sends `workerPayload.username = username.trim()` (line 332) — but `handle_channel_scrape` looks for `payload.get("channel", "") or payload.get("query", "")`, **not** `payload.get("username")`. This means even after the route fix, the username won't be passed correctly to the handler.
+
+So the worker payload mapping also needs fixing: either the proxy sends `channel = username` for `action: "username"`, or the `handle_channel_scrape` handler also checks `payload.get("username")`.
+
+The cleanest fix: update the `telegram-proxy` worker payload builder to include `channel = username` when `action = "username"`:
+
+```typescript
+case "username":
+  workerPayload.username = username.trim();
+  workerPayload.channel = username.trim();  // ← ADD: channel_scrape reads this field
+  break;
+```
 
 ---
 
@@ -87,14 +62,17 @@ The fix: only write `status: 'completed'` to `scan_progress` when it comes from 
 
 | File | Change |
 |---|---|
-| `supabase/migrations/new_fix_finalize_trigger.sql` | Fix `started_at` → `created_at` in trigger |
-| `supabase/functions/n8n-scan-progress/index.ts` | Guard: skip `completed` status write when no provider is specified (let results webhook handle it) |
+| `workers/telegram-worker/server.py` | Add `/telegram/username` to `ROUTES`, aliased to `handle_channel_scrape` |
+| `supabase/functions/telegram-proxy/index.ts` | Add `workerPayload.channel = username.trim()` for `action: "username"` |
 
 ---
 
-### Technical Details
+### Why No New Handler Is Needed
 
-- The `scans` table columns confirmed: `created_at` ✅, `started_at` ❌ does not exist
-- Database logs show repeated `ERROR: column "started_at" does not exist` — this has been silently failing for every scan
-- The grace period has never worked since this trigger was deployed
-- The fix is minimal and surgical — no schema changes needed, just correcting the column reference and adding a guard in the progress function
+For username-based Telegram OSINT, the `channel_scrape` handler is the correct approach:
+- Usernames on Telegram map directly to public channels/users
+- `handle_channel_scrape` already normalises `@handle` → bare handle
+- It returns `channel_profile` findings which the `ChannelProfileCard` UI already renders
+- This keeps the worker lean and avoids duplicating entity-resolution logic
+
+After this fix, username scans will produce Telegram results visible in the Telegram tab immediately.
