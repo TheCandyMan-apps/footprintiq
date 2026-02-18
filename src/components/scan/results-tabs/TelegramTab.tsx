@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, Activity, AlertTriangle, TrendingUp, Link } from 'lucide-react';
+import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock } from 'lucide-react';
 import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFindings';
 
 interface TelegramTabProps {
@@ -220,6 +220,29 @@ function GraphSummaryCard({
   );
 }
 
+// ── LastSeenBadge ────────────────────────────────────────────────
+
+const LAST_SEEN_CONFIG: Record<string, { label: string; className: string; icon: 'clock' | 'eye-off' }> = {
+  recently:     { label: 'Active Recently',    className: 'bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400',   icon: 'clock' },
+  within_week:  { label: 'Active This Week',   className: 'bg-teal-500/15 text-teal-600 border-teal-500/30 dark:text-teal-400',    icon: 'clock' },
+  within_month: { label: 'Active This Month',  className: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400', icon: 'clock' },
+  long_ago:     { label: 'Last Seen Long Ago', className: 'bg-muted text-muted-foreground border-border',                           icon: 'clock' },
+  hidden:       { label: 'Last Seen Hidden',   className: 'bg-muted text-muted-foreground border-border',                           icon: 'eye-off' },
+  unknown:      { label: 'Last Seen Unknown',  className: 'bg-muted text-muted-foreground border-border',                           icon: 'eye-off' },
+};
+
+function LastSeenBadge({ bucket }: { bucket: string }) {
+  const key = (bucket || '').toLowerCase().replace(/\s+/g, '_');
+  const cfg = LAST_SEEN_CONFIG[key] ?? LAST_SEEN_CONFIG['unknown'];
+  const Icon = cfg.icon === 'clock' ? Clock : EyeOff;
+  return (
+    <Badge variant="outline" className={`gap-1 h-5 px-1.5 text-[10px] font-medium ${cfg.className}`}>
+      <Icon className="w-2.5 h-2.5" />
+      {cfg.label}
+    </Badge>
+  );
+}
+
 function PhonePresenceCard({ findings }: { findings: TelegramFinding[] }) {
   const f = findings[0];
   if (!f) return null;
@@ -245,7 +268,10 @@ function PhonePresenceCard({ findings }: { findings: TelegramFinding[] }) {
           </Badge>
         </div>
         {lastSeen && (
-          <p className="text-xs text-muted-foreground">Last seen: {lastSeen}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Last seen:</span>
+            <LastSeenBadge bucket={lastSeen} />
+          </div>
         )}
       </CardContent>
     </Card>
@@ -263,6 +289,7 @@ function ChannelProfileCard({ findings }: { findings: TelegramFinding[] }) {
   const totalMessages = ev('total_messages') || ev('message_count');
   const description = ev('description') || ev('bio') || ev('about') || '';
   const linkedChannels: any[] = Array.isArray(f.meta?.linked_channels) ? f.meta.linked_channels : [];
+  const lastSeenBucket = ev('last_seen_bucket') || ev('last_seen') || f.meta?.last_seen_bucket || f.meta?.last_seen || '';
 
   return (
     <Card className="border-border/40">
@@ -278,6 +305,11 @@ function ChannelProfileCard({ findings }: { findings: TelegramFinding[] }) {
         <div>
           <p className="font-medium text-foreground">{title}</p>
           {username && <p className="text-xs text-muted-foreground">@{username}</p>}
+          {lastSeenBucket && (
+            <div className="mt-1.5">
+              <LastSeenBadge bucket={lastSeenBucket} />
+            </div>
+          )}
           {description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>}
         </div>
         <div className="flex flex-wrap gap-3 text-xs">
