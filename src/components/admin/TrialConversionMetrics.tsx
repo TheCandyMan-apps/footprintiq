@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrialMetrics } from '@/hooks/useTrialEmailAnalytics';
-import { TrendingUp, Users, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { TrendingUp, Users, Zap } from 'lucide-react';
 
 interface TrialConversionMetricsProps {
   metrics: TrialMetrics | undefined;
@@ -12,16 +12,6 @@ export function TrialConversionMetrics({ metrics, isLoading }: TrialConversionMe
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-8 w-full" />
-            ))}
-          </CardContent>
-        </Card>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
             <Card key={i}>
@@ -39,73 +29,58 @@ export function TrialConversionMetrics({ metrics, isLoading }: TrialConversionMe
     return (
       <Card>
         <CardContent className="pt-6 text-center text-muted-foreground">
-          No trial data available for this period
+          No subscription data available for this period
         </CardContent>
       </Card>
     );
   }
 
-  // Show a clean zero-state when there's data object but no trials
-  const hasAnyData = metrics.totalTrialsStarted > 0;
-
-  const maxValue = Math.max(
-    metrics.totalTrialsStarted,
-    metrics.activeTrials,
-    metrics.convertedTrials,
-    metrics.cancelledTrials,
-    1
-  );
-
-  const getBarWidth = (value: number) => `${Math.max((value / maxValue) * 100, 2)}%`;
-
-  const funnelItems = [
-    { label: 'Trials Started', value: metrics.totalTrialsStarted, color: 'bg-blue-500', icon: Users },
-    { label: 'Currently Active', value: metrics.activeTrials, color: 'bg-amber-500', icon: Clock },
-    { label: 'Converted to Pro', value: metrics.convertedTrials, color: 'bg-green-500', icon: CheckCircle },
-    { label: 'Cancelled', value: metrics.cancelledTrials, color: 'bg-red-500', icon: XCircle },
-    { label: 'Expired', value: metrics.expiredTrials, color: 'bg-gray-500', icon: Clock },
-  ];
+  const total = metrics.totalFreeUsers + metrics.totalProUsers;
+  const freeBarWidth = total > 0 ? `${(metrics.totalFreeUsers / total) * 100}%` : '0%';
+  const proBarWidth = total > 0 ? `${(metrics.totalProUsers / total) * 100}%` : '0%';
 
   return (
     <div className="space-y-6">
-      {/* Funnel Visualization */}
+      {/* Subscription Breakdown Bar */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
-            Trial Conversion Funnel
+            Subscription Funnel
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {funnelItems.map((item, index) => {
-            const Icon = item.icon;
-            const percentage = metrics.totalTrialsStarted > 0 && index > 0
-              ? ((item.value / metrics.totalTrialsStarted) * 100).toFixed(1)
-              : null;
-
-            return (
-              <div key={item.label} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Icon className={`h-4 w-4 ${item.color.replace('bg-', 'text-')}`} />
-                    <span>{item.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{item.value}</span>
-                    {percentage && (
-                      <span className="text-muted-foreground">({percentage}%)</span>
-                    )}
-                  </div>
-                </div>
-                <div className="h-3 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                    style={{ width: getBarWidth(item.value) }}
-                  />
-                </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span>Free Users</span>
               </div>
-            );
-          })}
+              <span className="font-semibold">{metrics.totalFreeUsers}</span>
+            </div>
+            <div className="h-3 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-muted-foreground/40 rounded-full transition-all duration-500"
+                style={{ width: freeBarWidth }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <span>Pro Subscribers</span>
+              </div>
+              <span className="font-semibold">{metrics.totalProUsers}</span>
+            </div>
+            <div className="h-3 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500"
+                style={{ width: proBarWidth }}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -115,11 +90,11 @@ export function TrialConversionMetrics({ metrics, isLoading }: TrialConversionMe
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-sm font-medium text-muted-foreground mb-1">Conversion Rate</p>
-              <p className="text-4xl font-bold text-green-500">
+              <p className="text-4xl font-bold text-primary">
                 {metrics.conversionRate.toFixed(1)}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {metrics.convertedTrials} of {metrics.totalTrialsStarted} trials
+                Free → Pro
               </p>
             </div>
           </CardContent>
@@ -128,12 +103,12 @@ export function TrialConversionMetrics({ metrics, isLoading }: TrialConversionMe
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Avg Scans Used</p>
-              <p className="text-4xl font-bold text-primary">
-                {metrics.avgScansUsed.toFixed(1)}
+              <p className="text-sm font-medium text-muted-foreground mb-1">Pro Subscribers</p>
+              <p className="text-4xl font-bold text-green-500">
+                {metrics.totalProUsers}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                of 3 available per trial
+                Active paid accounts
               </p>
             </div>
           </CardContent>
@@ -142,14 +117,12 @@ export function TrialConversionMetrics({ metrics, isLoading }: TrialConversionMe
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Churn Rate</p>
-              <p className="text-4xl font-bold text-red-500">
-                {metrics.totalTrialsStarted > 0
-                  ? ((metrics.cancelledTrials / metrics.totalTrialsStarted) * 100).toFixed(1)
-                  : '0.0'}%
+              <p className="text-sm font-medium text-muted-foreground mb-1">Total Workspaces</p>
+              <p className="text-4xl font-bold text-foreground">
+                {total}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {metrics.cancelledTrials} cancelled
+                {metrics.totalFreeUsers} free · {metrics.totalProUsers} pro
               </p>
             </div>
           </CardContent>
