@@ -397,18 +397,30 @@ serve(async (req: Request) => {
             Deno.env.get("SUPABASE_URL")!,
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
           );
-          await svcDiag.from("findings").upsert({
+          // Delete any prior not_found finding first to avoid duplicates, then insert fresh
+          await svcDiag.from("findings")
+            .delete()
+            .eq("scan_id", scanId)
+            .eq("provider", "telegram")
+            .eq("kind", "telegram.not_found");
+
+          const { error: insertErr } = await svcDiag.from("findings").insert({
             scan_id: scanId,
             provider: "telegram",
             kind: "telegram.not_found",
             severity: "info",
-            evidence: { key: "reason", value: "No Telegram entity resolved for this username" },
+            evidence: [{ key: "reason", value: "No Telegram entity resolved for this username" }],
             meta: {
               title: "No Telegram Entity Found",
               note: "The Telegram worker could not resolve this username to any user or channel.",
               worker_status: workerRes.status,
             },
-          }, { onConflict: "scan_id,provider,kind", ignoreDuplicates: true });
+          });
+          if (insertErr) {
+            console.error("[telegram-proxy] Failed to insert not_found diagnostic finding:", insertErr);
+          } else {
+            console.log(`[telegram-proxy] Wrote telegram.not_found diagnostic finding for scan ${scanId}`);
+          }
         } catch (diagErr) {
           console.warn("[telegram-proxy] Failed to write not_found diagnostic finding:", diagErr);
         }
