@@ -3,7 +3,7 @@
  *
  * Auth: Supabase JWT (user must be authenticated + member of scan's workspace)
  * Routes:
- *   - username scan → POST N8N_TELEGRAM_USERNAME_WEBHOOK_URL (fire-and-forget)
+ *   - username scan → POST N8N_TELEGRAM_USERNAME_WEBHOOK_URL (fire-and-forget, HMAC signed)
  *   - phone scan    → POST telegram-proxy (phone_presence action, using internal token)
  *
  * Before firing:
@@ -18,6 +18,27 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+/** Sign body with HMAC-SHA256, matching n8n-scan-trigger's signFpiqHmac helper */
+async function signHmac(body: string): Promise<Record<string, string>> {
+  const secret = Deno.env.get('N8N_WEBHOOK_HMAC_SECRET');
+  if (!secret) return {};
+
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const msgData = encoder.encode(body);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+  const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return {
+    'x-fpiq-signature': hex,
+    'x-fpiq-timestamp': Date.now().toString(),
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -42,17 +63,16 @@ Deno.serve(async (req) => {
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace('Bearer ', '');
-    const { data: authData, error: authError } = await userClient.auth.getClaims(token);
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
 
-    if (authError || !authData?.claims) {
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const userId = authData.claims.sub;
+    const userId = user.id;
 
     // ── 2. Parse body ───────────────────────────────────────────────
     let body: { scan_id?: string };
@@ -106,7 +126,7 @@ Deno.serve(async (req) => {
 
     // ── 4. Clear idempotency lock + stale data ──────────────────────
     await Promise.all([
-      // Clear the telegram_triggered_at lock so n8n-scan-trigger allows a re-trigger
+      // Clear the telegram_triggered_at lock so we can re-trigger
       adminClient
         .from('scans')
         .update({ telegram_triggered_at: null })
@@ -129,6 +149,8 @@ Deno.serve(async (req) => {
 
     const scanType = scan.scan_type || 'username';
     const target = scan.username || scan.email || scan.phone || '';
+
+    console.log(`[telegram-retrigger] Retriggering scan ${scan_id} (type=${scanType}, target=${target.slice(0, 10)}***)`);
 
     // ── 5. Route to correct backend ─────────────────────────────────
     if (scanType === 'phone') {
@@ -158,7 +180,7 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     } else {
-      // Username scan: fire n8n Telegram Username Webhook
+      // Username scan: fire n8n Telegram Username Webhook (HMAC-signed to match n8n-scan-trigger)
       const webhookUrl = Deno.env.get('N8N_TELEGRAM_USERNAME_WEBHOOK_URL');
       if (!webhookUrl) {
         console.error('[telegram-retrigger] N8N_TELEGRAM_USERNAME_WEBHOOK_URL not configured');
@@ -168,19 +190,32 @@ Deno.serve(async (req) => {
         );
       }
 
+      const payload = JSON.stringify({
+        scanId: scan_id,
+        username: target,
+        query: target,
+        workspace_id: scan.workspace_id,
+        userId,
+        tier: 'pro',
+        entityType: 'username',
+        telegramOptions: { enabled: true },
+        progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
+        resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
+        retrigger: true,
+      });
+
+      const hmacHeaders = await signHmac(payload);
+
       // Fire-and-forget
       fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          scan_id,
-          username: target,
-          query: target,
-          workspace_id: scan.workspace_id,
-          tier: 'pro',
-          retrigger: true,
-        }),
-      }).catch((err) => console.error('[telegram-retrigger] n8n webhook error:', err));
+        headers: { 'Content-Type': 'application/json', ...hmacHeaders },
+        body: payload,
+      })
+        .then((res) => console.log(`[telegram-retrigger] n8n webhook responded: ${res.status}`))
+        .catch((err) => console.error('[telegram-retrigger] n8n webhook error:', err));
+
+      console.log('[telegram-retrigger] Telegram username webhook fired (fire-and-forget)');
 
       return new Response(
         JSON.stringify({ ok: true, message: 'Telegram scan re-triggered. Results will appear shortly.' }),
