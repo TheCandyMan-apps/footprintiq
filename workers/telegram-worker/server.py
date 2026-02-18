@@ -675,6 +675,166 @@ async def handle_activity_intel(payload: dict) -> dict:
     }
 
 
+# ── Username Lookup ──────────────────────────────────────────────
+
+async def handle_username_lookup(payload: dict) -> dict:
+    """
+    Public profile lookup for a Telegram username.
+
+    Handles both entity types returned by get_entity():
+      - User  → personal account (returns public profile fields only)
+      - Channel → delegates to handle_channel_scrape()
+
+    Public-only fields extracted for User entities:
+      display_name, username, bio (if not restricted), photo_present,
+      verified, bot, last_seen_bucket
+
+    Returns artifacts under the 'channel_profile' key so the existing
+    ChannelProfileCard UI component renders without modification.
+
+    Privacy compliance: no private messages, no contact list, no mutual
+    contacts — only data visible to any authenticated Telegram user.
+    """
+    scan_id = payload.get("scanId", "")
+    raw = (
+        payload.get("username", "")
+        or payload.get("channel", "")
+        or payload.get("query", "")
+    )
+
+    if is_private_target(raw):
+        return error_response(
+            "PRIVATE_CHANNEL_UNSUPPORTED",
+            "Private invite links are not supported. Public usernames only.",
+            403,
+        )
+
+    handle = normalize_target(raw)
+    if not handle or len(handle) < 4:
+        return error_response("INVALID_TARGET", f"Could not normalize target: {raw}")
+
+    log.info(f"[username_lookup] scanId={scan_id} target={handle}")
+
+    client = await _get_client()
+
+    from telethon.tl.types import (
+        Channel,
+        User,
+        ChatPhotoEmpty,
+        UserStatusRecently,
+        UserStatusLastWeek,
+        UserStatusLastMonth,
+        UserStatusOffline,
+        UserStatusOnline,
+    )
+
+    try:
+        entity = await client.get_entity(handle)
+    except Exception as e:
+        err_str = str(e).lower()
+        if "invite" in err_str or "private" in err_str:
+            return error_response("PRIVATE_CHANNEL_UNSUPPORTED", "This appears to be a private account/channel.")
+        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "username" in err_str:
+            return error_response("INVALID_TARGET", f"Account not found: {handle}")
+        raise
+
+    # ── Channel / Supergroup → delegate ──────────────────────────
+    if isinstance(entity, Channel):
+        log.info(f"[username_lookup] entity is Channel — delegating to handle_channel_scrape")
+        return await handle_channel_scrape(payload)
+
+    # ── Personal account ─────────────────────────────────────────
+    if not isinstance(entity, User):
+        return error_response("INVALID_TARGET", f"Unrecognised entity type for '{handle}'.")
+
+    # Map last-seen status to a readable bucket
+    status = getattr(entity, "status", None)
+    if isinstance(status, UserStatusOnline):
+        last_seen_bucket = "recently"
+    elif isinstance(status, UserStatusRecently):
+        last_seen_bucket = "recently"
+    elif isinstance(status, UserStatusLastWeek):
+        last_seen_bucket = "within_week"
+    elif isinstance(status, UserStatusLastMonth):
+        last_seen_bucket = "within_month"
+    elif isinstance(status, UserStatusOffline):
+        last_seen_bucket = "long_ago"
+    else:
+        last_seen_bucket = "unknown"
+
+    # Attempt to fetch bio via GetFullUserRequest (public if user hasn't hidden it)
+    bio = None
+    try:
+        from telethon.tl.functions.users import GetFullUserRequest
+        full = await client(GetFullUserRequest(id=entity))
+        bio = getattr(full.full_user, "about", None) or None
+    except Exception as e:
+        log.warning(f"[username_lookup] GetFullUser failed (non-fatal): {e}")
+
+    first_name = getattr(entity, "first_name", "") or ""
+    last_name = getattr(entity, "last_name", "") or ""
+    display_name = f"{first_name} {last_name}".strip() or handle
+    username = getattr(entity, "username", None) or handle
+    photo_present = bool(entity.photo and not isinstance(entity.photo, ChatPhotoEmpty))
+    verified = getattr(entity, "verified", False)
+    is_bot = getattr(entity, "bot", False)
+    profile_url = f"https://t.me/{username}"
+
+    profile = {
+        "type": "user",
+        "display_name": display_name,
+        "first_name": first_name,
+        "last_name": last_name,
+        "username": username,
+        "bio": truncate(bio, 300) if bio else None,
+        "photo_present": photo_present,
+        "verified": verified,
+        "bot": is_bot,
+        "last_seen": last_seen_bucket,
+        "profile_url": profile_url,
+        # Surfaced in ChannelProfileCard — match channel shape where possible
+        "title": display_name,
+        "subscriber_count": None,
+        "last_message_ts": None,
+        "language_guess": None,
+    }
+
+    severity = "medium" if verified else "info"
+
+    findings = [
+        {
+            "kind": "telegram_username",
+            "provider": "telegram",
+            "severity": severity,
+            "evidence": {
+                "display_name": display_name,
+                "username": username,
+                "bio": profile["bio"],
+                "photo_present": photo_present,
+                "verified": verified,
+                "bot": is_bot,
+                "last_seen": last_seen_bucket,
+                "profile_url": profile_url,
+                "account_type": "bot" if is_bot else "personal",
+            },
+        }
+    ]
+
+    log.info(
+        f"[username_lookup] personal account found: username={username} "
+        f"verified={verified} bot={is_bot} last_seen={last_seen_bucket}"
+    )
+
+    return {
+        "ok": True,
+        "findings": findings,
+        "artifacts": {
+            # Keyed as channel_profile so ChannelProfileCard renders it unchanged
+            "channel_profile": profile,
+        },
+    }
+
+
 # ── Phone Presence ───────────────────────────────────────────────
 
 async def handle_phone_presence(payload: dict) -> dict:
@@ -826,7 +986,7 @@ async def handle_phone_presence(payload: dict) -> dict:
 # ── HTTP Server ──────────────────────────────────────────────────
 
 ROUTES = {
-    "/telegram/username":        handle_channel_scrape,    # username scans alias to channel_scrape
+    "/telegram/username":        handle_username_lookup,   # handles both User and Channel entities
     "/telegram/channel-scrape":  handle_channel_scrape,
     "/telegram/activity-intel":  handle_activity_intel,
     "/telegram/phone-presence":  handle_phone_presence,    # phone number → Telegram account check
