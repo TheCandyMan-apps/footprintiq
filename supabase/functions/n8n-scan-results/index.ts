@@ -212,8 +212,10 @@ serve(async (req) => {
     }
 
     // Process and store findings
+    // Declare outside the if-block so Telegram source guard can always reference it
+    let findingsToInsert: Array<Record<string, unknown>> = [];
     if (findings && Array.isArray(findings) && findings.length > 0) {
-      const findingsToInsert = findings
+      findingsToInsert = findings
         // Filter out negative results (found === false)
         .filter((finding: Record<string, unknown>) => finding.found !== false)
         .map((finding: Record<string, unknown>) => {
@@ -423,7 +425,7 @@ serve(async (req) => {
         accepted: true,
         finalized: false,
         reason: 'telegram_partial_results',
-        findingsStored: findingsToInsert?.length || 0,
+        findingsStored: findingsToInsert.length,
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
