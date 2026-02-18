@@ -389,7 +389,30 @@ serve(async (req: Request) => {
         /no (such |telegram )?user/i.test(workerBody);
 
       if (isNotFound) {
-        console.log(`[telegram-proxy] Entity not found for scan ${scanId} — returning empty results`);
+        console.log(`[telegram-proxy] Entity not found for scan ${scanId} — writing diagnostic finding`);
+
+        // Write a diagnostic finding so the UI can surface the real reason
+        try {
+          const svcDiag = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+          );
+          await svcDiag.from("findings").upsert({
+            scan_id: scanId,
+            provider: "telegram",
+            kind: "telegram.not_found",
+            severity: "info",
+            evidence: { key: "reason", value: "No Telegram entity resolved for this username" },
+            meta: {
+              title: "No Telegram Entity Found",
+              note: "The Telegram worker could not resolve this username to any user or channel.",
+              worker_status: workerRes.status,
+            },
+          }, { onConflict: "scan_id,provider,kind", ignoreDuplicates: true });
+        } catch (diagErr) {
+          console.warn("[telegram-proxy] Failed to write not_found diagnostic finding:", diagErr);
+        }
+
         return json({
           ok: true,
           scanId,
