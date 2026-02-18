@@ -153,15 +153,32 @@ async def handle_channel_scrape(payload: dict) -> dict:
     from telethon.tl.functions.messages import GetHistoryRequest
     from telethon.tl.types import Channel, ChatPhotoEmpty
 
+    entity = None
     try:
         entity = await client.get_entity(handle)
     except Exception as e:
         err_str = str(e).lower()
         if "invite" in err_str or "private" in err_str:
             return error_response("PRIVATE_CHANNEL_UNSUPPORTED", "This appears to be a private channel.")
-        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str:
-            return error_response("INVALID_TARGET", f"Channel not found: {handle}")
-        raise
+        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "invalid" in err_str:
+            log.info(f"[channel_scrape] get_entity failed for '{handle}', trying ResolveUsername fallback")
+            try:
+                from telethon.tl.functions.contacts import ResolveUsernameRequest
+                resolved = await client(ResolveUsernameRequest(handle))
+                if resolved.chats:
+                    entity = resolved.chats[0]
+                elif resolved.users:
+                    entity = resolved.users[0]
+                else:
+                    return error_response("INVALID_TARGET", f"Channel not found: {handle}", 404)
+            except Exception as e2:
+                log.warning(f"[channel_scrape] ResolveUsername also failed: {e2}")
+                return error_response("INVALID_TARGET", f"Channel not found: {handle}", 404)
+        else:
+            raise
+
+    if entity is None:
+        return error_response("INVALID_TARGET", f"Could not resolve entity for: {handle}", 404)
 
     if not isinstance(entity, Channel):
         return error_response("INVALID_TARGET", f"Target '{handle}' is not a channel/supergroup.")
@@ -371,15 +388,32 @@ async def handle_activity_intel(payload: dict) -> dict:
     from telethon.tl.functions.messages import GetHistoryRequest
     from telethon.tl.types import Channel
 
+    entity = None
     try:
         entity = await client.get_entity(handle)
     except Exception as e:
         err_str = str(e).lower()
         if "invite" in err_str or "private" in err_str:
             return error_response("PRIVATE_CHANNEL_UNSUPPORTED", "This appears to be a private channel.")
-        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str:
-            return error_response("INVALID_TARGET", f"Channel not found: {handle}")
-        raise
+        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "invalid" in err_str:
+            log.info(f"[activity_intel] get_entity failed for '{handle}', trying ResolveUsername fallback")
+            try:
+                from telethon.tl.functions.contacts import ResolveUsernameRequest
+                resolved = await client(ResolveUsernameRequest(handle))
+                if resolved.chats:
+                    entity = resolved.chats[0]
+                elif resolved.users:
+                    entity = resolved.users[0]
+                else:
+                    return error_response("INVALID_TARGET", f"Channel not found: {handle}", 404)
+            except Exception as e2:
+                log.warning(f"[activity_intel] ResolveUsername also failed: {e2}")
+                return error_response("INVALID_TARGET", f"Channel not found: {handle}", 404)
+        else:
+            raise
+
+    if entity is None:
+        return error_response("INVALID_TARGET", f"Could not resolve entity for: {handle}", 404)
 
     if not isinstance(entity, Channel):
         return error_response("INVALID_TARGET", f"Target '{handle}' is not a channel/supergroup.")
@@ -728,15 +762,37 @@ async def handle_username_lookup(payload: dict) -> dict:
         UserStatusOnline,
     )
 
+    # ── Try get_entity first, fall back to ResolveUsernameRequest ──
+    entity = None
     try:
         entity = await client.get_entity(handle)
     except Exception as e:
         err_str = str(e).lower()
         if "invite" in err_str or "private" in err_str:
             return error_response("PRIVATE_CHANNEL_UNSUPPORTED", "This appears to be a private account/channel.")
-        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "username" in err_str:
-            return error_response("INVALID_TARGET", f"Account not found: {handle}")
-        raise
+        # For any not-found style error, try MTProto ResolveUsername as fallback
+        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "username" in err_str or "invalid" in err_str:
+            log.info(f"[username_lookup] get_entity failed for '{handle}', trying ResolveUsername fallback")
+            try:
+                from telethon.tl.functions.contacts import ResolveUsernameRequest
+                resolved = await client(ResolveUsernameRequest(handle))
+                # resolved.users contains matched users, resolved.chats contains channels
+                if resolved.users:
+                    entity = resolved.users[0]
+                    log.info(f"[username_lookup] ResolveUsername resolved user: {getattr(entity, 'username', handle)}")
+                elif resolved.chats:
+                    entity = resolved.chats[0]
+                    log.info(f"[username_lookup] ResolveUsername resolved chat/channel: {getattr(entity, 'username', handle)}")
+                else:
+                    return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
+            except Exception as e2:
+                log.warning(f"[username_lookup] ResolveUsername also failed: {e2}")
+                return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
+        else:
+            raise
+
+    if entity is None:
+        return error_response("INVALID_TARGET", f"Could not resolve entity for: {handle}", 404)
 
     # ── Channel / Supergroup → delegate ──────────────────────────
     if isinstance(entity, Channel):
