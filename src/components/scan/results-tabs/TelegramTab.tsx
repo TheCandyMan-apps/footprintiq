@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock, RefreshCw } from 'lucide-react';
+import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock, RefreshCw, CheckCircle2, XCircle, Hourglass } from 'lucide-react';
 import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFindings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -25,6 +25,8 @@ interface TelegramTabProps {
   scanId: string;
   isPro: boolean;
   scanType?: string;
+  telegramTriggeredAt?: string | null;
+  hasTelegramFindings?: boolean;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -592,7 +594,126 @@ function ResponsibleUseTooltip() {
   );
 }
 
+// ── TelegramHealthIndicator ──────────────────────────────────────
+
+type WorkerStatus = 'not_triggered' | 'pending' | 'completed' | 'timed_out';
+
+function getWorkerStatus(
+  triggeredAt: string | null | undefined,
+  hasFindings: boolean,
+): WorkerStatus {
+  if (!triggeredAt) return 'not_triggered';
+  const elapsed = Date.now() - new Date(triggeredAt).getTime();
+  if (hasFindings) return 'completed';
+  // Give the worker 5 minutes before declaring a timeout
+  if (elapsed > 5 * 60 * 1000) return 'timed_out';
+  return 'pending';
+}
+
+function formatRelativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const secs = Math.floor(ms / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+const STATUS_CONFIG: Record<WorkerStatus, {
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badgeClass: string;
+  dotClass: string;
+}> = {
+  not_triggered: {
+    label: 'Not triggered',
+    description: 'Telegram worker has not been triggered for this scan.',
+    icon: XCircle,
+    badgeClass: 'bg-muted text-muted-foreground border-border',
+    dotClass: 'bg-muted-foreground',
+  },
+  pending: {
+    label: 'Results pending',
+    description: 'Telegram worker is running. Results will appear automatically when ready.',
+    icon: Hourglass,
+    badgeClass: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400',
+    dotClass: 'bg-amber-500 animate-pulse',
+  },
+  completed: {
+    label: 'Completed',
+    description: 'Telegram worker completed and results are stored.',
+    icon: CheckCircle2,
+    badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400',
+    dotClass: 'bg-green-500',
+  },
+  timed_out: {
+    label: 'No results returned',
+    description: 'Worker was triggered but no findings came back. The username may not exist on Telegram, or the worker encountered an error.',
+    icon: AlertTriangle,
+    badgeClass: 'bg-destructive/10 text-destructive border-destructive/30',
+    dotClass: 'bg-destructive',
+  },
+};
+
+function TelegramHealthIndicator({
+  triggeredAt,
+  hasFindings,
+}: {
+  triggeredAt: string | null | undefined;
+  hasFindings: boolean;
+}) {
+  const status = getWorkerStatus(triggeredAt, hasFindings);
+  const cfg = STATUS_CONFIG[status];
+  const Icon = cfg.icon;
+
+  return (
+    <Card className="border-border/40 bg-muted/20">
+      <CardHeader className="pb-2 pt-3 px-3">
+        <div className="flex items-center gap-2">
+          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+          <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Telegram Worker Health
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="px-3 pb-3 space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          {/* Status badge */}
+          <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-medium ${cfg.badgeClass}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dotClass}`} />
+            <Icon className="h-3 w-3 shrink-0" />
+            {cfg.label}
+          </div>
+
+          {/* Last triggered timestamp */}
+          {triggeredAt && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground cursor-default">
+                    <Clock className="h-3 w-3" />
+                    {formatRelativeTime(triggeredAt)}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Last triggered: {new Date(triggeredAt).toLocaleString()}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+
+        <p className="text-[10px] text-muted-foreground leading-relaxed">{cfg.description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── RetriggerButton ──────────────────────────────────────────────
+
 
 const COOLDOWN_MS = 30_000;
 
@@ -677,7 +798,7 @@ function RetriggerButton({ scanId, scanType, variant = 'default' }: {
 
 // ── Main component ──────────────────────────────────────────────
 
-export function TelegramTab({ scanId, isPro, scanType }: TelegramTabProps) {
+export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: TelegramTabProps) {
   const {
     findings,
     loading,
@@ -699,14 +820,17 @@ export function TelegramTab({ scanId, isPro, scanType }: TelegramTabProps) {
 
   if (!hasTelegramData) {
     return (
-      <div className="py-12 text-center space-y-3">
-        <Send className="h-8 w-8 text-muted-foreground/40 mx-auto" />
-        <p className="text-sm text-muted-foreground">No Telegram data found for this scan.</p>
-        <p className="text-xs text-muted-foreground/60">
-          Telegram intelligence is gathered when available from public profiles and channels.
-        </p>
-        <div className="flex justify-center pt-1">
-          <RetriggerButton scanId={scanId} scanType={scanType} />
+      <div className="space-y-4">
+        <TelegramHealthIndicator triggeredAt={telegramTriggeredAt} hasFindings={false} />
+        <div className="py-8 text-center space-y-3">
+          <Send className="h-8 w-8 text-muted-foreground/40 mx-auto" />
+          <p className="text-sm text-muted-foreground">No Telegram data found for this scan.</p>
+          <p className="text-xs text-muted-foreground/60">
+            Telegram intelligence is gathered when available from public profiles and channels.
+          </p>
+          <div className="flex justify-center pt-1">
+            <RetriggerButton scanId={scanId} scanType={scanType} />
+          </div>
         </div>
       </div>
     );
@@ -724,7 +848,7 @@ export function TelegramTab({ scanId, isPro, scanType }: TelegramTabProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Send className="h-5 w-5 text-[hsl(var(--primary))]" />
+          <Send className="h-5 w-5 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Telegram Intelligence</h3>
           <Badge variant="secondary" className="text-[10px] h-4 px-1">
             {findings.length} finding{findings.length !== 1 ? 's' : ''}
@@ -736,6 +860,9 @@ export function TelegramTab({ scanId, isPro, scanType }: TelegramTabProps) {
           <ResponsibleUseTooltip />
         </div>
       </div>
+
+      {/* Worker health indicator */}
+      <TelegramHealthIndicator triggeredAt={telegramTriggeredAt} hasFindings={hasTelegramData} />
 
       {/* Cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
