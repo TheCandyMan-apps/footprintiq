@@ -33,6 +33,21 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // ── Diagnostic GET endpoint – confirms this function is reachable ──
+  // This allows n8n / admins to test the callback URL without auth requirements.
+  if (req.method === 'GET') {
+    const url = new URL(req.url);
+    const pingParam = url.searchParams.get('ping');
+    if (pingParam === '1') {
+      console.log('[n8n-scan-results] GET diagnostic ping received');
+      return new Response(JSON.stringify({
+        ok: true,
+        message: 'n8n-scan-results is reachable',
+        timestamp: new Date().toISOString(),
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+  }
+
   try {
     // Read raw body BEFORE any JSON parsing (required for HMAC verification)
     const rawBody = await req.text();

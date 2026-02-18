@@ -40,7 +40,10 @@ async function signHmac(body: string): Promise<Record<string, string>> {
   };
 }
 
+console.log('[telegram-retrigger] Function booted');
+
 Deno.serve(async (req) => {
+  console.log(`[telegram-retrigger] Request received: ${req.method}`);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

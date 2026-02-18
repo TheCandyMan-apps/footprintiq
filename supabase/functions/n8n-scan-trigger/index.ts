@@ -336,7 +336,7 @@ serve(async (req) => {
     // (serviceClient already created above for tier gating)
     
     // Build initial progress record with step tracking for Free tier
-    const progressRecord: Record<string, unknown> = {
+        const progressRecord: Record<string, unknown> = {
       scan_id: scan.id,
       status: "running",
       total_providers: providers.length,
@@ -347,7 +347,6 @@ serve(async (req) => {
         ? "Starting quick scan..." 
         : `Starting scan with ${providers.length} providers...`,
       error: false,
-      updated_at: new Date().toISOString(),
     };
     
     // Add step tracking fields for Free tier scans
@@ -457,7 +456,6 @@ serve(async (req) => {
             status: "error",
             error: true,
             message: `Workflow failed to start (HTTP ${n8nResponse.status})`,
-            updated_at: new Date().toISOString(),
           }).eq("scan_id", scan.id);
 
           await serviceClient.from("system_errors").insert({
@@ -488,7 +486,6 @@ serve(async (req) => {
           status: "error",
           error: true,
           message: `Workflow unreachable: ${errMsg.substring(0, 100)}`,
-          updated_at: new Date().toISOString(),
         }).eq("scan_id", scan.id);
 
         await serviceClient.from("system_errors").insert({
@@ -642,16 +639,21 @@ serve(async (req) => {
               resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
             });
         const telegramHmacHeaders = await signFpiqHmac(telegramBody);
+        console.log(`[n8n-scan-trigger] Firing Telegram username webhook (URL configured: ${!!n8nTelegramUsernameWebhookUrl}, HMAC signed: ${Object.keys(telegramHmacHeaders).length > 0})`);
         fetch(n8nTelegramUsernameWebhookUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json", ...telegramHmacHeaders },
             body: telegramBody,
           })
-            .then((res) => {
-              console.log(`[n8n-scan-trigger] Telegram username workflow responded: ${res.status}`);
+            .then(async (res) => {
+              const respText = await res.text().catch(() => '');
+              console.log(`[n8n-scan-trigger] Telegram username workflow responded: ${res.status} — body: ${respText.substring(0, 200)}`);
+              if (!res.ok) {
+                console.error(`[n8n-scan-trigger] Telegram webhook non-OK response: ${res.status}`);
+              }
             })
             .catch((err) => {
-              console.error(`[n8n-scan-trigger] Telegram username workflow error: ${err.message}`);
+              console.error(`[n8n-scan-trigger] Telegram username workflow FAILED: ${err.message}`);
             });
 
           console.log(`[n8n-scan-trigger] Telegram username workflow triggered (fire-and-forget)`);
@@ -992,7 +994,6 @@ serve(async (req) => {
                   const newCount = (currentProgress?.findings_count || 0) + findings.length;
                   await serviceClient.from('scan_progress').update({
                     findings_count: newCount,
-                    updated_at: new Date().toISOString(),
                   }).eq('scan_id', scan.id);
                 }
               }
