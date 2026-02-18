@@ -247,32 +247,110 @@ function PhonePresenceCard({ findings }: { findings: TelegramFinding[] }) {
   const f = findings[0];
   if (!f) return null;
 
-  const registered = getEv(f, 'registered') || f.meta?.registered;
-  const lastSeen = getEv(f, 'last_seen') || f.meta?.last_seen;
+  const ev = (k: string) => getEv(f, k) || f.meta?.[k];
+
+  const registered   = ev('registered');
+  const isRegistered = registered === 'true' || registered === true;
+  const isNotFound   = registered === 'false' || registered === false;
+
+  const displayName  = ev('display_name') || ev('full_name') || '';
+  const username     = ev('username') || '';
+  const lastSeen     = ev('last_seen_bucket') || ev('last_seen') || '';
+  const verified     = ev('verified') === 'true' || ev('verified') === true;
+  const isBot        = ev('bot') === 'true' || ev('bot') === true;
+  const photoPresent = ev('photo_present') === 'true' || ev('photo_present') === true;
+  const profileUrl   = ev('profile_url') || (username ? `https://t.me/${username}` : '');
 
   return (
     <Card className="border-border/40">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Phone className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm">Phone Presence</CardTitle>
+          <CardTitle className="text-sm">Telegram Presence</CardTitle>
           <Badge variant="outline" className="text-[10px] h-4 px-1 border-primary/30 text-primary">Pro</Badge>
         </div>
-        <CardDescription className="text-xs">Whether this phone number is registered on Telegram</CardDescription>
+        <CardDescription className="text-xs">Whether this phone number has a Telegram account</CardDescription>
       </CardHeader>
-      <CardContent className="text-sm space-y-1">
+      <CardContent className="text-sm space-y-3">
+
+        {/* Registration status row */}
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">Registered:</span>
-          <Badge variant={registered === 'true' || registered === true ? 'default' : 'secondary'} className="text-[10px]">
-            {registered === 'true' || registered === true ? 'Yes' : registered === 'false' || registered === false ? 'No' : 'Unknown'}
+          <span className="text-muted-foreground text-xs">Registered:</span>
+          <Badge
+            variant={isRegistered ? 'default' : isNotFound ? 'secondary' : 'outline'}
+            className={`text-[10px] ${isRegistered ? 'bg-green-500/20 text-green-700 border-green-500/30 dark:text-green-400' : ''}`}
+          >
+            {isRegistered ? 'Yes — found on Telegram' : isNotFound ? 'Not found' : 'Unknown'}
           </Badge>
         </div>
-        {lastSeen && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Last seen:</span>
-            <LastSeenBadge bucket={lastSeen} />
+
+        {/* Profile block — only when registered */}
+        {isRegistered && (
+          <div className="rounded-md border border-border/40 bg-muted/20 p-3 space-y-2">
+
+            {/* Name + badges row */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-0.5 min-w-0">
+                {displayName && (
+                  <p className="font-medium text-foreground truncate">{displayName}</p>
+                )}
+                {username ? (
+                  profileUrl ? (
+                    <a
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline underline-offset-2 flex items-center gap-1"
+                    >
+                      @{username}
+                      <Link className="h-2.5 w-2.5 shrink-0" />
+                    </a>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">@{username}</p>
+                  )
+                ) : null}
+                {!displayName && !username && (
+                  <p className="text-xs text-muted-foreground italic">No public profile name</p>
+                )}
+              </div>
+
+              {/* Flag badges */}
+              <div className="flex flex-col gap-1 items-end shrink-0">
+                {verified && (
+                  <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-0.5 border-primary/30 text-primary">
+                    <Shield className="h-2.5 w-2.5" /> Verified
+                  </Badge>
+                )}
+                {isBot && (
+                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                    Bot
+                  </Badge>
+                )}
+                {photoPresent && (
+                  <Badge variant="outline" className="text-[10px] h-4 px-1.5 gap-0.5 text-muted-foreground border-border">
+                    <Eye className="h-2.5 w-2.5" /> Has photo
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Last seen badge */}
+            {lastSeen && (
+              <div className="flex items-center gap-2 pt-0.5">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Last seen:</span>
+                <LastSeenBadge bucket={lastSeen} />
+              </div>
+            )}
           </div>
         )}
+
+        {/* Not-found hint */}
+        {isNotFound && (
+          <p className="text-xs text-muted-foreground">
+            No Telegram account linked to this number. The account may be private or unregistered.
+          </p>
+        )}
+
       </CardContent>
     </Card>
   );
@@ -642,8 +720,8 @@ export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
         ) : (
           <LockedCard
             icon={Phone}
-            title="Phone Presence"
-            description="Whether a phone number is registered on Telegram"
+            title="Telegram Presence"
+            description="Whether a phone number has a Telegram account"
           />
         )}
       </div>
