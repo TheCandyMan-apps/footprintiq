@@ -1,198 +1,100 @@
 
-## Telegram OSINT Expansion — Implementation Plan
+## Root Cause: Premature Scan Completion
 
-### Architecture Overview
+The diagnosis is definitive. The scan for "jayquee" completed in **4 seconds** while n8n was still running for 2+ minutes. There are **two separate bugs** causing this.
 
-```
-n8n Master WF (single webhook)
-  → telegram-proxy Edge Function (action routing + tier gating)
-    → Cloud Run Worker (same service, new action handlers)
-      → scan_artifacts (heavy data)
-      → findings (summaries)
-```
+---
 
-### Supported Actions
+### Bug 1: `finalize_scan_if_complete` references a non-existent column
 
-| Action           | Tier   | Worker Path                  | Description                              |
-|------------------|--------|------------------------------|------------------------------------------|
-| `username`       | free+  | `/telegram/username`         | Basic profile lookup (existing)          |
-| `phone_presence` | pro+   | `/telegram/phone-presence`   | Phone→Telegram check (existing)          |
-| `channel_scrape` | free+  | `/telegram/channel-scrape`   | Channel metadata + messages + links      |
-| `activity_intel` | pro+   | `/telegram/activity-intel`   | Cadence, NER, risk, network mapping      |
+The PostgreSQL trigger function that finalises scans contains this query:
 
-### Action→Service Map (Future-Proof)
-
-`telegram-proxy` uses `ACTION_SERVICE_MAP` to resolve worker URLs per action.
-Each action has a `serviceUrlEnv` override — set it to split heavy actions
-(e.g. `channel_scrape`) to a separate Cloud Run service without changing n8n.
-
-### Worker API Contracts
-
-#### POST `/telegram/channel-scrape`
-
-**Request:**
-```json
-{
-  "scanId": "uuid",
-  "workspaceId": "uuid",
-  "userId": "uuid",
-  "tier": "free",
-  "action": "channel_scrape",
-  "channel": "@channelusername",
-  "messageLimit": 25
-}
+```sql
+SELECT scan_type, started_at  -- ❌ "started_at" does not exist on the scans table
+  INTO v_scan_type, v_scan_started_at
+FROM public.scans
+WHERE id = NEW.scan_id;
 ```
 
-**Response:**
-```json
-{
-  "ok": true,
-  "channel_metadata": {
-    "title": "Channel Name",
-    "username": "channelusername",
-    "description": "Bio text...",
-    "subscriber_count": 12345,
-    "verified": false,
-    "language_guess": "en",
-    "last_post_at": "2026-02-17T10:30:00Z",
-    "creation_hint": null,
-    "photo_url": "https://..."
-  },
-  "messages": [
-    {
-      "id": 12345,
-      "timestamp": "2026-02-17T10:30:00Z",
-      "text_snippet": "First 500 chars...",
-      "link_entities": ["https://example.com"],
-      "has_media": true,
-      "media_type": "photo",
-      "is_forwarded": false,
-      "forward_source": null,
-      "views": 1200
-    }
-  ],
-  "linked_channels": [
-    {
-      "username": "related_channel",
-      "title": "Related Channel",
-      "source": "bio_link",
-      "url": "https://t.me/related_channel"
-    }
-  ],
-  "findings": [
-    {
-      "kind": "channel_profile",
-      "provider": "telegram",
-      "severity": "info",
-      "evidence": { "title": "...", "subscribers": 12345 }
-    }
-  ]
-}
+The `scans` table only has `created_at`, not `started_at`. Because of this:
+
+- `v_scan_started_at` is **always NULL**
+- The 120-second grace period check evaluates as: `NULL IS NOT NULL` → **FALSE**
+- The grace period is **never enforced**
+- As soon as the first provider posts a `complete` event, the trigger bypasses the minimum wait and checks if `v_completed_count >= v_started_count`
+
+### Bug 2: The `stage` value for `started` events doesn't match the trigger's check
+
+The trigger queries for providers that have started:
+```sql
+AND stage = 'start'
 ```
 
-#### POST `/telegram/activity-intel`
-
-**Request:**
-```json
-{
-  "scanId": "uuid",
-  "workspaceId": "uuid",
-  "userId": "uuid",
-  "tier": "pro",
-  "action": "activity_intel",
-  "channel": "@channelusername",
-  "messageLimit": 200
-}
+But `n8n-scan-progress` inserts events with stage mapped as:
+```ts
+stage: status === 'started' ? 'start' : status === 'completed' ? 'complete' : status
 ```
 
-**Response:**
-```json
-{
-  "ok": true,
-  "activity_analysis": {
-    "posting_cadence": {
-      "per_hour": { "0": 2, "1": 0, "...": "..." },
-      "per_day_of_week": { "mon": 12, "tue": 15, "...": "..." },
-      "per_week": [{ "week": "2026-W07", "count": 45 }],
-      "avg_posts_per_day": 3.2,
-      "burst_periods": [
-        { "start": "2026-02-10T14:00Z", "end": "2026-02-10T16:00Z", "count": 12 }
-      ]
-    },
-    "last_seen_active": "2026-02-17T10:30:00Z",
-    "content_classification": {
-      "top_topics": ["crypto", "technology", "news"],
-      "named_entities": [
-        { "text": "Bitcoin", "type": "CRYPTO", "count": 15 },
-        { "text": "Elon Musk", "type": "PERSON", "count": 3 }
-      ],
-      "language_distribution": { "en": 0.85, "ru": 0.15 }
-    },
-    "link_analysis": {
-      "domain_frequency": { "example.com": 12, "t.me": 8 },
-      "total_links": 45
-    },
-    "forward_patterns": {
-      "total_forwards": 20,
-      "top_sources": [
-        { "channel": "@source_channel", "count": 8 }
-      ]
-    }
-  },
-  "risk_indicators": {
-    "overall_risk_score": 35,
-    "flags": [
-      { "type": "high_forward_ratio", "severity": "low", "detail": "60% forwarded content" },
-      { "type": "suspicious_links", "severity": "medium", "detail": "3 links to known phishing domains" }
-    ]
-  },
-  "graph": {
-    "nodes": [
-      { "id": "@target", "type": "channel", "label": "Target Channel" }
-    ],
-    "edges": [
-      { "source": "@target", "target": "@source_channel", "type": "forwards_from", "weight": 8 }
-    ]
-  },
-  "findings": [
-    {
-      "kind": "activity_intel",
-      "provider": "telegram",
-      "severity": "info",
-      "evidence": { "avg_posts_per_day": 3.2, "risk_score": 35 }
-    }
-  ]
-}
+For the "jayquee" scan, the scan events at the time of premature completion were **only `start` events** (Sherlock started, GoSearch started, Maigret started). There were **zero `complete` events**. Yet the scan was marked completed.
+
+**The actual trigger path:**
+
+Looking at the 4-second completion, no `complete` stage event existed at all when the scan finalised. Something **else** set `status = 'completed'` directly — likely a cached scan lookup or a race from `n8n-scan-progress` posting `status: 'completed'` on the **scan** (not a provider), which directly updates `scan_progress` with `status: completed`, and the frontend treats that as terminal.
+
+The `ScanProgress` component watches `scan_progress.status` via realtime. When n8n sends `{ status: 'completed', provider: undefined }`, the progress record becomes `status: completed`, and the UI treats it as done.
+
+---
+
+### The Fix (Two Parts)
+
+**Part 1 — Database migration: Fix `finalize_scan_if_complete`**
+
+Replace `started_at` with `created_at` in the trigger (which is the actual column). This restores the 120-second minimum grace period so the trigger cannot finalise a scan before the n8n workflow has had time to even start its providers.
+
+```sql
+CREATE OR REPLACE FUNCTION public.finalize_scan_if_complete()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
+DECLARE
+  v_scan_type text;
+  v_scan_started_at timestamptz;
+  v_expected_providers integer;
+  v_started_count integer;
+  v_completed_count integer;
+  v_total_findings integer;
+  v_min_wait_seconds integer := 120;
+BEGIN
+  IF NEW.stage IS DISTINCT FROM 'complete' THEN
+    RETURN NEW;
+  END IF;
+
+  -- FIX: Use created_at (the actual column) instead of the non-existent started_at
+  SELECT scan_type, created_at
+    INTO v_scan_type, v_scan_started_at
+  FROM public.scans WHERE id = NEW.scan_id;
+
+  -- ... rest unchanged
 ```
 
-### n8n Master Workflow Design
+**Part 2 — Guard `n8n-scan-progress` against scan-level "completed" broadcasting prematurely**
 
-Single webhook, minimal orchestration:
+When n8n sends `status: 'completed'` without a `provider`, it means the **entire workflow** is done. But right now, `n8n-scan-progress` sets `scan_progress.status = 'completed'` immediately, which the frontend treats as terminal — even though provider `complete` events haven't arrived yet via the separate `n8n-scan-results` webhook.
 
-1. **Trigger**: Webhook receives `{ action, channel/username, scanId, ... }`
-2. **SET Defaults**: Extract body fields
-3. **Progress Start**: POST to `n8n-scan-progress` with status="running"
-4. **HTTP Call**: POST to `telegram-proxy` with full payload + `x-n8n-key`
-5. **Results**: POST to `n8n-scan-results` with findings from proxy response
-6. **Progress Complete**: POST to `n8n-scan-progress` with status="completed" or "error"
+The fix: only write `status: 'completed'` to `scan_progress` when it comes from the **`n8n-scan-results`** endpoint (which has the actual findings), not from intermediate `n8n-scan-progress` calls. For `n8n-scan-progress`, when `provider` is null/undefined and `status === 'completed'`, we should ignore or convert it to `running` (the results webhook will handle finalisation).
 
-No branching in n8n. Action routing, tier gating, and data processing all happen
-inside `telegram-proxy` and the worker.
+---
 
-### Implementation Steps
+### Files to Change
 
-- [x] Step 1: Update `telegram-proxy` with action routing, tier gating, service map
-- [ ] Step 2: Add `channel_scrape` + `activity_intel` handlers to Cloud Run worker
-- [ ] Step 3: Build n8n Master Workflow (single webhook)
-- [ ] Step 4: Wire `n8n-scan-trigger` to fire Master WF for channel/intel scans
-- [ ] Step 5: Extend Telegram results UI for channel + intel panels
-- [ ] Step 6: End-to-end testing
+| File | Change |
+|---|---|
+| `supabase/migrations/new_fix_finalize_trigger.sql` | Fix `started_at` → `created_at` in trigger |
+| `supabase/functions/n8n-scan-progress/index.ts` | Guard: skip `completed` status write when no provider is specified (let results webhook handle it) |
 
-### Ethical Guardrails
+---
 
-- Public channels only — no private group data
-- No admin/member list collection
-- No deanonymization or private-group inference
-- Network mapping uses only explicit t.me links/forwards/mentions
-- "Public data only" badge on all results
-- "Responsible Use" tooltips
+### Technical Details
+
+- The `scans` table columns confirmed: `created_at` ✅, `started_at` ❌ does not exist
+- Database logs show repeated `ERROR: column "started_at" does not exist` — this has been silently failing for every scan
+- The grace period has never worked since this trigger was deployed
+- The fix is minimal and surgical — no schema changes needed, just correcting the column reference and adding a guard in the progress function
