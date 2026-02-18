@@ -435,7 +435,47 @@ serve(async (req) => {
     // endpoint again when ALL providers have finished, at which point finalization proceeds.
     const isTelegramCallback = body.source === 'telegram' || body.source === 'telegram-proxy';
     if (isTelegramCallback) {
-      console.log(`[n8n-scan-results] Telegram callback for ${scanId} — findings stored, scan NOT finalized`);
+      console.log(`[n8n-scan-results] Telegram callback for ${scanId} — findings stored: ${findingsToInsert.length}, scan NOT finalized`);
+
+      // If the workflow returned zero findings, write the 'telegram.not_found' diagnostic sentinel
+      // so the UI health indicator can correctly transition from "Results pending" → "Username not found"
+      if (findingsToInsert.length === 0) {
+        console.log(`[n8n-scan-results] No Telegram findings — writing telegram.not_found sentinel for ${scanId}`);
+        // Delete any stale sentinel first to avoid unique constraint issues
+        await supabase
+          .from('findings')
+          .delete()
+          .eq('scan_id', scanId)
+          .eq('provider', 'telegram')
+          .eq('kind', 'telegram.not_found');
+
+        const { error: sentinelError } = await supabase
+          .from('findings')
+          .insert({
+            scan_id: scanId,
+            workspace_id: scan.workspace_id,
+            provider: 'telegram',
+            kind: 'telegram.not_found',
+            severity: 'info',
+            confidence: 1.0,
+            observed_at: new Date().toISOString(),
+            evidence: [],
+            meta: {
+              title: 'No Telegram entity found',
+              description: body.note || 'The Telegram worker found no account or channel matching this target.',
+              source: 'telegram',
+              diagnostic: true,
+            },
+            created_at: new Date().toISOString(),
+          });
+
+        if (sentinelError) {
+          console.error(`[n8n-scan-results] Failed to write telegram.not_found sentinel:`, sentinelError);
+        } else {
+          console.log(`[n8n-scan-results] telegram.not_found sentinel written for ${scanId}`);
+        }
+      }
+
       return new Response(JSON.stringify({
         accepted: true,
         finalized: false,
