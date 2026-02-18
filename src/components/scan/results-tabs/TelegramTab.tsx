@@ -596,15 +596,17 @@ function ResponsibleUseTooltip() {
 
 // ── TelegramHealthIndicator ──────────────────────────────────────
 
-type WorkerStatus = 'not_triggered' | 'pending' | 'completed' | 'timed_out';
+type WorkerStatus = 'not_triggered' | 'pending' | 'completed' | 'timed_out' | 'not_found';
 
 function getWorkerStatus(
   triggeredAt: string | null | undefined,
   hasFindings: boolean,
+  hasNotFoundDiagnostic: boolean,
 ): WorkerStatus {
   if (!triggeredAt) return 'not_triggered';
   const elapsed = Date.now() - new Date(triggeredAt).getTime();
   if (hasFindings) return 'completed';
+  if (hasNotFoundDiagnostic) return 'not_found';
   // Give the worker 5 minutes before declaring a timeout
   if (elapsed > 5 * 60 * 1000) return 'timed_out';
   return 'pending';
@@ -656,16 +658,25 @@ const STATUS_CONFIG: Record<WorkerStatus, {
     badgeClass: 'bg-destructive/10 text-destructive border-destructive/30',
     dotClass: 'bg-destructive',
   },
+  not_found: {
+    label: 'Username not found',
+    description: 'The Telegram worker could not resolve this username to any user or channel. The account may not exist, be private, or use a different handle.',
+    icon: XCircle,
+    badgeClass: 'bg-orange-500/10 text-orange-600 border-orange-500/30 dark:text-orange-400',
+    dotClass: 'bg-orange-500',
+  },
 };
 
 function TelegramHealthIndicator({
   triggeredAt,
   hasFindings,
+  hasNotFoundDiagnostic = false,
 }: {
   triggeredAt: string | null | undefined;
   hasFindings: boolean;
+  hasNotFoundDiagnostic?: boolean;
 }) {
-  const status = getWorkerStatus(triggeredAt, hasFindings);
+  const status = getWorkerStatus(triggeredAt, hasFindings, hasNotFoundDiagnostic);
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
 
@@ -808,7 +819,22 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
     hasTelegramData,
   } = useTelegramFindings(scanId);
 
-  const grouped = useMemo(() => groupByKind(findings), [findings]);
+  // Detect the 'not_found' diagnostic finding written by telegram-proxy
+  const hasNotFoundDiagnostic = useMemo(
+    () => findings.some(f => f.kind === 'telegram.not_found'),
+    [findings],
+  );
+
+  // Real findings exclude the diagnostic sentinel
+  const realFindings = useMemo(
+    () => findings.filter(f => f.kind !== 'telegram.not_found'),
+    [findings],
+  );
+
+  const hasRealData = realFindings.length > 0;
+
+  // Group real findings by kind (hoisted before any early returns)
+  const groupedReal = useMemo(() => groupByKind(realFindings), [realFindings]);
 
   if (loading) {
     return (
@@ -818,10 +844,14 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
     );
   }
 
-  if (!hasTelegramData) {
+  if (!hasRealData) {
     return (
       <div className="space-y-4">
-        <TelegramHealthIndicator triggeredAt={telegramTriggeredAt} hasFindings={false} />
+        <TelegramHealthIndicator
+          triggeredAt={telegramTriggeredAt}
+          hasFindings={false}
+          hasNotFoundDiagnostic={hasNotFoundDiagnostic}
+        />
         <div className="py-8 text-center space-y-3">
           <Send className="h-8 w-8 text-muted-foreground/40 mx-auto" />
           <p className="text-sm text-muted-foreground">No Telegram data found for this scan.</p>
@@ -836,12 +866,13 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
     );
   }
 
-  const profileFindings = grouped['profile'] || grouped['profile_presence'] || grouped['telegram_username'] || [];
-  const channelProfileFindings = grouped['channel_profile'] || [];
-  const channelFindings = grouped['channel'] || grouped['channel_footprint'] || [];
-  const activityIntelFindings = grouped['activity_intel'] || [];
-  const entityFindings = grouped['entity'] || grouped['related_entity'] || [];
-  const phoneFindings = grouped['phone_presence'] || [];
+
+  const profileFindings = groupedReal['profile'] || groupedReal['profile_presence'] || groupedReal['telegram_username'] || [];
+  const channelProfileFindings = groupedReal['channel_profile'] || [];
+  const channelFindings = groupedReal['channel'] || groupedReal['channel_footprint'] || [];
+  const activityIntelFindings = groupedReal['activity_intel'] || [];
+  const entityFindings = groupedReal['entity'] || groupedReal['related_entity'] || [];
+  const phoneFindings = groupedReal['phone_presence'] || [];
 
   return (
     <div className="space-y-4">
@@ -851,7 +882,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
           <Send className="h-5 w-5 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Telegram Intelligence</h3>
           <Badge variant="secondary" className="text-[10px] h-4 px-1">
-            {findings.length} finding{findings.length !== 1 ? 's' : ''}
+            {realFindings.length} finding{realFindings.length !== 1 ? 's' : ''}
           </Badge>
           <PublicDataBadge />
         </div>
@@ -862,7 +893,11 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
       </div>
 
       {/* Worker health indicator */}
-      <TelegramHealthIndicator triggeredAt={telegramTriggeredAt} hasFindings={hasTelegramData} />
+      <TelegramHealthIndicator
+        triggeredAt={telegramTriggeredAt}
+        hasFindings={hasRealData}
+        hasNotFoundDiagnostic={hasNotFoundDiagnostic}
+      />
 
       {/* Cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
