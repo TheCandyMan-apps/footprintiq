@@ -412,6 +412,21 @@ serve(async (req) => {
       }
     }
 
+    // ====== TELEGRAM SOURCE GUARD ======
+    // Telegram callbacks are partial results — store findings but do NOT finalize the scan.
+    // The main OSINT workflow (Sherlock → GoSearch → Maigret → WhatsMyName) will call this
+    // endpoint again when ALL providers have finished, at which point finalization proceeds.
+    const isTelegramCallback = body.source === 'telegram' || body.source === 'telegram-proxy';
+    if (isTelegramCallback) {
+      console.log(`[n8n-scan-results] Telegram callback for ${scanId} — findings stored, scan NOT finalized`);
+      return new Response(JSON.stringify({
+        accepted: true,
+        finalized: false,
+        reason: 'telegram_partial_results',
+        findingsStored: findingsToInsert?.length || 0,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     // Compute per-provider stats from findings if providerResults not provided
     let computedProviderResults: Record<string, { status: string; count: number; duration_ms?: number; error?: string }> = {};
     
