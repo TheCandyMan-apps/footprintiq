@@ -11,12 +11,12 @@
  * Tier gating: Free users see the Profile card + locked preview placeholders.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye } from 'lucide-react';
+import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, Activity, AlertTriangle, TrendingUp, Link } from 'lucide-react';
 import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFindings';
 
 interface TelegramTabProps {
@@ -231,7 +231,7 @@ function PhonePresenceCard({ findings }: { findings: TelegramFinding[] }) {
     <Card className="border-border/40">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <Phone className="h-4 w-4 text-[hsl(var(--primary))]" />
+          <Phone className="h-4 w-4 text-primary" />
           <CardTitle className="text-sm">Phone Presence</CardTitle>
           <Badge variant="outline" className="text-[10px] h-4 px-1 border-primary/30 text-primary">Pro</Badge>
         </div>
@@ -246,6 +246,173 @@ function PhonePresenceCard({ findings }: { findings: TelegramFinding[] }) {
         </div>
         {lastSeen && (
           <p className="text-xs text-muted-foreground">Last seen: {lastSeen}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChannelProfileCard({ findings }: { findings: TelegramFinding[] }) {
+  const f = findings[0];
+  if (!f) return null;
+
+  const ev = (k: string) => getEv(f, k) || f.meta?.[k];
+  const title = ev('title') || ev('channel_name') || ev('username') || '—';
+  const username = ev('username') || '';
+  const subscribers = ev('subscriber_count') || ev('members_count') || ev('participants_count');
+  const totalMessages = ev('total_messages') || ev('message_count');
+  const description = ev('description') || ev('bio') || ev('about') || '';
+  const linkedChannels: any[] = Array.isArray(f.meta?.linked_channels) ? f.meta.linked_channels : [];
+
+  return (
+    <Card className="border-border/40">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-2">
+          <Hash className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">Channel Profile</CardTitle>
+          <PublicDataBadge />
+        </div>
+        <CardDescription className="text-xs">Public channel metadata from Telegram</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <div>
+          <p className="font-medium text-foreground">{title}</p>
+          {username && <p className="text-xs text-muted-foreground">@{username}</p>}
+          {description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>}
+        </div>
+        <div className="flex flex-wrap gap-3 text-xs">
+          {subscribers && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Users className="h-3 w-3" />
+              <span>{Number(subscribers).toLocaleString()} subscribers</span>
+            </div>
+          )}
+          {totalMessages && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Send className="h-3 w-3" />
+              <span>{Number(totalMessages).toLocaleString()} messages</span>
+            </div>
+          )}
+        </div>
+        {linkedChannels.length > 0 && (
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
+              <Link className="h-2.5 w-2.5" /> Linked Channels
+            </p>
+            <ul className="space-y-0.5">
+              {linkedChannels.slice(0, 4).map((lc: any, i: number) => (
+                <li key={i} className="text-xs text-muted-foreground truncate">
+                  {lc.username ? `@${lc.username}` : lc.title || lc}
+                </li>
+              ))}
+              {linkedChannels.length > 4 && (
+                <li className="text-[10px] text-muted-foreground">+{linkedChannels.length - 4} more</li>
+              )}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActivityIntelCard({ findings }: { findings: TelegramFinding[] }) {
+  const f = findings[0];
+  if (!f) return null;
+
+  const ev = (k: string) => getEv(f, k) || f.meta?.[k];
+  const riskScore = Number(ev('risk_score') ?? ev('risk') ?? 0);
+  const postFrequency = ev('post_frequency') || ev('posts_per_day') || ev('avg_posts_per_day');
+  const peakHour = ev('peak_hour') || ev('peak_posting_hour');
+  const linkDensity = ev('link_density') || ev('links_per_post');
+  const contentTypes: any = f.meta?.content_classification || f.meta?.content_types || {};
+  const riskIndicators: string[] = Array.isArray(f.meta?.risk_indicators) ? f.meta.risk_indicators : [];
+
+  const riskColor =
+    riskScore >= 70 ? 'text-destructive' :
+    riskScore >= 40 ? 'text-yellow-500 dark:text-yellow-400' :
+    'text-green-600 dark:text-green-400';
+
+  const riskBg =
+    riskScore >= 70 ? 'bg-destructive/10' :
+    riskScore >= 40 ? 'bg-yellow-500/10' :
+    'bg-green-500/10';
+
+  return (
+    <Card className="border-border/40">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">Activity Intelligence</CardTitle>
+          <Badge variant="outline" className="text-[10px] h-4 px-1 border-primary/30 text-primary">Pro</Badge>
+        </div>
+        <CardDescription className="text-xs">Behavioural analysis and risk indicators</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {/* Risk Score */}
+        {riskScore > 0 && (
+          <div className={`flex items-center gap-3 rounded-md px-3 py-2 ${riskBg}`}>
+            <AlertTriangle className={`h-4 w-4 shrink-0 ${riskColor}`} />
+            <div>
+              <p className={`font-semibold ${riskColor}`}>Risk Score: {riskScore}/100</p>
+              <p className="text-[10px] text-muted-foreground">
+                {riskScore >= 70 ? 'High risk signals detected' : riskScore >= 40 ? 'Moderate risk signals' : 'Low risk profile'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Posting Cadence */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
+          {postFrequency && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              <span>{postFrequency} posts/day avg</span>
+            </div>
+          )}
+          {peakHour && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Activity className="h-3 w-3" />
+              <span>Peak: {peakHour}:00 UTC</span>
+            </div>
+          )}
+          {linkDensity && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Link className="h-3 w-3" />
+              <span>{typeof linkDensity === 'number' ? linkDensity.toFixed(2) : linkDensity} links/post</span>
+            </div>
+          )}
+        </div>
+
+        {/* Content classification */}
+        {Object.keys(contentTypes).length > 0 && (
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Content Mix</p>
+            <div className="flex flex-wrap gap-1">
+              {Object.entries(contentTypes).slice(0, 5).map(([type, pct]: [string, any]) => (
+                <Badge key={type} variant="secondary" className="text-[10px] h-4 px-1.5 capitalize">
+                  {type}: {typeof pct === 'number' ? `${Math.round(pct * 100)}%` : pct}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Risk indicators list */}
+        {riskIndicators.length > 0 && (
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
+              <AlertTriangle className="h-2.5 w-2.5" /> Risk Indicators
+            </p>
+            <ul className="space-y-0.5">
+              {riskIndicators.slice(0, 4).map((r, i) => (
+                <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-destructive/60 mt-1.5 shrink-0" />
+                  {r}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -347,7 +514,9 @@ export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
   }
 
   const profileFindings = grouped['profile'] || grouped['profile_presence'] || grouped['telegram_username'] || [];
+  const channelProfileFindings = grouped['channel_profile'] || [];
   const channelFindings = grouped['channel'] || grouped['channel_footprint'] || [];
+  const activityIntelFindings = grouped['activity_intel'] || [];
   const entityFindings = grouped['entity'] || grouped['related_entity'] || [];
   const phoneFindings = grouped['phone_presence'] || [];
 
@@ -372,6 +541,24 @@ export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
         {profileFindings.length > 0 ? (
           <ProfileCard findings={profileFindings} />
         ) : null}
+
+        {/* Channel Profile – always visible (new worker output) */}
+        {channelProfileFindings.length > 0 ? (
+          <ChannelProfileCard findings={channelProfileFindings} />
+        ) : null}
+
+        {/* Activity Intelligence – Pro only (new worker output) */}
+        {isPro ? (
+          activityIntelFindings.length > 0 ? (
+            <ActivityIntelCard findings={activityIntelFindings} />
+          ) : null
+        ) : (
+          <LockedCard
+            icon={Activity}
+            title="Activity Intelligence"
+            description="Behavioural analysis, posting cadence, and risk indicators"
+          />
+        )}
 
         {/* Channel Footprints – Pro only */}
         {isPro ? (
@@ -404,8 +591,8 @@ export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
           <GraphSummaryCard
             scanId={scanId}
             loadArtifact={loadArtifact}
-            artifact={artifacts['graph']}
-            isLoading={artifactLoading['graph'] || false}
+            artifact={artifacts['relationship_graph']}
+            isLoading={artifactLoading['relationship_graph'] || false}
           />
         ) : (
           <LockedCard
