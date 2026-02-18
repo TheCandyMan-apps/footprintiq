@@ -70,6 +70,29 @@ const Auth = () => {
     return '/dashboard';
   }, []);
 
+  // Claim anonymous scan after signup
+  const claimAnonymousScan = useCallback(async (userId: string) => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const claimScanId = searchParams.get('claim');
+      if (!claimScanId) return;
+
+      const { error } = await supabase
+        .from('scans')
+        .update({ user_id: userId, claimed: true })
+        .eq('id', claimScanId)
+        .is('user_id', null); // Only claim if still unclaimed
+
+      if (!error) {
+        console.log('[Auth] Anonymous scan claimed:', claimScanId);
+        sessionStorage.removeItem('fpiq_anon_scan_id');
+        sessionStorage.removeItem('fpiq_anon_target');
+      }
+    } catch (err) {
+      console.warn('[Auth] Failed to claim anonymous scan:', err);
+    }
+  }, []);
+
   useEffect(() => {
     const safeRedirect = getRedirectTarget();
     
@@ -215,6 +238,7 @@ const Auth = () => {
 
       if (authData.session) {
         setAwaitingEmailConfirmation(false);
+        await claimAnonymousScan(authData.session.user.id);
         setTimeout(() => navigate(getRedirectTarget()), 250);
       } else {
         setAwaitingEmailConfirmation(true);

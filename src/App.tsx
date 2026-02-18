@@ -31,6 +31,7 @@ import NotFound from "./pages/NotFound";
 
 // Lazy-loaded pages (loaded on demand)
 const ScanPage = lazy(() => import("./pages/ScanPage"));
+const AnonScanPage = lazy(() => import("./pages/AnonScanPage"));
 const ResultsDetail = lazy(() => import("./pages/ResultsDetail"));
 const AnomalyHistory = lazy(() => import("./pages/AnomalyHistory"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -431,6 +432,7 @@ function RouterContent() {
             <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/scan" element={<ScanPage />} />
+          <Route path="/free-scan" element={<AnonScanPage />} />
           <Route path="/advanced" element={<Navigate to="/scan" replace />} />
           <Route path="/new-scan" element={<Navigate to="/scan" replace />} />
           <Route path="/scan-history" element={<Navigate to="/dashboard" replace />} />
