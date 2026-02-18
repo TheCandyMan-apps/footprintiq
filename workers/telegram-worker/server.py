@@ -678,6 +678,7 @@ async def handle_activity_intel(payload: dict) -> dict:
 # ── HTTP Server ──────────────────────────────────────────────────
 
 ROUTES = {
+    "/telegram/username":       handle_channel_scrape,   # username scans alias to channel_scrape
     "/telegram/channel-scrape": handle_channel_scrape,
     "/telegram/activity-intel": handle_activity_intel,
 }

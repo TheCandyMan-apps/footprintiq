@@ -330,6 +330,7 @@ serve(async (req: Request) => {
     switch (typedAction) {
       case "username":
         workerPayload.username = username.trim();
+        workerPayload.channel = username.trim();  // handle_channel_scrape reads 'channel' field
         break;
       case "phone_presence":
         workerPayload.phoneE164 = phoneE164;
