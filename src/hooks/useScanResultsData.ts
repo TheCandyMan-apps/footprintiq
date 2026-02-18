@@ -37,6 +37,7 @@ export interface ScanJob {
   error: string | null;
   all_sites: boolean;
   requested_by: string | null;
+  telegram_triggered_at?: string | null;
 }
 
 export interface TabCounts {

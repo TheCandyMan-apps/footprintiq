@@ -349,7 +349,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     try {
       const { data: scanData } = await supabase
         .from('scans')
-        .select('id, username, email, phone, scan_type, status, created_at, completed_at, user_id')
+        .select('id, username, email, phone, scan_type, status, created_at, completed_at, user_id, telegram_triggered_at')
         .eq('id', jobId)
         .maybeSingle();
 
@@ -367,7 +367,8 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
           finished_at: scanData.completed_at || null,
           error: null,
           all_sites: false,
-          requested_by: scanData.user_id
+          requested_by: scanData.user_id,
+          telegram_triggered_at: (scanData as any).telegram_triggered_at || null,
         };
         setJob(mappedJob);
         setJobLoading(false);
@@ -547,7 +548,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
           /* Phone scan with Telegram findings but no OSINT results — show Telegram card directly */
           <div className="mt-4">
             <Suspense fallback={<TabSkeleton />}>
-              <TelegramTab scanId={jobId} isPro={true} />
+              <TelegramTab scanId={jobId} isPro={true} telegramTriggeredAt={job?.telegram_triggered_at} />
             </Suspense>
           </div>
         ) : results.length === 0 ? (
@@ -640,7 +641,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
 
                 <TabsContent value="telegram" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
-                    <TelegramTab scanId={jobId} isPro={true} scanType={job?.scan_type} />
+                    <TelegramTab scanId={jobId} isPro={true} scanType={job?.scan_type} telegramTriggeredAt={job?.telegram_triggered_at} />
                   </Suspense>
                 </TabsContent>
 
