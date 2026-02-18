@@ -140,8 +140,13 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
-    if (status) {
-      updateData.status = status;
+    // GUARD: If n8n sends status='completed' with no provider, it means the workflow
+    // finished orchestrating — but the results webhook hasn't fired yet.
+    // Don't write 'completed' here; let n8n-scan-results handle finalization.
+    const effectiveStatus = (status === 'completed' && !provider) ? 'running' : status;
+
+    if (effectiveStatus) {
+      updateData.status = effectiveStatus;
     } else if (currentProgress?.status) {
       // Preserve existing status when not explicitly provided
       updateData.status = currentProgress.status;
