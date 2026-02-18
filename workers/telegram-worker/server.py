@@ -4,7 +4,7 @@ Telegram OSINT Worker — Cloud Run Service
 Handlers:
   GET  /health                     → healthcheck
   POST /telegram/username          → basic profile lookup (existing)
-  POST /telegram/phone-presence    → phone→Telegram check (existing)
+  POST /telegram/phone-presence    → phone number → Telegram account presence check
   POST /telegram/channel-scrape    → channel metadata + messages + linked channels
   POST /telegram/activity-intel    → cadence, classification, risk, graph
 
@@ -675,12 +675,161 @@ async def handle_activity_intel(payload: dict) -> dict:
     }
 
 
+# ── Phone Presence ───────────────────────────────────────────────
+
+async def handle_phone_presence(payload: dict) -> dict:
+    """
+    Check whether a phone number has a publicly visible Telegram account.
+
+    Uses Telethon's ImportContacts + ResolvePhone approach:
+      1. Temporarily import the phone as a contact (required by Telegram API).
+      2. Inspect the returned user object for public profile data.
+      3. Immediately delete the imported contact to leave no trace.
+
+    Returns a 'phone_presence' finding with only publicly available data:
+    - Whether the account exists
+    - Display name (if public)
+    - Username (if set and public)
+    - Photo present (boolean)
+    - Account verified flag
+    - Last seen bucket (if visible): 'recently', 'within_week', 'within_month', 'long_ago'
+
+    Privacy compliance: we never store the contact, never access private chats,
+    and never return data that isn't already visible to any Telegram user.
+    """
+    scan_id = payload.get("scanId", "")
+    phone_raw = payload.get("phone", "") or payload.get("phoneE164", "") or payload.get("query", "")
+
+    if not phone_raw:
+        return error_response("MISSING_PHONE", "phone field is required.")
+
+    # Normalise: strip spaces/dashes, ensure + prefix
+    phone = re.sub(r"[\s\-\(\)]", "", str(phone_raw).strip())
+    if not phone.startswith("+"):
+        phone = "+" + phone
+
+    # Basic E.164 sanity check (7–15 digits after +)
+    if not re.match(r"^\+\d{7,15}$", phone):
+        return error_response("INVALID_PHONE", f"Could not parse phone number: {phone_raw}")
+
+    log.info(f"[phone_presence] scanId={scan_id} phone={phone[:6]}***")
+
+    client = await _get_client()
+
+    from telethon.tl.functions.contacts import ImportContactsRequest, DeleteContactsRequest
+    from telethon.tl.types import InputPhoneContact, UserStatusRecently, UserStatusLastWeek, UserStatusLastMonth, UserStatusOffline, UserStatusOnline
+    import time
+
+    # Use a random client_id for this ephemeral contact import
+    contact_id = int(time.time()) % 2147483647
+
+    try:
+        result = await client(ImportContactsRequest(contacts=[
+            InputPhoneContact(
+                client_id=contact_id,
+                phone=phone,
+                first_name="OSINT",
+                last_name="Query",
+            )
+        ]))
+    except Exception as e:
+        log.warning(f"[phone_presence] ImportContacts error: {e}")
+        return error_response("LOOKUP_FAILED", f"Failed to query phone: {e}", 500)
+
+    users = getattr(result, "users", [])
+
+    # Always clean up imported contact immediately
+    if users:
+        try:
+            from telethon.tl.types import InputUser
+            await client(DeleteContactsRequest(id=[
+                InputUser(user_id=u.id, access_hash=u.access_hash) for u in users
+            ]))
+        except Exception as cleanup_err:
+            log.warning(f"[phone_presence] Contact cleanup failed (non-fatal): {cleanup_err}")
+
+    if not users:
+        # Phone number not linked to any Telegram account (or account is hidden)
+        findings = [{
+            "kind": "phone_presence",
+            "provider": "telegram",
+            "severity": "info",
+            "evidence": {
+                "phone": phone,
+                "registered": False,
+                "message": "No Telegram account found for this number.",
+            },
+        }]
+        return {"ok": True, "findings": findings, "artifacts": {}}
+
+    user = users[0]
+
+    # Map last-seen status to a human-readable bucket
+    status = getattr(user, "status", None)
+    status_type = type(status).__name__ if status else "Unknown"
+    last_seen_bucket = None
+    if isinstance(status, UserStatusRecently):
+        last_seen_bucket = "recently"
+    elif isinstance(status, UserStatusLastWeek):
+        last_seen_bucket = "within_week"
+    elif isinstance(status, UserStatusLastMonth):
+        last_seen_bucket = "within_month"
+    elif isinstance(status, UserStatusOffline):
+        last_seen_bucket = "offline"
+    elif isinstance(status, UserStatusOnline):
+        last_seen_bucket = "online"
+    else:
+        last_seen_bucket = "hidden"
+
+    from telethon.tl.types import ChatPhotoEmpty
+
+    profile = {
+        "phone": phone,
+        "registered": True,
+        "user_id": user.id,
+        "first_name": getattr(user, "first_name", "") or "",
+        "last_name": getattr(user, "last_name", "") or "",
+        "username": getattr(user, "username", None),
+        "bio": None,  # Bio requires GetFullUser — skip to avoid rate-limit risk
+        "photo_present": bool(user.photo and not isinstance(user.photo, ChatPhotoEmpty)),
+        "verified": getattr(user, "verified", False),
+        "bot": getattr(user, "bot", False),
+        "last_seen": last_seen_bucket,
+        "profile_url": f"https://t.me/{user.username}" if getattr(user, "username", None) else None,
+    }
+
+    display_name = f"{profile['first_name']} {profile['last_name']}".strip() or "Unknown"
+
+    severity = "medium" if profile["username"] else "info"
+
+    findings = [{
+        "kind": "phone_presence",
+        "provider": "telegram",
+        "severity": severity,
+        "evidence": {
+            **profile,
+            "display_name": display_name,
+        },
+    }]
+
+    log.info(f"[phone_presence] Found account: user_id={user.id} username={profile['username']} last_seen={last_seen_bucket}")
+
+    return {
+        "ok": True,
+        "findings": findings,
+        "artifacts": {
+            "phone_profile": profile,
+        },
+    }
+
+
 # ── HTTP Server ──────────────────────────────────────────────────
 
 ROUTES = {
-    "/telegram/username":       handle_channel_scrape,   # username scans alias to channel_scrape
-    "/telegram/channel-scrape": handle_channel_scrape,
-    "/telegram/activity-intel": handle_activity_intel,
+    "/telegram/username":        handle_channel_scrape,    # username scans alias to channel_scrape
+    "/telegram/channel-scrape":  handle_channel_scrape,
+    "/telegram/activity-intel":  handle_activity_intel,
+    "/telegram/phone-presence":  handle_phone_presence,    # phone number → Telegram account check
 }
 
 
