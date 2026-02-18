@@ -1,126 +1,132 @@
 
-## Wiring Telegram Phone Presence into the Phone Scan Pipeline
+## Add last_seen Badge to ChannelProfileCard
 
-### What's Already Built
-The `handle_phone_presence` handler in the Telegram Cloud Run worker is **fully implemented** and wired into the worker's `ROUTES`. The `telegram-proxy` edge function already validates `phone_presence` requests and routes them correctly. Both pieces are production-ready.
+### What's Currently There
 
-### What's Missing: The Trigger
+The `ChannelProfileCard` component (lines 255–317 in `TelegramTab.tsx`) renders:
+- Channel title, username, description
+- Subscriber count and message count stats
+- Linked channels list
 
-The `n8n-scan-trigger` edge function already builds a `telegramOptions` object for phone scans (with `action: 'phone_presence'`, `phoneE164`, and `consentConfirmed: true`), but it **only passes this data to the n8n workflow** — it never directly calls `telegram-proxy` for phone scans. The dedicated Telegram trigger block (lines 575–630 in `n8n-scan-trigger`) only activates for `scanType === 'username'`. There is no equivalent block for `scanType === 'phone'`.
+It does **not** extract or display `last_seen_bucket` — the field returned by the `handle_username_lookup` worker for personal accounts (e.g., `recently`, `within_week`, `within_month`, `long_ago`, `hidden`).
 
-Additionally, the `ARTIFACT_KEYS` array in `telegram-proxy/index.ts` does not include `phone_profile` — the artifact key returned by `handle_phone_presence` — so that data would never be persisted to `scan_artifacts`.
+By contrast, the `PhonePresenceCard` (lines 223–253) reads `last_seen` from the evidence but renders it as raw text (`Last seen: {lastSeen}`) with no colour coding, icon, or structured badge.
 
 ---
 
-### Files to Change
+### The Fix: One File, Two Improvements
 
-| File | Change |
-|---|---|
-| `supabase/functions/n8n-scan-trigger/index.ts` | Add a parallel Telegram phone-presence trigger block (fire-and-forget) for `scanType === 'phone'` on Pro+ tiers |
-| `supabase/functions/telegram-proxy/index.ts` | Add `phone_profile` to `ARTIFACT_KEYS` so `handle_phone_presence` results are persisted |
+**File:** `src/components/scan/results-tabs/TelegramTab.tsx`
+
+#### Change 1 — `ChannelProfileCard`: Add a `LastSeenBadge` inline component
+
+Extract `last_seen_bucket` (and fall back to `last_seen`) from the finding's evidence/meta, then render a colour-coded badge immediately after the title/username block.
+
+**Bucket → Badge mapping:**
+
+| Bucket value | Label | Colour | Icon |
+|---|---|---|---|
+| `recently` | Active Recently | Green | `Clock` |
+| `within_week` | Active This Week | Lime/teal | `Clock` |
+| `within_month` | Active This Month | Amber | `Clock` |
+| `long_ago` | Last Seen Long Ago | Muted/slate | `Clock` |
+| `hidden` / `unknown` | Last Seen Hidden | Muted | `EyeOff` |
+
+#### Change 2 — `PhonePresenceCard`: Upgrade raw text to the same badge
+
+The `PhonePresenceCard` currently renders `Last seen: {lastSeen}` as plain text. Swap this for the same `LastSeenBadge` so both cards are visually consistent.
+
+#### Change 3 — Add `Clock` and `EyeOff` to the import list
+
+These two icons from `lucide-react` are needed for the badge. `EyeOff` is already used elsewhere in the file (line 19 shows `Eye` is imported); `Clock` needs to be added.
 
 ---
 
 ### Technical Detail
 
-#### 1. `n8n-scan-trigger`: New Telegram Phone Block
-
-After the existing `phone-intel` parallel call (lines ~539–573), add a new block that fires `telegram-proxy` directly (fire-and-forget) for Pro+ phone scans:
+#### Reusable `LastSeenBadge` component (inline, not exported)
 
 ```typescript
-// ==================== TELEGRAM PHONE PRESENCE (fire-and-forget, Pro+ only) ====================
-// For phone scans on Pro+ tier, call telegram-proxy to check if the phone
-// has a Telegram account. This runs in parallel with phone-intel and n8n.
-if (scanType === 'phone' && targetValue && effectiveTier !== 'free') {
-  console.log(`[n8n-scan-trigger] Triggering Telegram phone-presence for scan ${scan.id}`);
-  
-  fetch(`${supabaseUrl}/functions/v1/telegram-proxy`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${serviceRoleKey}`,   // uses service role for internal call
-      'x-n8n-key': Deno.env.get('N8N_GATEWAY_KEY') || '',
-    },
-    body: JSON.stringify({
-      action: 'phone_presence',
-      scanId: scan.id,
-      workspaceId: workspaceId,
-      userId: user.id,
-      tier: effectiveTier,
-      phoneE164: targetValue,
-      consentConfirmed: true,
-      lawfulBasis: 'legitimate_interest',
-    }),
-  })
-    .then(res => console.log(`[n8n-scan-trigger] Telegram phone-presence responded: ${res.status}`))
-    .catch(err => console.error(`[n8n-scan-trigger] Telegram phone-presence error: ${err.message}`));
-    
-  console.log(`[n8n-scan-trigger] Telegram phone-presence triggered (fire-and-forget)`);
+const LAST_SEEN_CONFIG: Record<string, {
+  label: string;
+  className: string;
+  icon: 'clock' | 'eye-off';
+}> = {
+  recently:      { label: 'Active Recently',     className: 'bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400', icon: 'clock' },
+  within_week:   { label: 'Active This Week',    className: 'bg-teal-500/15 text-teal-600 border-teal-500/30 dark:text-teal-400',   icon: 'clock' },
+  within_month:  { label: 'Active This Month',   className: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400', icon: 'clock' },
+  long_ago:      { label: 'Last Seen Long Ago',  className: 'bg-muted text-muted-foreground border-border',                           icon: 'clock' },
+  hidden:        { label: 'Last Seen Hidden',    className: 'bg-muted text-muted-foreground border-border',                           icon: 'eye-off' },
+  unknown:       { label: 'Last Seen Unknown',   className: 'bg-muted text-muted-foreground border-border',                           icon: 'eye-off' },
+};
+
+function LastSeenBadge({ bucket }: { bucket: string }) {
+  const key = (bucket || '').toLowerCase().replace(/\s+/g, '_');
+  const cfg = LAST_SEEN_CONFIG[key] ?? LAST_SEEN_CONFIG['unknown'];
+  const Icon = cfg.icon === 'clock' ? Clock : EyeOff;
+
+  return (
+    <Badge variant="outline" className={`gap-1 h-5 px-1.5 text-[10px] font-medium ${cfg.className}`}>
+      <Icon className="w-2.5 h-2.5" />
+      {cfg.label}
+    </Badge>
+  );
 }
 ```
 
-**Why call `telegram-proxy` directly (not via n8n)?**
-The phone scan n8n workflow's Telegram node would need `consentConfirmed` and E.164 formatting passed correctly. The existing pattern for Telegram username avoids this by having its own dedicated n8n workflow. For phone, calling `telegram-proxy` directly from `n8n-scan-trigger` mirrors the `email-intel` and `phone-intel` parallel call pattern — simpler, faster, no n8n dependency.
+#### `ChannelProfileCard` — where the badge is inserted
 
-**Why use `N8N_GATEWAY_KEY` as the `x-n8n-key` header?**
-`telegram-proxy` authenticates via `x-n8n-key` (matching `N8N_GATEWAY_KEY`). Since this is an internal service-to-service call, using the gateway key is the correct auth path without requiring a user JWT. The `N8N_GATEWAY_KEY` secret is already configured.
+The badge renders inside the existing title block, right after the `@username` line:
 
-**What about `n8n-scan-results` finalization?**
-`telegram-proxy` does NOT call `n8n-scan-results` — it stores findings directly in the `findings` table and artifacts in `scan_artifacts` via the service client inside `telegram-proxy/index.ts`. No scan finalization risk.
+```tsx
+{/* existing */}
+<p className="font-medium text-foreground">{title}</p>
+{username && <p className="text-xs text-muted-foreground">@{username}</p>}
 
-#### 2. `telegram-proxy`: Add `phone_profile` to `ARTIFACT_KEYS`
+{/* NEW */}
+{lastSeenBucket && (
+  <div className="mt-1.5">
+    <LastSeenBadge bucket={lastSeenBucket} />
+  </div>
+)}
+```
 
-The existing `ARTIFACT_KEYS` array only covers channel-related artifacts. `handle_phone_presence` returns `artifacts: { phone_profile: {...} }`. Add `phone_profile` so it gets persisted:
+The `lastSeenBucket` value is extracted as:
 
 ```typescript
-const ARTIFACT_KEYS: Array<{ key: string; type: string }> = [
-  { key: "channel_metadata", type: "channel_metadata" },
-  { key: "channel_messages", type: "channel_messages" },
-  { key: "linked_channels", type: "linked_channels" },
-  { key: "activity_analysis", type: "activity_analysis" },
-  { key: "risk_indicators", type: "risk_indicators" },
-  { key: "relationship_graph", type: "relationship_graph" },
-  { key: "channel_profile", type: "channel_profile" },   // personal account profile (username lookup)
-  { key: "phone_profile", type: "phone_profile" },       // ADD THIS — phone presence result
-];
+const lastSeenBucket = ev('last_seen_bucket') || ev('last_seen') || f.meta?.last_seen_bucket || f.meta?.last_seen || '';
+```
+
+This ensures compatibility with both the new `handle_username_lookup` output (`last_seen_bucket`) and any older scan data that stored a plain `last_seen` value.
+
+#### `PhonePresenceCard` — upgrade the raw text
+
+Replace:
+```tsx
+{lastSeen && (
+  <p className="text-xs text-muted-foreground">Last seen: {lastSeen}</p>
+)}
+```
+
+With:
+```tsx
+{lastSeen && (
+  <div className="flex items-center gap-2">
+    <span className="text-muted-foreground">Last seen:</span>
+    <LastSeenBadge bucket={lastSeen} />
+  </div>
+)}
 ```
 
 ---
 
-### Data Flow After the Fix
+### Summary of Changes
 
-```text
-User triggers phone scan (Pro+)
-         │
-         ▼
-n8n-scan-trigger
-    ├─ fire n8n workflow (PhoneInfoga)      → n8n-scan-results (finalises)
-    ├─ fire phone-intel (parallel)          → writes findings directly
-    └─ fire telegram-proxy (new, parallel)  → telegram-worker /telegram/phone-presence
-                                                     │
-                                                     ▼
-                                            findings → findings table
-                                            artifacts → scan_artifacts (phone_profile)
-```
+| File | Lines Changed | What |
+|---|---|---|
+| `src/components/scan/results-tabs/TelegramTab.tsx` | Line 19 | Add `Clock`, `EyeOff` to lucide imports |
+| `src/components/scan/results-tabs/TelegramTab.tsx` | After line 222 | Add `LAST_SEEN_CONFIG` map + `LastSeenBadge` component |
+| `src/components/scan/results-tabs/TelegramTab.tsx` | Lines 255–317 (`ChannelProfileCard`) | Extract `lastSeenBucket`, render `LastSeenBadge` |
+| `src/components/scan/results-tabs/TelegramTab.tsx` | Lines 223–253 (`PhonePresenceCard`) | Replace raw text with `LastSeenBadge` |
 
-### What the UI Gets
-
-The `phone_presence` finding kind is already handled in the existing phone results UI — it returns:
-- `registered: true/false`
-- `display_name`, `username` (if public)
-- `photo_present`, `verified`, `bot`
-- `last_seen` bucket (recently / within_week / within_month / offline / hidden)
-- `profile_url` (if username is public)
-
-No UI changes are required — the findings schema is already compatible with the phone results view.
-
-### Tier Gating
-
-The block only runs when `effectiveTier !== 'free'`. `telegram-proxy` enforces a secondary Pro+ gate on `phone_presence` (`ACTION_TIER_GATE.phone_presence = "pro"`), providing defense in depth.
-
-### Privacy & Ethics
-
-- The E.164 phone number is the target the user has already submitted for scanning
-- `handle_phone_presence` uses ephemeral contact import (deleted immediately after lookup)
-- Only public Telegram profile data is returned — no private messages, no contact lists
-- The worker logs `phone[:6]***` to avoid storing full numbers in logs
+No new files, no backend changes, no new dependencies. All changes are confined to one component file.
