@@ -21,6 +21,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob } from '@/hooks/useScanResultsData';
+import { useTelegramFindings } from '@/hooks/useTelegramFindings';
 import { exportResultsToJSON, exportResultsToCSV } from '@/utils/exporters';
 import { generateInvestigationReport } from '@/lib/investigationReportPDF';
 import { ScanProgress } from './ScanProgress';
@@ -215,6 +216,9 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     breachResults,
     refetch: refetchResults
   } = useScanResultsData(jobId);
+
+  // Telegram findings – always fetched so Telegram tab shows even for zero-OSINT scans
+  const { hasTelegramData, loading: telegramLoading } = useTelegramFindings(jobId);
 
   // Calculate timeline event count for conditional visibility
   const timelineEventCount = useMemo(() => {
@@ -533,6 +537,18 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
             <p className="text-sm text-muted-foreground">
               {job.status === 'running' ? 'Scanning in progress...' : 'Loading results...'}
             </p>
+          </div>
+        ) : results.length === 0 && telegramLoading ? (
+          /* Still waiting to see if there are Telegram-only findings */
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : results.length === 0 && hasTelegramData ? (
+          /* Phone scan with Telegram findings but no OSINT results — show Telegram card directly */
+          <div className="mt-4">
+            <Suspense fallback={<TabSkeleton />}>
+              <TelegramTab scanId={jobId} isPro={true} />
+            </Suspense>
           </div>
         ) : results.length === 0 ? (
           <div className="py-12">
