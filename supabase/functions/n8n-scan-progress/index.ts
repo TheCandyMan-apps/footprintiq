@@ -270,8 +270,12 @@ serve(async (req) => {
         console.log(`[n8n-scan-progress] Step broadcast sent: step ${step}`);
       }
 
-      // Broadcast scan completion if status is final
-      if (status === 'completed' || status === 'completed_partial' || status === 'completed_empty') {
+      // Broadcast scan completion ONLY when the whole workflow is done (no specific provider).
+      // Provider-level 'completed' events must NOT trigger scan_complete — only the final
+      // workflow-level signal (provider=undefined/null, status='completed') should do so.
+      // That signal is now sent by n8n-scan-results after all findings are stored.
+      const isWorkflowLevelCompletion = (status === 'completed' || status === 'completed_partial' || status === 'completed_empty') && !provider;
+      if (isWorkflowLevelCompletion) {
         await channel.send({
           type: 'broadcast',
           event: 'scan_complete',
