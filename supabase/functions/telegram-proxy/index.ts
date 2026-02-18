@@ -444,6 +444,8 @@ serve(async (req: Request) => {
       { key: "activity_analysis", type: "activity_analysis" },
       { key: "risk_indicators", type: "risk_indicators" },
       { key: "relationship_graph", type: "relationship_graph" },
+      { key: "channel_profile", type: "channel_profile" },   // personal account profile (username lookup)
+      { key: "phone_profile", type: "phone_profile" },       // phone presence result (phone_presence action)
     ];
 
     for (const { key, type } of ARTIFACT_KEYS) {
