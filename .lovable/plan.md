@@ -1,132 +1,89 @@
 
-## Add last_seen Badge to ChannelProfileCard
+# Fix: Two Bugs Blocking Telegram Results
 
-### What's Currently There
+## Root Cause Analysis
 
-The `ChannelProfileCard` component (lines 255–317 in `TelegramTab.tsx`) renders:
-- Channel title, username, description
-- Subscriber count and message count stats
-- Linked channels list
+Two separate bugs are preventing Telegram data from being saved:
 
-It does **not** extract or display `last_seen_bucket` — the field returned by the `handle_username_lookup` worker for personal accounts (e.g., `recently`, `within_week`, `within_month`, `long_ago`, `hidden`).
+### Bug 1 — `n8n-scan-results` crashes on empty Telegram callbacks (CRITICAL)
 
-By contrast, the `PhonePresenceCard` (lines 223–253) reads `last_seen` from the evidence but renders it as raw text (`Last seen: {lastSeen}`) with no colour coding, icon, or structured badge.
+**File**: `supabase/functions/n8n-scan-results/index.ts`
 
----
-
-### The Fix: One File, Two Improvements
-
-**File:** `src/components/scan/results-tabs/TelegramTab.tsx`
-
-#### Change 1 — `ChannelProfileCard`: Add a `LastSeenBadge` inline component
-
-Extract `last_seen_bucket` (and fall back to `last_seen`) from the finding's evidence/meta, then render a colour-coded badge immediately after the title/username block.
-
-**Bucket → Badge mapping:**
-
-| Bucket value | Label | Colour | Icon |
-|---|---|---|---|
-| `recently` | Active Recently | Green | `Clock` |
-| `within_week` | Active This Week | Lime/teal | `Clock` |
-| `within_month` | Active This Month | Amber | `Clock` |
-| `long_ago` | Last Seen Long Ago | Muted/slate | `Clock` |
-| `hidden` / `unknown` | Last Seen Hidden | Muted | `EyeOff` |
-
-#### Change 2 — `PhonePresenceCard`: Upgrade raw text to the same badge
-
-The `PhonePresenceCard` currently renders `Last seen: {lastSeen}` as plain text. Swap this for the same `LastSeenBadge` so both cards are visually consistent.
-
-#### Change 3 — Add `Clock` and `EyeOff` to the import list
-
-These two icons from `lucide-react` are needed for the badge. `EyeOff` is already used elsewhere in the file (line 19 shows `Eye` is imported); `Clock` needs to be added.
-
----
-
-### Technical Detail
-
-#### Reusable `LastSeenBadge` component (inline, not exported)
+`findingsToInsert` is declared inside an `if (findings && findings.length > 0)` block (line 216), but then referenced **outside** that block at line 426 inside the Telegram source guard:
 
 ```typescript
-const LAST_SEEN_CONFIG: Record<string, {
-  label: string;
-  className: string;
-  icon: 'clock' | 'eye-off';
-}> = {
-  recently:      { label: 'Active Recently',     className: 'bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400', icon: 'clock' },
-  within_week:   { label: 'Active This Week',    className: 'bg-teal-500/15 text-teal-600 border-teal-500/30 dark:text-teal-400',   icon: 'clock' },
-  within_month:  { label: 'Active This Month',   className: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400', icon: 'clock' },
-  long_ago:      { label: 'Last Seen Long Ago',  className: 'bg-muted text-muted-foreground border-border',                           icon: 'clock' },
-  hidden:        { label: 'Last Seen Hidden',    className: 'bg-muted text-muted-foreground border-border',                           icon: 'eye-off' },
-  unknown:       { label: 'Last Seen Unknown',   className: 'bg-muted text-muted-foreground border-border',                           icon: 'eye-off' },
-};
+findingsStored: findingsToInsert?.length || 0,  // ← ReferenceError when findings = []
+```
 
-function LastSeenBadge({ bucket }: { bucket: string }) {
-  const key = (bucket || '').toLowerCase().replace(/\s+/g, '_');
-  const cfg = LAST_SEEN_CONFIG[key] ?? LAST_SEEN_CONFIG['unknown'];
-  const Icon = cfg.icon === 'clock' ? Clock : EyeOff;
+When Telegram returns 0 findings (username not found, or fallback returns empty), the `if` block is skipped entirely, `findingsToInsert` is never defined, and the function crashes with:
+```
+ReferenceError: findingsToInsert is not defined
+```
 
-  return (
-    <Badge variant="outline" className={`gap-1 h-5 px-1.5 text-[10px] font-medium ${cfg.className}`}>
-      <Icon className="w-2.5 h-2.5" />
-      {cfg.label}
-    </Badge>
-  );
+This means **every Telegram callback is crashing** the edge function, even when the worker succeeds and returns an empty array.
+
+### Bug 2 — Worker routing 404 (the `{"detail":"Not Found"}` response)
+
+The worker returned `{"detail":"Not Found"}` — this is a **FastAPI-style JSON 404**, not a Telethon "user not found" error. This means the Cloud Run worker is **not recognising the `/telegram/username` route** correctly. Most likely cause: the worker code was updated locally but the new Python file was compiled to a different binary or the route registration is failing at startup.
+
+The `server.py` file uses Python's standard `http.server` (not FastAPI), so `{"detail":"Not Found"}` is unexpected. This suggests the deployed container image may still be running the old version, or a startup error is preventing the new route from loading — and Cloud Run is serving its own default 404.
+
+## Fix Plan
+
+### Fix 1 — `n8n-scan-results` edge function (immediate, high impact)
+
+Hoist `findingsToInsert` declaration to the outer scope so it is always defined before the Telegram source guard checks it:
+
+```typescript
+// Before (line 214-309):
+if (findings && Array.isArray(findings) && findings.length > 0) {
+  const findingsToInsert = findings.filter(...).map(...);  // scoped only here
+  // ... insert logic
+}
+
+// After:
+let findingsToInsert: Array<...> = [];  // always defined
+if (findings && Array.isArray(findings) && findings.length > 0) {
+  findingsToInsert = findings.filter(...).map(...);
+  // ... insert logic
 }
 ```
 
-#### `ChannelProfileCard` — where the badge is inserted
+This ensures the Telegram source guard at line 426 can safely reference `findingsToInsert.length` even when findings is empty.
 
-The badge renders inside the existing title block, right after the `@username` line:
+### Fix 2 — Worker startup verification
 
-```tsx
-{/* existing */}
-<p className="font-medium text-foreground">{title}</p>
-{username && <p className="text-xs text-muted-foreground">@{username}</p>}
+The `{"detail":"Not Found"}` from Cloud Run strongly indicates the new container is not running the updated `server.py`. The fix is to check if the new image was actually built and pushed — the previous deploy used `--source` which builds a new image, but if the `server.py` write did not make it into the filesystem before deployment, the old image is still running.
 
-{/* NEW */}
-{lastSeenBucket && (
-  <div className="mt-1.5">
-    <LastSeenBadge bucket={lastSeenBucket} />
-  </div>
-)}
-```
+Action: Force a fresh Cloud Run redeploy with an explicit build trigger to ensure the new `server.py` (with `ResolveUsername` fallback) is included in the container image.
 
-The `lastSeenBucket` value is extracted as:
+Since Lovable can only edit edge functions and source code (not trigger Cloud Run deployments), the plan is:
 
-```typescript
-const lastSeenBucket = ev('last_seen_bucket') || ev('last_seen') || f.meta?.last_seen_bucket || f.meta?.last_seen || '';
-```
+1. Fix the edge function bug (deployable automatically)
+2. Instruct you to trigger a fresh Cloud Run rebuild
 
-This ensures compatibility with both the new `handle_username_lookup` output (`last_seen_bucket`) and any older scan data that stored a plain `last_seen` value.
+## Files to Change
 
-#### `PhonePresenceCard` — upgrade the raw text
+### `supabase/functions/n8n-scan-results/index.ts`
 
-Replace:
-```tsx
-{lastSeen && (
-  <p className="text-xs text-muted-foreground">Last seen: {lastSeen}</p>
-)}
-```
+- Hoist `findingsToInsert` to outer scope (fix the `ReferenceError`)
+- Change `const findingsToInsert = ...` → `let findingsToInsert: typeof ... = []` declared before the `if` block
+- Remove the optional chaining `?.` on line 426 since it will always be defined
 
-With:
-```tsx
-{lastSeen && (
-  <div className="flex items-center gap-2">
-    <span className="text-muted-foreground">Last seen:</span>
-    <LastSeenBadge bucket={lastSeen} />
-  </div>
-)}
-```
+### Technical Details
 
----
+- The `findingsToInsert` variable is used in 3 places: the insert call, the Brave enrichment, and the Telegram source guard response — all need access to it regardless of whether findings is empty.
+- The Telegram source guard is specifically designed to handle the case of 0 findings (legitimate "no account found") — this crash is preventing that graceful path from working.
 
-### Summary of Changes
+## After Deployment
 
-| File | Lines Changed | What |
-|---|---|---|
-| `src/components/scan/results-tabs/TelegramTab.tsx` | Line 19 | Add `Clock`, `EyeOff` to lucide imports |
-| `src/components/scan/results-tabs/TelegramTab.tsx` | After line 222 | Add `LAST_SEEN_CONFIG` map + `LastSeenBadge` component |
-| `src/components/scan/results-tabs/TelegramTab.tsx` | Lines 255–317 (`ChannelProfileCard`) | Extract `lastSeenBucket`, render `LastSeenBadge` |
-| `src/components/scan/results-tabs/TelegramTab.tsx` | Lines 223–253 (`PhonePresenceCard`) | Replace raw text with `LastSeenBadge` |
-
-No new files, no backend changes, no new dependencies. All changes are confined to one component file.
+Once the edge function fix is deployed:
+1. Run a fresh scan for `Jammmy10`
+2. If Telegram still returns 404 from the worker, you will need to rebuild the Cloud Run image:
+   ```bash
+   gcloud run deploy telegram-worker \
+     --source workers/telegram-worker/ \
+     --region europe-west2 \
+     --no-allow-unauthenticated
+   ```
+   This forces a fresh Docker build from the current source, picking up the `ResolveUsername` fallback code.
