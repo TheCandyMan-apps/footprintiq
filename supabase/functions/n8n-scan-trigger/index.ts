@@ -572,6 +572,39 @@ serve(async (req) => {
       }
     }
 
+    // ==================== TELEGRAM PHONE PRESENCE (fire-and-forget, Pro+ only) ====================
+    // For phone scans on Pro+ tier, call telegram-proxy directly to check if the phone
+    // has a Telegram account. Runs in parallel with phone-intel and the n8n PhoneInfoga workflow.
+    // telegram-proxy stores findings directly — it does NOT call n8n-scan-results, so no
+    // premature scan finalisation risk.
+    if (scanType === 'phone' && targetValue && effectiveTier !== 'free') {
+      console.log(`[n8n-scan-trigger] Triggering Telegram phone-presence for scan ${scan.id}`);
+      const _telegramPhoneServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+      fetch(`${supabaseUrl}/functions/v1/telegram-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${_telegramPhoneServiceKey}`,
+          'x-n8n-key': Deno.env.get('N8N_GATEWAY_KEY') || '',
+        },
+        body: JSON.stringify({
+          action: 'phone_presence',
+          scanId: scan.id,
+          workspaceId: workspaceId,
+          userId: user.id,
+          tier: effectiveTier,
+          phoneE164: targetValue,
+          consentConfirmed: true,
+          lawfulBasis: 'legitimate_interest',
+        }),
+      })
+        .then(res => console.log(`[n8n-scan-trigger] Telegram phone-presence responded: ${res.status}`))
+        .catch(err => console.error(`[n8n-scan-trigger] Telegram phone-presence error: ${err.message}`));
+
+      console.log(`[n8n-scan-trigger] Telegram phone-presence triggered (fire-and-forget)`);
+    }
+
     // ==================== TELEGRAM USERNAME WORKFLOW (fire-and-forget, idempotent) ====================
     // For username scans only, trigger the dedicated Telegram username n8n workflow.
     // Idempotency: only trigger once per scan (check telegram_triggered_at).
