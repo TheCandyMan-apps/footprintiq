@@ -1,89 +1,102 @@
 
-# Fix: Two Bugs Blocking Telegram Results
+# Re-run Telegram Scan Button
 
-## Root Cause Analysis
+## What this builds
 
-Two separate bugs are preventing Telegram data from being saved:
+A "Re-run Telegram" button on the Telegram tab that lets a user manually re-trigger only the Telegram worker for an existing scan — without starting a full new scan. It works for both `username` (via the n8n Telegram Username Workflow) and `phone` scan types (via the `telegram-proxy` edge function directly).
 
-### Bug 1 — `n8n-scan-results` crashes on empty Telegram callbacks (CRITICAL)
+## Architecture Overview
 
-**File**: `supabase/functions/n8n-scan-results/index.ts`
-
-`findingsToInsert` is declared inside an `if (findings && findings.length > 0)` block (line 216), but then referenced **outside** that block at line 426 inside the Telegram source guard:
-
-```typescript
-findingsStored: findingsToInsert?.length || 0,  // ← ReferenceError when findings = []
+```text
+[Re-run Telegram button]
+        │
+        ▼
+[New Edge Function: telegram-retrigger]
+        │  Validates: user owns the scan, scan type, clears idempotency lock
+        ├─── username scan ──► POST n8n Telegram Username Webhook (fire-and-forget)
+        └─── phone scan ──────► POST telegram-proxy (phone_presence action)
+        │
+        ▼
+[Clears telegram_triggered_at + old findings/artifacts]
+        │
+        ▼
+[Results arrive via existing n8n-scan-results webhook]
+        │
+        ▼
+[Telegram findings realtime subscription refreshes UI]
 ```
 
-When Telegram returns 0 findings (username not found, or fallback returns empty), the `if` block is skipped entirely, `findingsToInsert` is never defined, and the function crashes with:
+## Why a new edge function (not calling telegram-proxy directly)?
+
+The `telegram-proxy` currently only allows:
+- n8n gateway key (`x-n8n-key`) — secret, never exposed to browser
+- Admin JWT — users are not admins
+
+Calling it directly from the frontend is not safe. The new `telegram-retrigger` function:
+1. Authenticates the user via their Supabase JWT
+2. Verifies they own the workspace the scan belongs to
+3. Clears the `telegram_triggered_at` idempotency lock (allowing re-trigger)
+4. Optionally deletes stale findings from the previous failed attempt
+5. Routes to the correct backend (n8n webhook for username, telegram-proxy for phone)
+
+## Files to Create / Edit
+
+### 1. New: `supabase/functions/telegram-retrigger/index.ts`
+
+New edge function with:
+- JWT auth: validates user is authenticated
+- Ownership check: user must be a member of the scan's workspace
+- Clears `telegram_triggered_at` from the `scans` table
+- Deletes existing `findings` rows where `provider = 'telegram'` for this scan (stale data cleanup)
+- Deletes existing `scan_artifacts` rows where `source = 'telegram'` for this scan
+- For `scan_type = 'username'`: fires the n8n Telegram Username Webhook (same payload as `n8n-scan-trigger`)
+- For `scan_type = 'phone'`: calls `telegram-proxy` with action `phone_presence` using the service role key + gateway key
+- Returns `{ ok: true, message: '...' }` immediately (fire-and-forget)
+
+### 2. Edit: `src/components/scan/results-tabs/TelegramTab.tsx`
+
+- Add a `scanType` prop (`'username' | 'phone' | string`)
+- Add a `RetriggerButton` component at the top of the "no data" empty state and also in the header bar when data exists
+- Uses `supabase.functions.invoke('telegram-retrigger', ...)` from the frontend
+- Shows: idle → loading spinner → success toast → resets (relies on realtime to update findings)
+- Rate-limited in UI: disables button for 30 seconds after click to prevent spam
+
+### 3. Edit: `src/components/scan/AdvancedResultsPage.tsx`
+
+- Pass `scanType={job?.scan_type}` to `<TelegramTab>` so it knows which re-trigger path to use
+
+## User Experience Flow
+
+1. User opens the Telegram tab for a failed/empty scan
+2. Sees "No Telegram data found" empty state with a **Re-run Telegram Scan** button
+3. Clicks the button → spinner → toast "Telegram scan re-triggered. Results will appear shortly."
+4. Button disables for 30s (prevents double-clicks)
+5. When worker completes and posts results back → realtime subscription in `useTelegramFindings` fires → findings appear automatically
+6. If data already exists (partial results), button also appears in the header as a small "Re-scan" icon button
+
+## Technical Details
+
+### Idempotency Lock Clearing
+The `telegram_triggered_at` timestamp in the `scans` table acts as an idempotency guard in `n8n-scan-trigger`. The retrigger function sets this to `NULL` before firing the new request, which allows the workflow to run again.
+
+### Stale Data Cleanup
+Before re-triggering, the function deletes:
+- `findings` where `scan_id = ? AND provider = 'telegram'`
+- `scan_artifacts` where `scan_id = ? AND source = 'telegram'`
+
+This ensures the UI doesn't show mixed old + new results.
+
+### Auth Flow for the Edge Function
 ```
-ReferenceError: findingsToInsert is not defined
+Frontend (user JWT)
+  → telegram-retrigger (validates JWT + workspace membership)
+    → clears DB idempotency lock
+    → fires n8n webhook (using server-side env vars for secrets)
+    → returns 200 OK immediately
 ```
 
-This means **every Telegram callback is crashing** the edge function, even when the worker succeeds and returns an empty array.
-
-### Bug 2 — Worker routing 404 (the `{"detail":"Not Found"}` response)
-
-The worker returned `{"detail":"Not Found"}` — this is a **FastAPI-style JSON 404**, not a Telethon "user not found" error. This means the Cloud Run worker is **not recognising the `/telegram/username` route** correctly. Most likely cause: the worker code was updated locally but the new Python file was compiled to a different binary or the route registration is failing at startup.
-
-The `server.py` file uses Python's standard `http.server` (not FastAPI), so `{"detail":"Not Found"}` is unexpected. This suggests the deployed container image may still be running the old version, or a startup error is preventing the new route from loading — and Cloud Run is serving its own default 404.
-
-## Fix Plan
-
-### Fix 1 — `n8n-scan-results` edge function (immediate, high impact)
-
-Hoist `findingsToInsert` declaration to the outer scope so it is always defined before the Telegram source guard checks it:
-
-```typescript
-// Before (line 214-309):
-if (findings && Array.isArray(findings) && findings.length > 0) {
-  const findingsToInsert = findings.filter(...).map(...);  // scoped only here
-  // ... insert logic
-}
-
-// After:
-let findingsToInsert: Array<...> = [];  // always defined
-if (findings && Array.isArray(findings) && findings.length > 0) {
-  findingsToInsert = findings.filter(...).map(...);
-  // ... insert logic
-}
-```
-
-This ensures the Telegram source guard at line 426 can safely reference `findingsToInsert.length` even when findings is empty.
-
-### Fix 2 — Worker startup verification
-
-The `{"detail":"Not Found"}` from Cloud Run strongly indicates the new container is not running the updated `server.py`. The fix is to check if the new image was actually built and pushed — the previous deploy used `--source` which builds a new image, but if the `server.py` write did not make it into the filesystem before deployment, the old image is still running.
-
-Action: Force a fresh Cloud Run redeploy with an explicit build trigger to ensure the new `server.py` (with `ResolveUsername` fallback) is included in the container image.
-
-Since Lovable can only edit edge functions and source code (not trigger Cloud Run deployments), the plan is:
-
-1. Fix the edge function bug (deployable automatically)
-2. Instruct you to trigger a fresh Cloud Run rebuild
-
-## Files to Change
-
-### `supabase/functions/n8n-scan-results/index.ts`
-
-- Hoist `findingsToInsert` to outer scope (fix the `ReferenceError`)
-- Change `const findingsToInsert = ...` → `let findingsToInsert: typeof ... = []` declared before the `if` block
-- Remove the optional chaining `?.` on line 426 since it will always be defined
-
-### Technical Details
-
-- The `findingsToInsert` variable is used in 3 places: the insert call, the Brave enrichment, and the Telegram source guard response — all need access to it regardless of whether findings is empty.
-- The Telegram source guard is specifically designed to handle the case of 0 findings (legitimate "no account found") — this crash is preventing that graceful path from working.
-
-## After Deployment
-
-Once the edge function fix is deployed:
-1. Run a fresh scan for `Jammmy10`
-2. If Telegram still returns 404 from the worker, you will need to rebuild the Cloud Run image:
-   ```bash
-   gcloud run deploy telegram-worker \
-     --source workers/telegram-worker/ \
-     --region europe-west2 \
-     --no-allow-unauthenticated
-   ```
-   This forces a fresh Docker build from the current source, picking up the `ResolveUsername` fallback code.
+### No new secrets needed
+All required secrets already exist:
+- `N8N_TELEGRAM_USERNAME_WEBHOOK_URL` — for username scans
+- `N8N_GATEWAY_KEY` — for phone_presence via telegram-proxy
+- `SUPABASE_SERVICE_ROLE_KEY` — available in all edge functions by default
