@@ -640,7 +640,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
 
                 <TabsContent value="telegram" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
-                    <TelegramTab scanId={jobId} isPro={true} />
+                    <TelegramTab scanId={jobId} isPro={true} scanType={job?.scan_type} />
                   </Suspense>
                 </TabsContent>
 

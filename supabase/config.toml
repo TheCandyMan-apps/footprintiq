@@ -114,3 +114,6 @@ verify_jwt = false
 
 [functions.persona-simulation]
 verify_jwt = true
+
+[functions.telegram-retrigger]
+verify_jwt = false

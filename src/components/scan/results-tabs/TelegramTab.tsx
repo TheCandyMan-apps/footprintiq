@@ -11,17 +11,20 @@
  * Tier gating: Free users see the Profile card + locked preview placeholders.
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock } from 'lucide-react';
+import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock, RefreshCw } from 'lucide-react';
 import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFindings';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 
 interface TelegramTabProps {
   scanId: string;
   isPro: boolean;
+  scanType?: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -589,9 +592,92 @@ function ResponsibleUseTooltip() {
   );
 }
 
+// ── RetriggerButton ──────────────────────────────────────────────
+
+const COOLDOWN_MS = 30_000;
+
+function RetriggerButton({ scanId, scanType, variant = 'default' }: {
+  scanId: string;
+  scanType?: string;
+  variant?: 'default' | 'icon';
+}) {
+  const [loading, setLoading] = useState(false);
+  const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [disabled, setDisabled] = useState(false);
+
+  const handleRetrigger = useCallback(async () => {
+    if (loading || disabled) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('telegram-retrigger', {
+        body: { scan_id: scanId },
+      });
+
+      if (error) {
+        toast.error('Failed to re-trigger Telegram scan. Please try again.');
+        console.error('[RetriggerButton]', error);
+      } else {
+        toast.success('Telegram scan re-triggered. Results will appear shortly.');
+        setDisabled(true);
+        cooldownRef.current = setTimeout(() => setDisabled(false), COOLDOWN_MS);
+      }
+    } catch (err) {
+      toast.error('Unexpected error. Please try again.');
+      console.error('[RetriggerButton]', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [scanId, loading, disabled]);
+
+  if (variant === 'icon') {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={handleRetrigger}
+              disabled={loading || disabled}
+            >
+              {loading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            <p className="text-xs">{disabled ? 'Re-triggered — waiting for results…' : 'Re-run Telegram scan'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleRetrigger}
+      disabled={loading || disabled}
+      className="gap-2"
+    >
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <RefreshCw className="h-3.5 w-3.5" />
+      )}
+      {disabled ? 'Re-triggered…' : 'Re-run Telegram Scan'}
+    </Button>
+  );
+}
+
 // ── Main component ──────────────────────────────────────────────
 
-export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
+export function TelegramTab({ scanId, isPro, scanType }: TelegramTabProps) {
   const {
     findings,
     loading,
@@ -613,12 +699,15 @@ export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
 
   if (!hasTelegramData) {
     return (
-      <div className="py-12 text-center space-y-2">
+      <div className="py-12 text-center space-y-3">
         <Send className="h-8 w-8 text-muted-foreground/40 mx-auto" />
         <p className="text-sm text-muted-foreground">No Telegram data found for this scan.</p>
         <p className="text-xs text-muted-foreground/60">
           Telegram intelligence is gathered when available from public profiles and channels.
         </p>
+        <div className="flex justify-center pt-1">
+          <RetriggerButton scanId={scanId} scanType={scanType} />
+        </div>
       </div>
     );
   }
@@ -642,7 +731,10 @@ export function TelegramTab({ scanId, isPro }: TelegramTabProps) {
           </Badge>
           <PublicDataBadge />
         </div>
-        <ResponsibleUseTooltip />
+        <div className="flex items-center gap-2">
+          <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" />
+          <ResponsibleUseTooltip />
+        </div>
       </div>
 
       {/* Cards grid */}
