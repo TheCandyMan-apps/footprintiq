@@ -534,7 +534,6 @@ serve(async (req) => {
         findings_count: findings?.length || 0,
         message: `Scan complete: ${findings?.length || 0} findings from ${providerCount} providers`,
         error: finalStatus === 'failed',
-        updated_at: new Date().toISOString(),
       }, { onConflict: 'scan_id' });
 
     if (progressError) {
