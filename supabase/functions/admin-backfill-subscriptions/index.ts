@@ -181,7 +181,6 @@ serve(async (req) => {
             subscription_tier: "pro",
             plan: "pro",
             subscription_expires_at: subscriptionEnd,
-            trial_status: "converted",
           })
           .eq("id", workspaceId);
 
@@ -207,7 +206,6 @@ serve(async (req) => {
             subscription_tier: "pro",
             plan: "pro",
             subscription_expires_at: subscriptionEnd,
-            trial_status: "converted",
           })
           .select("id")
           .single();

@@ -432,7 +432,6 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         plan: plan,
         scan_limit_monthly: scanLimit,
         subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
-        trial_status: 'converted',
       })
       .eq("id", workspaceId);
     
@@ -714,7 +713,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
         plan: plan,
         scan_limit_monthly: scanLimit,
         subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
-        trial_status: 'converted',
       })
       .eq("id", workspaceId);
     

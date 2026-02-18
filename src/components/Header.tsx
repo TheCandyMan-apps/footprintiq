@@ -441,7 +441,7 @@ export const Header = () => {
             )}
             {!user && (
               <Button onClick={() => navigate('/auth?tab=signup')}>
-                Start Free Trial
+                Get Started
               </Button>
             )}
           </div>
@@ -670,7 +670,7 @@ export const Header = () => {
                       onClick={() => { navigate('/auth?tab=signup'); setMobileMenuOpen(false); }} 
                       className="w-full min-h-[44px]"
                     >
-                      Start Free Trial
+                      Get Started
                     </Button>
                   </div>
                 )}

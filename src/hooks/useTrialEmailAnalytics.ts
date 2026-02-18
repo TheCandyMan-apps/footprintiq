@@ -1,13 +1,17 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Renamed from TrialMetrics — now tracks subscription conversion (free vs pro)
 export interface TrialMetrics {
+  totalFreeUsers: number;
+  totalProUsers: number;
+  conversionRate: number;
+  // Legacy fields kept to avoid breaking component consumers
   totalTrialsStarted: number;
   activeTrials: number;
   convertedTrials: number;
   cancelledTrials: number;
   expiredTrials: number;
-  conversionRate: number;
   avgScansUsed: number;
 }
 
@@ -44,42 +48,36 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
   return useQuery({
     queryKey: ['trial-email-analytics', dateRange?.start?.toISOString(), dateRange?.end?.toISOString()],
     queryFn: async (): Promise<TrialEmailAnalytics> => {
-      // Build date filter — null means "all time"
-      const isAllTime = !dateRange;
       const startDate = dateRange?.start || new Date('2020-01-01');
       const endDate = dateRange?.end || new Date();
 
-      // Fetch trial metrics from FREE-TIER workspaces only (paid users aren't "trialing")
+      // Fetch subscription conversion metrics (free vs pro workspaces)
       const { data: workspaces, error: workspacesError } = await supabase
         .from('workspaces')
-        .select('trial_status, trial_scans_used, trial_started_at, subscription_tier')
-        .not('trial_started_at', 'is', null)
-        .eq('subscription_tier', 'free');
+        .select('subscription_tier, created_at');
 
-      // Gracefully handle RLS errors - continue with empty data instead of throwing
       if (workspacesError) {
-        console.warn('Admin trial metrics workspace query failed (RLS?):', workspacesError);
+        console.warn('Admin conversion metrics query failed (RLS?):', workspacesError);
       }
 
-      // Filter by date range if trial_started_at is within range
-      const filteredWorkspaces = (workspaces || []).filter(w => {
-        if (!w.trial_started_at) return false;
-        const trialStart = new Date(w.trial_started_at);
-        return trialStart >= startDate && trialStart <= endDate;
+      const allWorkspaces = (workspaces || []).filter(w => {
+        if (!w.created_at) return false;
+        const created = new Date(w.created_at);
+        return created >= startDate && created <= endDate;
       });
 
-      const totalTrialsStarted = filteredWorkspaces.length;
-      const activeTrials = filteredWorkspaces.filter(w => w.trial_status === 'active').length;
-      const convertedTrials = filteredWorkspaces.filter(w => w.trial_status === 'converted').length;
-      const cancelledTrials = filteredWorkspaces.filter(w => w.trial_status === 'cancelled').length;
-      const expiredTrials = filteredWorkspaces.filter(w => w.trial_status === 'expired').length;
-      
-      const conversionRate = totalTrialsStarted > 0 
-        ? (convertedTrials / totalTrialsStarted) * 100 
-        : 0;
-      
-      const totalScans = filteredWorkspaces.reduce((sum, w) => sum + (w.trial_scans_used || 0), 0);
-      const avgScansUsed = totalTrialsStarted > 0 ? totalScans / totalTrialsStarted : 0;
+      const totalFreeUsers = allWorkspaces.filter(w =>
+        !w.subscription_tier || w.subscription_tier === 'free'
+      ).length;
+
+      const totalProUsers = allWorkspaces.filter(w =>
+        w.subscription_tier === 'pro' ||
+        w.subscription_tier === 'premium' ||
+        w.subscription_tier === 'enterprise'
+      ).length;
+
+      const totalUsers = totalFreeUsers + totalProUsers;
+      const conversionRate = totalUsers > 0 ? (totalProUsers / totalUsers) * 100 : 0;
 
       // Fetch email metrics (with graceful RLS error handling)
       const { data: emails, error: emailsError } = await supabase
@@ -88,12 +86,10 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
         .gte('sent_at', startDate.toISOString())
         .lte('sent_at', endDate.toISOString());
 
-      // Gracefully handle RLS errors - continue with empty data instead of throwing
       if (emailsError) {
         console.warn('Admin email metrics query failed (RLS?):', emailsError);
       }
 
-      // Calculate overall email metrics
       const allEmails = emails || [];
       const totalSent = allEmails.length;
       const totalDelivered = allEmails.filter(e => e.delivered_at).length;
@@ -105,8 +101,7 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
       const overallClickRate = totalDelivered > 0 ? (totalClicked / totalDelivered) * 100 : 0;
       const overallBounceRate = totalSent > 0 ? (totalBounced / totalSent) * 100 : 0;
 
-      // Group by email type
-      const emailTypes = ['trial_started', 'trial_ending', 'trial_converted', 'low_credit_warning'];
+      const emailTypes = ['welcome', 'scan_complete', 'low_credit_warning', 'subscription_created', 'subscription_cancelled'];
       const byType: EmailTypeMetrics[] = emailTypes.map(type => {
         const typeEmails = allEmails.filter(e => e.type === type);
         const sent = typeEmails.length;
@@ -126,17 +121,20 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
           clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
           clickToOpenRate: opened > 0 ? (clicked / opened) * 100 : 0,
         };
-      }).filter(m => m.sent > 0); // Only include types with sent emails
+      }).filter(m => m.sent > 0);
 
       return {
         trialMetrics: {
-          totalTrialsStarted,
-          activeTrials,
-          convertedTrials,
-          cancelledTrials,
-          expiredTrials,
+          totalFreeUsers,
+          totalProUsers,
           conversionRate,
-          avgScansUsed,
+          // Legacy fields set to 0 — trials removed
+          totalTrialsStarted: 0,
+          activeTrials: 0,
+          convertedTrials: totalProUsers,
+          cancelledTrials: 0,
+          expiredTrials: 0,
+          avgScansUsed: 0,
         },
         emailMetrics: {
           totalSent,
@@ -151,7 +149,7 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
         },
       };
     },
-    placeholderData: keepPreviousData, // Prevent blank flash when switching timelines
-    refetchInterval: 60000, // Refresh every minute
+    placeholderData: keepPreviousData,
+    refetchInterval: 60000,
   });
 }
