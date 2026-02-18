@@ -1,5 +1,6 @@
 import { lazy, Suspense, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { AnonScanBanner } from '@/components/anon/AnonScanBanner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -22,6 +23,8 @@ const AdvancedResultsPage = lazy(() => import('@/components/scan/AdvancedResults
  */
 export default function ResultsDetail() {
   const { scanId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isAnonymous = searchParams.get('anon') === '1';
   const { subscriptionTier: rawSubscriptionTier, isLoading: subscriptionLoading } = useSubscription();
 
   const plan = useMemo(() => {
@@ -66,6 +69,11 @@ export default function ResultsDetail() {
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
         <main className="flex-1">
+          {isAnonymous && scanId && (
+            <div className="max-w-4xl mx-auto px-4 pt-6">
+              <AnonScanBanner scanId={scanId} />
+            </div>
+          )}
           <FreeResultsPage jobId={scanId} />
         </main>
         <Footer />

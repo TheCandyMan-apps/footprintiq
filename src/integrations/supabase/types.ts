@@ -803,6 +803,33 @@ export type Database = {
           },
         ]
       }
+      anonymous_scan_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string
+          last_scan_at: string | null
+          scan_count: number
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: string
+          last_scan_at?: string | null
+          scan_count?: number
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string
+          last_scan_at?: string | null
+          scan_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string | null
@@ -7639,6 +7666,7 @@ export type Database = {
           archived_at: string | null
           cache_key: string | null
           cached_from_scan_id: string | null
+          claimed: boolean
           completed_at: string | null
           created_at: string
           domain: string | null
@@ -7658,6 +7686,7 @@ export type Database = {
           referrer: string | null
           results_route: string
           scan_type: Database["public"]["Enums"]["scan_type"]
+          session_fingerprint: string | null
           status: string | null
           telegram_triggered_at: string | null
           total_sources_found: number | null
@@ -7676,6 +7705,7 @@ export type Database = {
           archived_at?: string | null
           cache_key?: string | null
           cached_from_scan_id?: string | null
+          claimed?: boolean
           completed_at?: string | null
           created_at?: string
           domain?: string | null
@@ -7695,6 +7725,7 @@ export type Database = {
           referrer?: string | null
           results_route?: string
           scan_type: Database["public"]["Enums"]["scan_type"]
+          session_fingerprint?: string | null
           status?: string | null
           telegram_triggered_at?: string | null
           total_sources_found?: number | null
@@ -7713,6 +7744,7 @@ export type Database = {
           archived_at?: string | null
           cache_key?: string | null
           cached_from_scan_id?: string | null
+          claimed?: boolean
           completed_at?: string | null
           created_at?: string
           domain?: string | null
@@ -7732,6 +7764,7 @@ export type Database = {
           referrer?: string | null
           results_route?: string
           scan_type?: Database["public"]["Enums"]["scan_type"]
+          session_fingerprint?: string | null
           status?: string | null
           telegram_triggered_at?: string | null
           total_sources_found?: number | null
