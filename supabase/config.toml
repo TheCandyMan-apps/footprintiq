@@ -117,3 +117,6 @@ verify_jwt = true
 
 [functions.telegram-retrigger]
 verify_jwt = false
+
+[functions.monitor-stuck-telegram]
+verify_jwt = false
