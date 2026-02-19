@@ -4032,7 +4032,7 @@ export type Database = {
           provider: string
           scan_id: string
           severity: string
-          workspace_id: string
+          workspace_id: string | null
         }
         Insert: {
           confidence: number
@@ -4045,7 +4045,7 @@ export type Database = {
           provider: string
           scan_id: string
           severity: string
-          workspace_id: string
+          workspace_id?: string | null
         }
         Update: {
           confidence?: number
@@ -4058,7 +4058,7 @@ export type Database = {
           provider?: string
           scan_id?: string
           severity?: string
-          workspace_id?: string
+          workspace_id?: string | null
         }
         Relationships: [
           {
