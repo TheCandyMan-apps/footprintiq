@@ -1,8 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Clock, CheckCircle, Loader2, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
+// Rotating live status messages shown during scan
+const SCAN_PHASES = [
+  { message: 'Initialising OSINT pipeline...', minElapsed: 0 },
+  { message: 'Querying WhatsMyName database...', minElapsed: 5 },
+  { message: 'Scanning social media platforms...', minElapsed: 12 },
+  { message: 'Cross-referencing usernames across 300+ sites...', minElapsed: 20 },
+  { message: 'Running Maigret profile detection...', minElapsed: 30 },
+  { message: 'Mapping linked profiles and entities...', minElapsed: 45 },
+  { message: 'Correlating identity signals...', minElapsed: 60 },
+  { message: 'Checking breach exposure databases...', minElapsed: 80 },
+  { message: 'Filtering false positives...', minElapsed: 100 },
+  { message: 'Aggregating and scoring results...', minElapsed: 130 },
+  { message: 'Building digital footprint profile...', minElapsed: 160 },
+  { message: 'Almost there — finalising intelligence report...', minElapsed: 200 },
+];
 
 interface ScanProgressProps {
   startedAt: string | null;
@@ -15,6 +31,9 @@ interface ScanProgressProps {
 export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSites }: ScanProgressProps) => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [estimatedTotal, setEstimatedTotal] = useState(0);
+  const [liveMessage, setLiveMessage] = useState(SCAN_PHASES[0].message);
+  const [messageVisible, setMessageVisible] = useState(true);
+  const messageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Estimated total sites based on scan type
   useEffect(() => {
@@ -27,7 +46,31 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
     }
   }, [allSites]);
 
+  // Drive live status message based on elapsed time
+  useEffect(() => {
+    if (!['running', 'pending'].includes(status) || finishedAt) return;
+
+    const updateMessage = (seconds: number) => {
+      // Find the most advanced phase that has been reached
+      let phase = SCAN_PHASES[0];
+      for (const p of SCAN_PHASES) {
+        if (seconds >= p.minElapsed) phase = p;
+      }
+      if (phase.message !== liveMessage) {
+        // Fade out → swap → fade in
+        setMessageVisible(false);
+        setTimeout(() => {
+          setLiveMessage(phase.message);
+          setMessageVisible(true);
+        }, 300);
+      }
+    };
+
+    updateMessage(elapsedSeconds);
+  }, [elapsedSeconds, status, finishedAt]);
+
   // Update elapsed time
+
   useEffect(() => {
     if (!startedAt || finishedAt || !['running', 'pending'].includes(status)) return;
 
@@ -190,19 +233,23 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
 
           {/* Additional Info */}
           {isRunning && (
-            <div className="pt-2 border-t space-y-2">
-              <p className="text-xs text-muted-foreground">
-                {allSites 
-                  ? '⚡ Scanning all available sites. This may take several minutes.'
-                  : '🎯 Scanning popular sites. Faster completion expected.'}
-              </p>
-              <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-                <p className="text-xs font-medium text-foreground">
-                  💡 Scanning 300+ platforms using multiple OSINT tools
+            <div className="pt-2 border-t space-y-3">
+              {/* Live rolling status message */}
+              <div className="flex items-center gap-2 min-h-[20px]">
+                <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
+                <p
+                  className="text-xs text-foreground font-medium transition-opacity duration-300"
+                  style={{ opacity: messageVisible ? 1 : 0 }}
+                >
+                  {liveMessage}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  We use Maigret, Sherlock, WhatsMyName, and other tools in parallel. 
-                  Deep scans can take up to 10 minutes for comprehensive results.
+              </div>
+
+              <div className="bg-muted/40 rounded-lg p-3 border border-border/50">
+                <p className="text-xs text-muted-foreground">
+                  {allSites
+                    ? '⚡ Running full-depth scan across all available sites. This may take several minutes.'
+                    : '🎯 Maigret · Sherlock · WhatsMyName running in parallel. Deep scans can take up to 10 minutes.'}
                 </p>
               </div>
             </div>
