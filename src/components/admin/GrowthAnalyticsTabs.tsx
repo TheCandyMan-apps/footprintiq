@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrialConversionMetrics } from './TrialConversionMetrics';
+import { SubscriptionConversionMetrics } from './SubscriptionConversionMetrics';
 import { EmailMetricsDashboard } from './EmailMetricsDashboard';
 import { AbandonedCheckoutMetrics } from './AbandonedCheckoutMetrics';
+import { useSubscriptionConversion } from '@/hooks/useSubscriptionConversion';
 import { useTrialEmailAnalytics } from '@/hooks/useTrialEmailAnalytics';
 import { useAbandonedCheckouts } from '@/hooks/useAbandonedCheckouts';
 import { TrendingUp, Mail, Calendar, ShoppingCart } from 'lucide-react';
@@ -36,7 +37,8 @@ export function GrowthAnalyticsTabs() {
   };
 
   const dateRange = getDateRange(dateRangeOption);
-  const { data, isLoading, isPlaceholderData } = useTrialEmailAnalytics(dateRange);
+  const { data: conversionData, isLoading: conversionLoading, isPlaceholderData: conversionPlaceholder } = useSubscriptionConversion(dateRange);
+  const { data: emailData, isLoading: emailLoading, isPlaceholderData: emailPlaceholder } = useTrialEmailAnalytics(dateRange);
   const { data: checkoutData, isLoading: checkoutLoading, isPlaceholderData: checkoutPlaceholder } = useAbandonedCheckouts(dateRange);
 
   return (
@@ -61,11 +63,11 @@ export function GrowthAnalyticsTabs() {
         </Select>
       </div>
 
-      <Tabs defaultValue="trial-funnel" className="space-y-6">
+      <Tabs defaultValue="subscription-overview" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="trial-funnel" className="flex items-center gap-2">
+          <TabsTrigger value="subscription-overview" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Trial Funnel
+            Subscription Overview
           </TabsTrigger>
           <TabsTrigger value="abandoned-checkouts" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
@@ -77,10 +79,10 @@ export function GrowthAnalyticsTabs() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="trial-funnel">
-          <TrialConversionMetrics 
-            metrics={data?.trialMetrics} 
-            isLoading={isLoading && !isPlaceholderData} 
+        <TabsContent value="subscription-overview">
+          <SubscriptionConversionMetrics
+            data={conversionData}
+            isLoading={conversionLoading && !conversionPlaceholder}
           />
         </TabsContent>
 
@@ -93,8 +95,8 @@ export function GrowthAnalyticsTabs() {
 
         <TabsContent value="email-performance">
           <EmailMetricsDashboard 
-            metrics={data?.emailMetrics} 
-            isLoading={isLoading && !isPlaceholderData} 
+            metrics={emailData?.emailMetrics} 
+            isLoading={emailLoading && !emailPlaceholder} 
           />
         </TabsContent>
       </Tabs>
