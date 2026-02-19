@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ScanResultRow {
@@ -109,6 +109,10 @@ function transformFinding(finding: any): ScanResultRow {
 export function useRealtimeResults(jobId: string | null) {
   const [results, setResults] = useState<ScanResultRow[]>([]);
   const [loading, setLoading] = useState(true);
+  // Ref to track active post-completion polling loop
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollAttemptsRef = useRef(0);
+  const MAX_POLL_ATTEMPTS = 15; // poll every 2s for up to 30s
 
   useEffect(() => {
     if (!jobId) {
@@ -123,11 +127,20 @@ export function useRealtimeResults(jobId: string | null) {
       channels.forEach(channel => {
         if (channel) supabase.removeChannel(channel);
       });
+      stopPolling();
     };
   }, [jobId]);
 
-  const loadInitialResults = async () => {
-    if (!jobId) return;
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    pollAttemptsRef.current = 0;
+  };
+
+  const loadInitialResults = async (): Promise<number> => {
+    if (!jobId) return 0;
 
     try {
       // Query both tables in parallel
@@ -163,13 +176,39 @@ export function useRealtimeResults(jobId: string | null) {
         ...normalizedProfiles,
       ];
 
-      console.log(`[useRealtimeResults] Loaded ${findingsResult.data?.length || 0} findings and ${profilesResult.data?.length || 0} social_profiles for scan ${jobId}`);
+      const total = merged.length;
+      console.log(`[useRealtimeResults] Loaded ${findingsResult.data?.length || 0} findings and ${profilesResult.data?.length || 0} social_profiles for scan ${jobId} (total=${total})`);
       setResults(merged);
+      return total;
     } catch (error) {
       console.error('Failed to load initial results:', error);
+      return 0;
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Start a polling loop after scan completion.
+   * Retries every 2s for up to 30s until results appear.
+   * This handles the race condition where scan_complete fires before
+   * DB writes are visible to the frontend.
+   */
+  const startCompletionPolling = () => {
+    stopPolling(); // clear any existing poll
+    pollAttemptsRef.current = 0;
+
+    pollIntervalRef.current = setInterval(async () => {
+      pollAttemptsRef.current++;
+      console.log(`[useRealtimeResults] Post-completion poll attempt ${pollAttemptsRef.current}/${MAX_POLL_ATTEMPTS}`);
+
+      const count = await loadInitialResults();
+
+      if (count > 0 || pollAttemptsRef.current >= MAX_POLL_ATTEMPTS) {
+        console.log(`[useRealtimeResults] Stopping poll — found ${count} results after ${pollAttemptsRef.current} attempts`);
+        stopPolling();
+      }
+    }, 2000);
   };
 
   const setupRealtime = () => {
@@ -190,6 +229,8 @@ export function useRealtimeResults(jobId: string | null) {
           console.log('[useRealtimeResults] New finding received:', payload.new);
           const transformed = transformFinding(payload.new);
           setResults((prev) => [...prev, transformed]);
+          // If we get a realtime insert, stop any active polling
+          stopPolling();
         }
       )
       .subscribe();
@@ -209,6 +250,7 @@ export function useRealtimeResults(jobId: string | null) {
           console.log('[useRealtimeResults] New social_profile received:', payload.new);
           const normalized = normalizeSocialProfile(payload.new as SocialProfile);
           setResults((prev) => [...prev, normalized]);
+          stopPolling();
         }
       )
       .subscribe();
@@ -218,7 +260,11 @@ export function useRealtimeResults(jobId: string | null) {
 
   const refetch = async () => {
     setLoading(true);
-    await loadInitialResults();
+    const count = await loadInitialResults();
+    // If still no results, start the completion polling loop
+    if (count === 0) {
+      startCompletionPolling();
+    }
   };
 
   return { results, loading, refetch };
