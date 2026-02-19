@@ -18,6 +18,7 @@ const PricingPage = () => {
   const { workspace } = useWorkspace();
   const navigate = useNavigate();
   const [currentPlan, setCurrentPlan] = useState<PlanId>('free');
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual');
 
   useEffect(() => {
     if (workspace?.id) {
@@ -48,6 +49,11 @@ const PricingPage = () => {
 
     await startCheckout({ planId, workspaceId: workspace.id });
   };
+
+  // The plan to checkout based on billing period toggle
+  const proPlanId: PlanId = billingPeriod === 'annual' ? 'pro_annual' : 'pro';
+  const proPrice = billingPeriod === 'annual' ? 119 : 14.99;
+  const proAnnualSavings = Math.round((1 - 119 / (14.99 * 12)) * 100); // ~34%
 
   const pricingStructuredData = {
     "@context": "https://schema.org",
@@ -244,6 +250,34 @@ const PricingPage = () => {
           </div>
         </section>
 
+        {/* Billing Period Toggle */}
+        <section className="py-4 px-4">
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => setBillingPeriod('monthly')}
+              className={`text-sm font-medium transition-colors ${billingPeriod === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'annual' : 'monthly')}
+              className={`relative w-12 h-6 rounded-full transition-colors focus:outline-none ${billingPeriod === 'annual' ? 'bg-primary' : 'bg-muted'}`}
+              aria-label="Toggle billing period"
+            >
+              <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${billingPeriod === 'annual' ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+            <button
+              onClick={() => setBillingPeriod('annual')}
+              className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${billingPeriod === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}
+            >
+              Annual
+              <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-semibold">
+                Save {proAnnualSavings}%
+              </span>
+            </button>
+          </div>
+        </section>
+
         {/* Pricing Cards */}
         <section className="py-6 px-4">
           <div className="container mx-auto">
@@ -337,12 +371,12 @@ const PricingPage = () => {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="scale-[1.02]"
               >
-                <Card className={`relative h-full border-primary shadow-xl ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
+                <Card className={`relative h-full border-primary shadow-xl ${(currentPlan === 'pro' || currentPlan === 'pro_annual') ? 'ring-2 ring-primary' : ''}`}>
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                     <Star className="w-3 h-3 mr-1" />
-                    Recommended
+                    {billingPeriod === 'annual' ? 'Most Popular' : 'Recommended'}
                   </Badge>
-                  {currentPlan === 'pro' && (
+                  {(currentPlan === 'pro' || currentPlan === 'pro_annual') && (
                     <Badge variant="secondary" className="absolute -top-3 right-4">Current Plan</Badge>
                   )}
                   
@@ -354,10 +388,25 @@ const PricingPage = () => {
                     <p className="text-xs text-primary font-medium tracking-wide">
                       Full Remediation Intelligence Engine
                     </p>
-                    <div className="pt-2">
-                      <span className="text-4xl font-bold">£{PLANS.pro.priceMonthly}</span>
-                      <span className="text-muted-foreground">/month</span>
+                    <div className="pt-2 flex items-end gap-2">
+                      {billingPeriod === 'annual' ? (
+                        <>
+                          <span className="text-4xl font-bold">£119</span>
+                          <span className="text-muted-foreground">/year</span>
+                          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold ml-1">
+                            Save {proAnnualSavings}%
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-4xl font-bold">£14.99</span>
+                          <span className="text-muted-foreground">/month</span>
+                        </>
+                      )}
                     </div>
+                    {billingPeriod === 'annual' && (
+                      <p className="text-xs text-muted-foreground mt-1">≈ £9.92/month · billed annually</p>
+                    )}
                     <CardDescription className="pt-4">
                       Pro gives you control — not just visibility.
                     </CardDescription>
@@ -399,7 +448,7 @@ const PricingPage = () => {
                           const text = typeof item === 'string' ? item : item.text;
                           return (
                             <li key={i} className="flex items-start gap-2 text-sm">
-                              <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isLensItem ? 'text-primary' : 'text-primary'}`} />
+                              <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                               <span className={isLensItem ? 'font-semibold text-foreground' : ''}>
                                 {text}
                                 {isLensItem && (
@@ -445,10 +494,10 @@ const PricingPage = () => {
                   <CardFooter>
                     <Button 
                       className="w-full" 
-                      onClick={() => handleSelectPlan('pro')}
-                      disabled={currentPlan === 'pro'}
+                      onClick={() => handleSelectPlan(proPlanId)}
+                      disabled={currentPlan === 'pro' || currentPlan === 'pro_annual'}
                     >
-                      {currentPlan === 'pro' ? 'Current Plan' : 'Switch to Pro Intelligence'}
+                      {(currentPlan === 'pro' || currentPlan === 'pro_annual') ? 'Current Plan' : 'Switch to Pro Intelligence'}
                     </Button>
                   </CardFooter>
                 </Card>

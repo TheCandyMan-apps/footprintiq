@@ -21,9 +21,10 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<any>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
 
-  // Map tier to plan for config
+  // Map tier to plan for config — pro_annual maps to 'pro' for feature display
+  const isProAnnual = (subscriptionTier as string) === 'pro_annual';
   const planId: PlanId = subscriptionTier === 'business' ? 'business' : 
-                         (subscriptionTier === 'pro' || subscriptionTier === 'premium') ? 'pro' : 
+                         (subscriptionTier === 'pro' || subscriptionTier === 'premium' || isProAnnual) ? 'pro' : 
                          'free';
   const planConfig = getPlanConfig(planId);
 
@@ -140,6 +141,11 @@ export default function BillingPage() {
                   <Badge variant={isActive ? 'default' : 'secondary'}>
                     {planConfig.name}
                   </Badge>
+                  {planId === 'pro' && (
+                    <Badge variant="outline" className="text-xs font-normal">
+                      {isProAnnual ? 'Annual' : 'Monthly'}
+                    </Badge>
+                  )}
                 </CardTitle>
                 <CardDescription>{planConfig.description}</CardDescription>
               </div>

@@ -20,7 +20,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-export type PlanId = 'free' | 'pro' | 'business';
+export type PlanId = 'free' | 'pro' | 'pro_annual' | 'business';
 
 export interface PlanDefinition {
   id: PlanId;
@@ -34,17 +34,13 @@ export interface PlanDefinition {
 }
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
-  /**
-   * Free tier: Discovery • Preview
-   * 1 scan/month with partial results - conversion via insight gating
-   */
   free: {
     id: 'free',
     label: 'Free',
     description: 'A fast way to see what\'s publicly visible.',
     priceMonthly: 0,
     stripePriceId: null,
-    monthlyScanLimit: 1, // 1 scan per month - upgrade for more
+    monthlyScanLimit: 1,
     allowedProviders: ['maigret', 'holehe'],
     features: [
       'Single digital footprint scan',
@@ -74,13 +70,33 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
       'PDF & CSV export',
     ],
   },
+  pro_annual: {
+    id: 'pro_annual',
+    label: 'Pro Annual',
+    description: 'All Pro features, billed annually. Save 34% vs monthly.',
+    priceMonthly: 9.92, // £119/12
+    stripePriceId: 'price_1T2KcMA3ptI9drWal0ujIdd',
+    monthlyScanLimit: 100,
+    allowedProviders: ['maigret', 'sherlock', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint'],
+    features: [
+      '100 scans per month',
+      'Advanced OSINT scans',
+      'Confidence scoring & false-positive filtering',
+      '✦ LENS identity verification',
+      'Labeled connections graph',
+      'Exposure timelines',
+      'Removal guidance',
+      'Continuous monitoring & alerts',
+      'PDF & CSV export',
+    ],
+  },
   business: {
     id: 'business',
     label: 'Business',
     description: 'Teams, agencies and corporate investigators.',
     priceMonthly: 49.99,
     stripePriceId: 'price_1ShdxJA3ptI9drLWjndMjptw',
-    monthlyScanLimit: null, // unlimited
+    monthlyScanLimit: null,
     allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint'],
     features: [
       'Unlimited scans',
@@ -100,6 +116,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
 export function resolvePlanFromStripePrice(priceId: string | null): PlanId {
   if (!priceId) return 'free';
   if (priceId === PLANS.pro.stripePriceId) return 'pro';
+  if (priceId === PLANS.pro_annual.stripePriceId) return 'pro_annual';
   if (priceId === PLANS.business.stripePriceId) return 'business';
   return 'free';
 }

@@ -25,8 +25,8 @@ export const SUBSCRIPTION_PLANS = {
   },
   pro_annual: {
     name: 'PRO Annual',
-    price: 140,
-    priceId: 'price_1Si2vkA3ptI9drLWCQrxU4Dc',
+    price: 119,
+    priceId: 'price_1T2KcMA3ptI9drWal0ujIdd',
     productId: 'prod_TfNh5g6CTii7RT',
     tier: 'pro',
     currency: 'GBP',

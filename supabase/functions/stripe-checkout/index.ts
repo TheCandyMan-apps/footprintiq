@@ -14,7 +14,7 @@ const corsHeaders = {
 
 const CheckoutSchema = z.object({
   workspaceId: z.string().uuid(),
-  plan: z.enum(['pro', 'business']),
+  plan: z.enum(['pro', 'pro_annual', 'business']),
 });
 
 serve(async (req) => {
@@ -133,12 +133,16 @@ serve(async (req) => {
 
     console.log('[STRIPE-CHECKOUT] Workspace access OK', { workspaceId, isOwner, isMember });
 
-    // Get Stripe price ID from environment
-    const priceIdEnvVar = plan === 'pro' ? 'STRIPE_PRICE_PRO' : 'STRIPE_PRICE_BUSINESS';
-    const priceId = Deno.env.get(priceIdEnvVar);
+    // Get Stripe price ID — hardcoded for security, no env var needed for public price IDs
+    const PRICE_IDS: Record<string, string> = {
+      pro: 'price_1ShgNPA3ptI9drLW40rbWMjq',
+      pro_annual: 'price_1T2KcMA3ptI9drWal0ujIdd',
+      business: 'price_1ShdxJA3ptI9drLWjndMjptw',
+    };
+    const priceId = PRICE_IDS[plan];
 
     if (!priceId) {
-      console.error(`Missing environment variable: ${priceIdEnvVar}`);
+      console.error(`Unknown plan: ${plan}`);
       return new Response(JSON.stringify({ error: 'Stripe configuration error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
