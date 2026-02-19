@@ -7691,7 +7691,7 @@ export type Database = {
           telegram_triggered_at: string | null
           total_sources_found: number | null
           used_free_any_credit: boolean | null
-          user_id: string
+          user_id: string | null
           username: string | null
           workspace_id: string | null
         }
@@ -7730,7 +7730,7 @@ export type Database = {
           telegram_triggered_at?: string | null
           total_sources_found?: number | null
           used_free_any_credit?: boolean | null
-          user_id: string
+          user_id?: string | null
           username?: string | null
           workspace_id?: string | null
         }
@@ -7769,7 +7769,7 @@ export type Database = {
           telegram_triggered_at?: string | null
           total_sources_found?: number | null
           used_free_any_credit?: boolean | null
-          user_id?: string
+          user_id?: string | null
           username?: string | null
           workspace_id?: string | null
         }
