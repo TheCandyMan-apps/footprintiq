@@ -409,10 +409,13 @@ serve(async (req: Request) => {
             provider: "telegram",
             kind: "telegram.not_found",
             severity: "info",
+            confidence: 0,
             evidence: [{ key: "reason", value: "No Telegram entity resolved for this username" }],
             meta: {
               title: "No Telegram Entity Found",
-              note: "The Telegram worker could not resolve this username to any user or channel.",
+              description: "The Telegram worker could not resolve this username to any user or channel.",
+              diagnostic: true,
+              source: "telegram",
               worker_status: workerRes.status,
             },
           });

@@ -620,10 +620,17 @@ serve(async (req) => {
 
         // Stamp idempotency marker immediately
         const triggeredAt = new Date().toISOString();
-        await serviceClient
+        const { error: tgStampError } = await serviceClient
           .from('scans')
           .update({ telegram_triggered_at: triggeredAt })
-          .eq('id', scan.id);
+          .eq('id', scan.id)
+          .select('id');
+
+        if (tgStampError) {
+          console.error(`[n8n-scan-trigger] Failed to stamp telegram_triggered_at for ${scan.id}:`, tgStampError.message, tgStampError.code);
+        } else {
+          console.log(`[n8n-scan-trigger] telegram_triggered_at stamped for ${scan.id}`);
+        }
 
         try {
         const telegramBody = JSON.stringify({
