@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
 // Matches new billing tiers + legacy support
-export type SubscriptionTier = 'free' | 'pro' | 'business' | 'analyst' | 'premium' | 'enterprise' | 'family';
+export type SubscriptionTier = 'free' | 'pro' | 'pro_annual' | 'business' | 'analyst' | 'premium' | 'enterprise' | 'family';
 
 interface SubscriptionContextType {
   user: User | null;
@@ -128,7 +128,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const isPremium = subscriptionTier !== 'free';
-  const isProOrHigher = ['pro', 'business', 'premium', 'enterprise'].includes(subscriptionTier);
+  const isProOrHigher = ['pro', 'pro_annual', 'business', 'premium', 'enterprise'].includes(subscriptionTier);
 
   return (
     <SubscriptionContext.Provider value={{ 

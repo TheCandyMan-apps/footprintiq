@@ -19,6 +19,7 @@ const SCAN_TYPES: ScanTypeAvailability[] = [
     tiers: {
       free: { available: true, note: 'Maigret' },
       pro: { available: true, note: 'Maigret + Sherlock' },
+      pro_annual: { available: true, note: 'Maigret + Sherlock' },
       business: { available: true, note: 'Full suite + GoSearch' },
     },
   },
@@ -29,6 +30,7 @@ const SCAN_TYPES: ScanTypeAvailability[] = [
     tiers: {
       free: { available: true, note: 'Holehe only' },
       pro: { available: true, note: 'IPQS + Holehe' },
+      pro_annual: { available: true, note: 'IPQS + Holehe' },
       business: { available: true, note: 'Full enrichment' },
     },
   },
@@ -39,6 +41,7 @@ const SCAN_TYPES: ScanTypeAvailability[] = [
     tiers: {
       free: { available: false },
       pro: { available: true, note: 'IPQS Phone' },
+      pro_annual: { available: true, note: 'IPQS Phone' },
       business: { available: true, note: 'Full intel' },
     },
   },
@@ -49,6 +52,7 @@ const SCAN_TYPES: ScanTypeAvailability[] = [
     tiers: {
       free: { available: false },
       pro: { available: true, note: 'Basic lookup' },
+      pro_annual: { available: true, note: 'Basic lookup' },
       business: { available: true, note: 'Deep analysis' },
     },
   },
@@ -57,6 +61,7 @@ const SCAN_TYPES: ScanTypeAvailability[] = [
 const TIER_CONFIG: Record<PlanId, { label: string; color: string }> = {
   free: { label: 'Free', color: 'text-muted-foreground' },
   pro: { label: 'Pro', color: 'text-primary' },
+  pro_annual: { label: 'Pro Annual', color: 'text-primary' },
   business: { label: 'Business', color: 'text-amber-600' },
 };
 
