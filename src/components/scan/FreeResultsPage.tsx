@@ -370,6 +370,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
       })
       .on('broadcast', { event: 'scan_complete' }, () => {
         loadJob();
+        // Delay refetch to allow DB writes to fully commit before reading results
+        setTimeout(() => refetch(), 800);
+        setTimeout(() => refetch(), 2500);
       })
       .subscribe();
 
@@ -394,12 +397,15 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     return () => clearInterval(interval);
   }, [job?.status]);
 
-  // Reload results when scan completes but we have no results
+  // Reload results when scan completes but we have no results yet (race condition guard)
   useEffect(() => {
-    if (job?.status && ['completed', 'completed_empty'].includes(job.status) && results.length === 0 && refetch) {
-      refetch();
-    }
-  }, [job?.status, results.length, refetch]);
+    if (!job?.status || !['completed', 'completed_empty', 'completed_partial'].includes(job.status) || results.length > 0) return;
+    // Retry at 1s, 3s, and 6s to handle slow DB commit propagation
+    const t1 = setTimeout(() => refetch(), 1000);
+    const t2 = setTimeout(() => refetch(), 3000);
+    const t3 = setTimeout(() => refetch(), 6000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [job?.status, results.length]);
 
    // Post-scan upgrade modal removed to reduce upsell fatigue (session replay feedback)
 
