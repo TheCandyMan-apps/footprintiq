@@ -299,20 +299,32 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     jobChannelRef.current = channel;
 
     // Subscribe to progress broadcasts
-    // IMPORTANT: Must match backend broadcast topic (n8n-scan-progress uses `scan_progress:${scanId}`)
+    // Backend uses two channel name formats: `scan_progress:${scanId}` (colon) and `scan_progress_${scanId}` (underscore)
+    // We subscribe to both to handle all backend functions correctly
+    const handleProviderUpdate = (payload: any) => {
+      if (payload.payload?.resultCount !== undefined) {
+        setBroadcastResultCount(payload.payload.resultCount);
+      }
+    };
+    const handleScanComplete = () => {
+      loadJob();
+      // Delay refetch to allow DB writes to fully commit before reading results
+      setTimeout(() => refetchResults(), 800);
+      setTimeout(() => refetchResults(), 2500);
+    };
+
     const progressChannel = supabase
       .channel(`scan_progress:${jobId}`)
-      .on('broadcast', { event: 'provider_update' }, (payload) => {
-        if (payload.payload?.resultCount !== undefined) {
-          setBroadcastResultCount(payload.payload.resultCount);
-        }
-      })
-      .on('broadcast', { event: 'scan_complete' }, () => {
-        loadJob();
-        // Delay refetch to allow DB writes to fully commit before reading results
-        setTimeout(() => refetchResults(), 800);
-        setTimeout(() => refetchResults(), 2500);
-      })
+      .on('broadcast', { event: 'provider_update' }, handleProviderUpdate)
+      .on('broadcast', { event: 'scan_complete' }, handleScanComplete)
+      .subscribe();
+
+    // Also subscribe to underscore format used by enqueue-maigret-scan
+    const progressChannelAlt = supabase
+      .channel(`scan_progress_${jobId}`)
+      .on('broadcast', { event: 'provider_update' }, handleProviderUpdate)
+      .on('broadcast', { event: 'scan_complete' }, handleScanComplete)
+      .on('broadcast', { event: 'scan_failed' }, handleScanComplete)
       .subscribe();
 
     progressChannelRef.current = progressChannel;
@@ -320,6 +332,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     return () => {
       if (jobChannelRef.current) supabase.removeChannel(jobChannelRef.current);
       if (progressChannelRef.current) supabase.removeChannel(progressChannelRef.current);
+      supabase.removeChannel(progressChannelAlt);
     };
   }, [jobId]);
 

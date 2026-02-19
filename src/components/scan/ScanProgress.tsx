@@ -29,7 +29,7 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
 
   // Update elapsed time
   useEffect(() => {
-    if (!startedAt || finishedAt || status !== 'running') return;
+    if (!startedAt || finishedAt || !['running', 'pending'].includes(status)) return;
 
     const interval = setInterval(() => {
       const start = new Date(startedAt).getTime();
