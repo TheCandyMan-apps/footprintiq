@@ -410,6 +410,7 @@ serve(async (req: Request) => {
             kind: "telegram.not_found",
             severity: "info",
             confidence: 0,
+            observed_at: new Date().toISOString(),
             evidence: [{ key: "reason", value: "No Telegram entity resolved for this username" }],
             meta: {
               title: "No Telegram Entity Found",

@@ -133,7 +133,8 @@ Deno.serve(async (req) => {
       adminClient
         .from('scans')
         .update({ telegram_triggered_at: null })
-        .eq('id', scan_id),
+        .eq('id', scan_id)
+        .select('id'),
 
       // Delete stale telegram findings
       adminClient
@@ -155,7 +156,21 @@ Deno.serve(async (req) => {
 
     console.log(`[telegram-retrigger] Retriggering scan ${scan_id} (type=${scanType}, target=${target.slice(0, 10)}***)`);
 
-    // ── 5. Route to correct backend ─────────────────────────────────
+    // ── 5. Stamp triggered_at immediately so UI shows "pending" ─────
+    const triggeredAt = new Date().toISOString();
+    const { error: stampError } = await adminClient
+      .from('scans')
+      .update({ telegram_triggered_at: triggeredAt })
+      .eq('id', scan_id)
+      .select('id');
+
+    if (stampError) {
+      console.error(`[telegram-retrigger] Failed to stamp telegram_triggered_at:`, stampError.message);
+    } else {
+      console.log(`[telegram-retrigger] telegram_triggered_at stamped: ${triggeredAt}`);
+    }
+
+    // ── 6. Route to correct backend ─────────────────────────────────
     if (scanType === 'phone') {
       // Phone scan: call telegram-proxy with phone_presence action
       const gatewayKey = Deno.env.get('N8N_GATEWAY_KEY');
