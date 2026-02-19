@@ -862,7 +862,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
             Telegram intelligence is gathered when available from public profiles and channels.
           </p>
           <div className="flex justify-center pt-2">
-            <RetriggerButton scanId={scanId} scanType={scanType} />
+            <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" />
           </div>
         </div>
       </div>
