@@ -127,6 +127,7 @@ const UsersearchVsFootprintiq = lazy(() => import("./pages/comparisons/Usersearc
 const PeopleSearchVsFootprintiq = lazy(() => import("./pages/comparisons/PeopleSearchVsFootprintiq"));
 const OsintSuitesVsFootprintiq = lazy(() => import("./pages/comparisons/OsintSuitesVsFootprintiq"));
 const OsintForHighRiskUsers = lazy(() => import("./pages/OsintForHighRiskUsers"));
+const OsintForInvestigators = lazy(() => import("./pages/OsintForInvestigators"));
 const EthicalOsintCharter = lazy(() => import("./pages/EthicalOsintCharter"));
 const CheckWhatsPubliclyVisible = lazy(() => import("./pages/guides/CheckWhatsPubliclyVisible"));
 const EmployersDigitalFootprint = lazy(() => import("./pages/guides/EmployersDigitalFootprint"));
@@ -687,6 +688,7 @@ function RouterContent() {
              <Route path="/people-search-vs-footprintiq" element={<PeopleSearchVsFootprintiq />} />
              <Route path="/osint-suites-vs-footprintiq" element={<OsintSuitesVsFootprintiq />} />
              <Route path="/osint-for-activists-journalists" element={<OsintForHighRiskUsers />} />
+             <Route path="/osint-for-investigators" element={<OsintForInvestigators />} />
              <Route path="/guides/check-whats-publicly-visible" element={<CheckWhatsPubliclyVisible />} />
              <Route path="/guides/employers-digital-footprint" element={<EmployersDigitalFootprint />} />
              <Route path="/guides/clean-up-online-presence" element={<CleanUpOnlinePresence />} />
