@@ -603,10 +603,13 @@ function getWorkerStatus(
   hasFindings: boolean,
   hasNotFoundDiagnostic: boolean,
 ): WorkerStatus {
-  if (!triggeredAt) return 'not_triggered';
-  const elapsed = Date.now() - new Date(triggeredAt).getTime();
+  // If we have findings or a diagnostic sentinel, the worker definitely ran —
+  // even if the telegram_triggered_at timestamp failed to persist.
   if (hasFindings) return 'completed';
   if (hasNotFoundDiagnostic) return 'not_found';
+
+  if (!triggeredAt) return 'not_triggered';
+  const elapsed = Date.now() - new Date(triggeredAt).getTime();
   // Give the worker 5 minutes before declaring a timeout
   if (elapsed > 5 * 60 * 1000) return 'timed_out';
   return 'pending';
