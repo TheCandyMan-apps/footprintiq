@@ -309,6 +309,9 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
       })
       .on('broadcast', { event: 'scan_complete' }, () => {
         loadJob();
+        // Delay refetch to allow DB writes to fully commit before reading results
+        setTimeout(() => refetchResults(), 800);
+        setTimeout(() => refetchResults(), 2500);
       })
       .subscribe();
 
@@ -338,12 +341,15 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     return () => clearInterval(interval);
   }, [job?.status, isTerminalStatus]);
 
-  // Reload results when scan completes but we have no results (handles missed realtime events)
+  // Reload results when scan completes but we have no results (handles missed realtime events + race conditions)
   useEffect(() => {
-    if (job?.status && ['completed', 'completed_empty', 'completed_partial'].includes(job.status) && results.length === 0) {
-      refetchResults();
-    }
-  }, [job?.status, results.length, refetchResults]);
+    if (!job?.status || !['completed', 'completed_empty', 'completed_partial'].includes(job.status) || results.length > 0) return;
+    // Retry at 1s, 3s, and 6s to handle slow DB commit propagation
+    const t1 = setTimeout(() => refetchResults(), 1000);
+    const t2 = setTimeout(() => refetchResults(), 3000);
+    const t3 = setTimeout(() => refetchResults(), 6000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [job?.status, results.length]);
 
   const loadJob = async () => {
     try {
