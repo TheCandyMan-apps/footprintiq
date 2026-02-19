@@ -136,7 +136,7 @@ serve(async (req) => {
     // Get Stripe price ID — hardcoded for security, no env var needed for public price IDs
     const PRICE_IDS: Record<string, string> = {
       pro: 'price_1ShgNPA3ptI9drLW40rbWMjq',
-      pro_annual: 'price_1T2KcMA3ptI9drWal0ujIdd',
+      pro_annual: 'price_1T2KcMA3ptI9drLWal0ujIdd',
       business: 'price_1ShdxJA3ptI9drLWjndMjptw',
     };
     const priceId = PRICE_IDS[plan];
