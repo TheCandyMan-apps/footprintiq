@@ -1070,18 +1070,21 @@ class WorkerHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         request_id = str(uuid.uuid4())[:8]
 
+        # Strip query string from path (handles cases where proxy appends ?params)
+        clean_path = self.path.split("?")[0].rstrip("/") or "/"
+
         # Auth check
         provided_key = self.headers.get("X-Worker-Key", "")
         if WORKER_TOKEN and provided_key != WORKER_TOKEN:
-            log.warning(f"[{request_id}] Unauthorized request to {self.path}")
+            log.warning(f"[{request_id}] Unauthorized request to {clean_path}")
             self._send_json({"ok": False, "error": "Unauthorized"}, 401)
             return
 
         # Route
-        handler = ROUTES.get(self.path)
+        handler = ROUTES.get(clean_path)
         if not handler:
-            # Pass through to existing handlers or 404
-            self._send_json({"ok": False, "error": f"Unknown route: {self.path}"}, 404)
+            log.warning(f"[{request_id}] Unknown route: {clean_path} (raw: {self.path})")
+            self._send_json({"ok": False, "error": f"Unknown route: {clean_path}"}, 404)
             return
 
         # Parse body
@@ -1094,7 +1097,7 @@ class WorkerHandler(BaseHTTPRequestHandler):
             return
 
         scan_id = payload.get("scanId", "unknown")
-        log.info(f"[{request_id}] {self.path} scanId={scan_id}")
+        log.info(f"[{request_id}] {clean_path} scanId={scan_id}")
 
         # TODO: rate-limit hook — check per-workspace / per-IP limits here
 
