@@ -861,7 +861,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
           <p className="text-xs text-muted-foreground/60">
             Telegram intelligence is gathered when available from public profiles and channels.
           </p>
-          <div className="flex justify-center pt-1">
+          <div className="flex justify-center pt-2">
             <RetriggerButton scanId={scanId} scanType={scanType} />
           </div>
         </div>
@@ -890,7 +890,30 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
           <PublicDataBadge />
         </div>
         <div className="flex items-center gap-2">
-          <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={async () => {
+                    const { error } = await supabase.functions.invoke('telegram-retrigger', {
+                      body: { scan_id: scanId, scan_type: scanType },
+                    });
+                    if (!error) toast.success('Telegram scan re-triggered.');
+                    else toast.error('Failed to re-trigger.');
+                  }}
+                  aria-label="Re-run Telegram scan"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p className="text-xs">Re-run Telegram scan</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <ResponsibleUseTooltip />
         </div>
       </div>
