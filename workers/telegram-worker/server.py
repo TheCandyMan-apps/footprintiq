@@ -45,9 +45,12 @@ _loop = None
 
 
 def _get_loop():
-    global _loop
+    global _loop, _client
     if _loop is None or _loop.is_closed():
         _loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_loop)
+        # Reset client so it reconnects on the new loop
+        _client = None
     return _loop
 
 
@@ -1117,6 +1120,11 @@ class WorkerHandler(BaseHTTPRequestHandler):
             result = loop.run_until_complete(handler(payload))
         except Exception as e:
             log.exception(f"[{request_id}] Handler error: {e}")
+            # Mark loop as needing replacement on next request so state doesn't carry over
+            try:
+                loop.close()
+            except Exception:
+                pass
             self._send_json({"ok": False, "error": "Internal worker error", "detail": str(e)}, 500)
             return
 
