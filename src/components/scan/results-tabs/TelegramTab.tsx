@@ -11,7 +11,7 @@
  * Tier gating: Free users see the Profile card + locked preview placeholders.
  */
 
-import { useMemo, useState, useCallback, useRef } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -731,9 +731,10 @@ function TelegramHealthIndicator({
 
 const COOLDOWN_MS = 30_000;
 
-function RetriggerButton({ scanId, scanType, variant = 'default' }: {
+function RetriggerButton({ scanId, scanType, variant = 'default', onRetriggered }: {
   scanId: string;
   scanType?: string;
+  onRetriggered?: () => void;
   variant?: 'default' | 'icon';
 }) {
   const [loading, setLoading] = useState(false);
@@ -754,6 +755,7 @@ function RetriggerButton({ scanId, scanType, variant = 'default' }: {
         console.error('[RetriggerButton]', error);
       } else {
         toast.success('Telegram scan re-triggered. Results will appear shortly.');
+        onRetriggered?.();
         setDisabled(true);
         cooldownRef.current = setTimeout(() => setDisabled(false), COOLDOWN_MS);
       }
@@ -813,6 +815,25 @@ function RetriggerButton({ scanId, scanType, variant = 'default' }: {
 // ── Main component ──────────────────────────────────────────────
 
 export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: TelegramTabProps) {
+  // Keep a local copy of triggeredAt so it can be refreshed after a retrigger
+  // without requiring the parent to re-fetch the whole scan record.
+  const [localTriggeredAt, setLocalTriggeredAt] = useState<string | null | undefined>(telegramTriggeredAt);
+
+  // Sync if the parent updates (e.g. on initial load)
+  useEffect(() => {
+    setLocalTriggeredAt(telegramTriggeredAt);
+  }, [telegramTriggeredAt]);
+
+  const handleRetriggered = useCallback(async () => {
+    // Re-fetch telegram_triggered_at from the DB so the health indicator updates immediately
+    const { data } = await supabase
+      .from('scans')
+      .select('telegram_triggered_at')
+      .eq('id', scanId)
+      .maybeSingle();
+    if (data) setLocalTriggeredAt((data as any).telegram_triggered_at ?? null);
+  }, [scanId]);
+
   const {
     findings,
     loading,
@@ -851,7 +872,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
     return (
       <div className="space-y-4">
         <TelegramHealthIndicator
-          triggeredAt={telegramTriggeredAt}
+          triggeredAt={localTriggeredAt}
           hasFindings={false}
           hasNotFoundDiagnostic={hasNotFoundDiagnostic}
         />
@@ -862,7 +883,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
             Telegram intelligence is gathered when available from public profiles and channels.
           </p>
           <div className="flex justify-center pt-2">
-            <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" />
+            <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" onRetriggered={handleRetriggered} />
           </div>
         </div>
       </div>
@@ -901,7 +922,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
                     const { error } = await supabase.functions.invoke('telegram-retrigger', {
                       body: { scan_id: scanId, scan_type: scanType },
                     });
-                    if (!error) toast.success('Telegram scan re-triggered.');
+                    if (!error) { toast.success('Telegram scan re-triggered.'); handleRetriggered(); }
                     else toast.error('Failed to re-trigger.');
                   }}
                   aria-label="Re-run Telegram scan"
@@ -920,7 +941,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
       {/* Worker health indicator */}
       <TelegramHealthIndicator
-        triggeredAt={telegramTriggeredAt}
+        triggeredAt={localTriggeredAt}
         hasFindings={hasRealData}
         hasNotFoundDiagnostic={hasNotFoundDiagnostic}
       />
