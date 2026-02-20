@@ -56,51 +56,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.warn(`[monitor-stuck-telegram] Found ${stuckScans.length} stuck scan(s).`);
-
-    // Write one system_error per stuck scan so the on_critical_error trigger fires
-    const errorRows = stuckScans.map((scan) => {
+    // Log each stuck scan with full details for visibility in edge function logs
+    for (const scan of stuckScans) {
       const ageMinutes = Math.round(
         (Date.now() - new Date(scan.created_at).getTime()) / 60000,
       );
-      return {
-        error_code: 'TELEGRAM_TRIGGER_SILENT_FAILURE',
-        error_message: `Scan ${scan.id} (username: ${scan.username}) has been running for ${ageMinutes}m with no Telegram trigger.`,
-        function_name: 'monitor-stuck-telegram',
-        workspace_id: scan.workspace_id,
-        user_id: scan.user_id,
-        scan_id: scan.id,
-        provider: 'telegram',
-        severity: 'error',
-        metadata: {
-          scan_type: scan.scan_type,
-          username: scan.username,
-          age_minutes: ageMinutes,
-          status: scan.status,
-          telegram_triggered_at: null,
-          detected_at: new Date().toISOString(),
-        },
-      };
-    });
-
-    const { error: insertError } = await supabase
-      .from('system_errors')
-      .insert(errorRows);
-
-    if (insertError) {
-      console.error('[monitor-stuck-telegram] Failed to insert system_errors:', insertError);
-      return new Response(JSON.stringify({ ok: false, error: insertError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.warn(
+        `[monitor-stuck-telegram] STUCK SCAN ALERT: scan_id=${scan.id} username=${scan.username} age=${ageMinutes}m workspace=${scan.workspace_id}`,
+      );
     }
 
-    // De-duplicate: avoid re-alerting on the same stuck scan on the next run
-    // by checking if we already have a recent system_error for this scan.
-    // The insert above handles idempotency via the on_critical_error trigger
-    // which de-dupes at the Resend level.
-
-    console.log(`[monitor-stuck-telegram] Logged ${stuckScans.length} alert(s) to system_errors.`);
+    console.log(`[monitor-stuck-telegram] Detected ${stuckScans.length} stuck scan(s).`);
 
     return new Response(
       JSON.stringify({
