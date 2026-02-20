@@ -283,7 +283,8 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
             // Backward/forward compatible error column
             error: updatedScan.analysis_error || updatedScan.error_message || null,
             all_sites: false,
-            requested_by: updatedScan.user_id
+            requested_by: updatedScan.user_id,
+            telegram_triggered_at: updatedScan.telegram_triggered_at || null,
           };
           setJob(mappedJob);
           
