@@ -768,28 +768,38 @@ async def handle_username_lookup(payload: dict) -> dict:
         entity = await client.get_entity(handle)
     except Exception as e:
         err_str = str(e).lower()
+        err_type = type(e).__name__
+
+        # FloodWaitError must surface as 429 so the proxy/n8n can back off gracefully
+        if "floodwait" in err_type.lower() or "flood_wait" in err_str:
+            wait = getattr(e, 'seconds', 60)
+            return error_response("FLOOD_WAIT", f"Rate limited by Telegram — retry after {wait}s", 429)
+
+        # Private account or invite-only channel
         if "invite" in err_str or "private" in err_str:
             return error_response("PRIVATE_CHANNEL_UNSUPPORTED", "This appears to be a private account/channel.")
-        # For any not-found style error, try MTProto ResolveUsername as fallback
-        if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "username" in err_str or "invalid" in err_str:
-            log.info(f"[username_lookup] get_entity failed for '{handle}', trying ResolveUsername fallback")
-            try:
-                from telethon.tl.functions.contacts import ResolveUsernameRequest
-                resolved = await client(ResolveUsernameRequest(handle))
-                # resolved.users contains matched users, resolved.chats contains channels
-                if resolved.users:
-                    entity = resolved.users[0]
-                    log.info(f"[username_lookup] ResolveUsername resolved user: {getattr(entity, 'username', handle)}")
-                elif resolved.chats:
-                    entity = resolved.chats[0]
-                    log.info(f"[username_lookup] ResolveUsername resolved chat/channel: {getattr(entity, 'username', handle)}")
-                else:
-                    return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
-            except Exception as e2:
-                log.warning(f"[username_lookup] ResolveUsername also failed: {e2}")
+
+        # For ALL other errors, attempt ResolveUsername fallback before giving up.
+        # This catches ValueError, PeerIdInvalidError, UsernameNotOccupiedError, etc.
+        log.info(f"[username_lookup] get_entity raised {err_type}: {e} — trying ResolveUsername fallback")
+        try:
+            from telethon.tl.functions.contacts import ResolveUsernameRequest
+            resolved = await client(ResolveUsernameRequest(handle))
+            if resolved.users:
+                entity = resolved.users[0]
+                log.info(f"[username_lookup] ResolveUsername resolved user: {getattr(entity, 'username', handle)}")
+            elif resolved.chats:
+                entity = resolved.chats[0]
+                log.info(f"[username_lookup] ResolveUsername resolved chat/channel: {getattr(entity, 'username', handle)}")
+            else:
                 return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
-        else:
-            raise
+        except Exception as e2:
+            e2_type = type(e2).__name__
+            if "floodwait" in e2_type.lower():
+                wait = getattr(e2, 'seconds', 60)
+                return error_response("FLOOD_WAIT", f"Rate limited — retry after {wait}s", 429)
+            log.warning(f"[username_lookup] ResolveUsername also failed: {e2}")
+            return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
 
     if entity is None:
         return error_response("INVALID_TARGET", f"Could not resolve entity for: {handle}", 404)
