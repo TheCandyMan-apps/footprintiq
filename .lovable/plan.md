@@ -1,78 +1,90 @@
 
-## Telegram Integration End-to-End Test Plan
+## Fix: Harden the Telegram Worker Error Handling
 
-### Current Status (from live database)
+### What's broken
 
-All scans from the last hour show:
-- `telegram_triggered_at = NULL` on every scan (trigger timestamp still not persisting)
-- Zero Telegram findings on the 4 most recent scans for `shubham_27.2007` and `clemence.wtrs`
-- The last Telegram result recorded was a `telegram.not_found` sentinel, written before the Cloud Run rebuild
+The `handle_username_lookup` function in `workers/telegram-worker/server.py` uses a narrow string-match filter to decide whether to retry with `ResolveUsernameRequest`:
 
-This confirms the Cloud Run fix has not yet been validated — the worker hasn't successfully returned a positive result since the rebuild.
+```python
+if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "username" in err_str or "invalid" in err_str:
+    # try fallback
+else:
+    raise  # ← This causes the 500
+```
 
----
+Any Telethon error that doesn't contain one of those substrings (e.g. `FloodWaitError`, `UsernameOccupiedError`, `UsernameNotOccupiedError`, `PeerIdInvalidError`, network timeouts) hits the bare `raise` and produces a 500 instead of a graceful 404.
 
-### Two Things to Test
+### Fix strategy
 
-#### Test 1: Cloud Run Worker Returns a Valid Account
+1. **Broaden the fallback to catch all non-private, non-flood errors** — instead of matching specific strings, only `raise` for `FloodWaitError` (which needs to be surfaced as a 429) and unknown catastrophic errors. Catch everything else and attempt the `ResolveUsername` fallback before giving up.
 
-The previous issue was that the worker returned a 404 even for accounts that exist. The MTProto `ResolveUsernameRequest` fallback was added to fix this.
+2. **Add explicit `FloodWaitError` handling** — return a structured error with a `retry_after` hint so the proxy/n8n can back off gracefully instead of getting a hard 500.
 
-**Action needed:** Run a fresh scan on a username with a **confirmed active Telegram account** (e.g., a public channel or a known active user). The Sherlock results for `shubham_27.2007` show active accounts on multiple platforms — this username is likely valid. If you have a username you can confirm exists on Telegram (e.g., your own), that is the ideal test.
+3. **Wrap `GetFullUserRequest` bio fetch more safely** — currently it re-raises on unexpected errors; make it fully silent (non-fatal only).
 
-**Expected result after the fix:**
-- Cloud Run worker returns `200` with a profile payload
-- `telegram-proxy` writes findings with `kind: telegram.profile` or similar
-- TG tab shows profile data, not "not found"
+### Files to change
 
-#### Test 2: Trigger Timestamp Persistence
+- `workers/telegram-worker/server.py` — update `handle_username_lookup` error handling (~lines 769–792)
 
-The `telegram_triggered_at` column is still NULL on all recent scans, meaning the `.update().eq().select('id')` fix in `n8n-scan-trigger` may not have deployed properly or the code path isn't being reached.
+### Technical changes
 
-**Action needed:** After running the scan in Test 1, query the database directly to confirm `telegram_triggered_at` is non-null on the new scan row.
+In `handle_username_lookup`, replace the narrow `if/else raise` block with:
 
----
+```python
+except Exception as e:
+    err_str = str(e).lower()
+    err_type = type(e).__name__
 
-### What to Deploy / Verify Before Testing
+    # FloodWait must surface as 429, not 500
+    if "floodwait" in err_type.lower() or "flood_wait" in err_str:
+        wait = getattr(e, 'seconds', 60)
+        return error_response("FLOOD_WAIT", f"Rate limited by Telegram — retry after {wait}s", 429)
 
-The following edge functions were modified in previous sessions. Confirm they are at their latest deployed version:
+    # Private/invite link
+    if "invite" in err_str or "private" in err_str:
+        return error_response("PRIVATE_CHANNEL_UNSUPPORTED", "Private account or invite link.")
 
-1. `n8n-scan-trigger` — must have `.select('id')` on the `telegram_triggered_at` update
-2. `telegram-proxy` — must include `observed_at` and `confidence` in the diagnostic insert
-3. `telegram-retrigger` — must stamp `telegram_triggered_at` immediately after firing the webhook
+    # For ALL other errors, attempt ResolveUsername fallback before giving up
+    log.info(f"[username_lookup] get_entity raised {err_type}: {e} — trying ResolveUsername fallback")
+    try:
+        from telethon.tl.functions.contacts import ResolveUsernameRequest
+        resolved = await client(ResolveUsernameRequest(handle))
+        if resolved.users:
+            entity = resolved.users[0]
+        elif resolved.chats:
+            entity = resolved.chats[0]
+        else:
+            return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
+    except Exception as e2:
+        e2_type = type(e2).__name__
+        if "floodwait" in e2_type.lower():
+            wait = getattr(e2, 'seconds', 60)
+            return error_response("FLOOD_WAIT", f"Rate limited — retry after {wait}s", 429)
+        log.warning(f"[username_lookup] ResolveUsername also failed: {e2}")
+        return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
+```
 
----
+This ensures:
+- `FloodWaitError` → 429 (proxy/n8n can detect and back off)
+- Private account → 403
+- Any other lookup failure → tries `ResolveUsername`, then gracefully returns 404
+- Nothing propagates as an unhandled 500
 
-### Test Execution Plan
+### After the code change
 
-#### Step 1: Run a new scan on a confirmed Telegram username
-- Go to the FootprintIQ dashboard
-- Start a username scan on a username you know has an active Telegram account
-- Watch the Telegram tab in the scan results
+The worker code change requires a redeployment. The user will need to run:
 
-#### Step 2: Observe the TG tab behaviour
-- If the Cloud Run fix is working: the tab should transition from "Results pending" → profile data within 30–60 seconds
-- If still returning not_found: the Cloud Run worker is still not resolving the entity correctly
+```bash
+cd ~/telegram-worker
+gcloud run deploy telegram-worker \
+  --source . \
+  --region europe-west2 \
+  --no-allow-unauthenticated \
+  --project footprintiq
+```
 
-#### Step 3: Re-trigger test
-- On the same scan, use the "Re-trigger" button in the TG tab
-- Confirm the 30-second cooldown activates
-- Confirm a new result arrives via realtime
+Then retrigger the `Jammmy10` scan using the retrigger button on the Telegram tab — it should resolve and return a profile this time.
 
-#### Step 4: Validate `telegram_triggered_at` in the database
-- After the scan completes, check that the `telegram_triggered_at` column on the scan row is non-null
-- If it is still null, the edge function update fix is not persisting — likely a deployment issue
+### Why previous scans for Jammmy10 also returned not_found
 
----
-
-### Technical Scope (if fixes are still needed after testing)
-
-If Test 1 still returns 404 from the worker:
-- The Cloud Run container needs to be rebuilt and redeployed with the `ResolveUsernameRequest` fallback using: `gcloud run deploy telegram-worker --source workers/telegram-worker/ --region europe-west2 --no-allow-unauthenticated`
-- The specific issue is that the initial `GetEntityRequest` fails for some account types; the MTProto fallback is the fix
-
-If `telegram_triggered_at` is still null:
-- `n8n-scan-trigger` needs to be redeployed (the `.select('id')` change must be in the live function)
-- Alternatively, the trigger code path for username scans may be taking a different branch that bypasses the update
-
-No database migrations needed.
+All four previous scans also wrote `telegram.not_found`. The session was live but the entity resolution was silently failing — this fix will make the fallback path fire correctly for accounts that require the MTProto `ResolveUsername` path.
