@@ -660,6 +660,10 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
                 )}
 
                 <TabsContent value="telegram" className="mt-0">
+                  <div className="mb-4 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm text-muted-foreground">
+                    <span className="text-base">🚧</span>
+                    <span>Telegram intelligence is coming soon — this feature is currently being upgraded and will be available shortly.</span>
+                  </div>
                   <Suspense fallback={<TabSkeleton />}>
                     <TelegramTab scanId={jobId} isPro={true} scanType={job?.scan_type} telegramTriggeredAt={job?.telegram_triggered_at} />
                   </Suspense>
