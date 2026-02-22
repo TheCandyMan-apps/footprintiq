@@ -24,8 +24,8 @@ const EmailBreachToolsPage = () => {
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
-    "headline": "Email Breach Check Tools Compared: HIBP, Mozilla Monitor, and Contextual Platforms",
-    "description": "Compare email breach checking approaches: Have I Been Pwned (HIBP), Mozilla Monitor, and contextual analysis platforms like FootprintIQ. Learn which method suits your needs.",
+    "headline": "Best Digital Footprint Checker — Email Breach Check Tools Compared",
+    "description": "Compare the best digital footprint checker tools: Have I Been Pwned (HIBP), Mozilla Monitor, and contextual platforms like FootprintIQ. Monitor your online presence and protect your email addresses.",
     "author": {
       "@type": "Organization",
       "name": "FootprintIQ",
@@ -37,9 +37,37 @@ const EmailBreachToolsPage = () => {
       "url": "https://footprintiq.app"
     },
     "datePublished": "2026-01-14T10:00:00Z",
-    "dateModified": "2026-01-14T10:00:00Z",
+    "dateModified": "2026-02-22T10:00:00Z",
     "mainEntityOfPage": canonicalUrl,
-    "keywords": ["Email Breach Check", "Have I Been Pwned", "HIBP", "Mozilla Monitor", "Data Breach", "Email Security"]
+    "keywords": ["best digital footprint checker", "Email Breach Check", "Firefox Monitor Check Breaches", "Have I Been Pwned", "HIBP", "Mozilla Monitor", "Data Breach", "Email Security", "online presence", "public records"]
+  };
+
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Best Email Breach Check Tools",
+    "description": "Comparison of the best digital footprint checker and email breach check tools",
+    "numberOfItems": 3,
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Have I Been Pwned (HIBP)",
+        "description": "The largest breach database with 14B+ compromised accounts"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Mozilla Monitor (Firefox Monitor)",
+        "description": "Privacy-focused breach monitoring with Firefox integration and data broker removal"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "FootprintIQ Contextual Analysis",
+        "description": "Multi-vector digital footprint analysis correlating breaches with broader online exposure"
+      }
+    ]
   };
 
   const breadcrumbSchema = {
@@ -70,8 +98,8 @@ const EmailBreachToolsPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Firefox Monitor Check Breaches — Email Breach Check Tools Compared | FootprintIQ"
-        description="Firefox Monitor check breaches and Firefox Monitor email breach check tools compared with HIBP. Learn how to check breaches using Mozilla Monitor and protect your email addresses from data leaks."
+        title="Best Digital Footprint Checker — Firefox Monitor Check Breaches & Email Breach Tools | FootprintIQ"
+        description="Best digital footprint checker tools compared: Firefox Monitor check breaches, HIBP, and contextual platforms. Check email breaches, monitor your online presence, and protect email addresses with real-time breach detection."
         canonical={canonicalUrl}
         article={{
           publishedTime: "2026-01-14T10:00:00Z",
@@ -87,6 +115,9 @@ const EmailBreachToolsPage = () => {
         </script>
         <script type="application/ld+json">
           {JSON.stringify(breadcrumbSchema)}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(itemListSchema)}
         </script>
       </Helmet>
 
@@ -108,24 +139,26 @@ const EmailBreachToolsPage = () => {
         <section className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Firefox Monitor Check Breaches — Email Breach Check Tools Compared
+              Best Digital Footprint Checker — Email Breach Check Tools Compared
             </h1>
             <p className="text-xl text-muted-foreground mb-6">
-              Firefox Monitor Email Breach Check vs Mozilla Monitor vs Have I Been Pwned
+              Firefox Monitor Email Breach Check vs Mozilla Monitor vs Have I Been Pwned — find the best digital footprint checker for your online presence and public records
             </p>
           </div>
 
           {/* Introduction */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-12">
             <p className="text-lg leading-relaxed">
-              Using Firefox Monitor to check breaches is a fundamental security practice. This Firefox Monitor email breach check guide 
-              compares breach checking approaches including Firefox Monitor (Mozilla Monitor), created using Troy Hunt's HIBP database, 
-              to help individuals and organisations identify when email addresses and passwords have been exposed.
+              Finding the best digital footprint checker starts with understanding how breach checking tools work. 
+              This guide compares Firefox Monitor (Mozilla Monitor), HIBP, and contextual analysis platforms to help 
+              you monitor your online presence, check if your email addresses have been exposed in data breaches, 
+              and protect your public records and social media posts from real-time threats.
             </p>
             <p className="text-muted-foreground">
-              Learn how Firefox Monitor check breaches functionality works, including how to enter your email address 
-              and use a password manager to protect against credential stuffing. This Firefox Monitor email breach check 
-              guide works with any Firefox browser version.
+              Whether you're looking for a free digital footprint checker, want to check email breaches using Firefox Monitor, 
+              or need to understand the trail of data you leave behind online, this guide covers the best tools for 
+              monitoring your online activity. Learn how to enter your email address and use a password manager to 
+              protect against credential stuffing and data leaks.
             </p>
           </div>
           
