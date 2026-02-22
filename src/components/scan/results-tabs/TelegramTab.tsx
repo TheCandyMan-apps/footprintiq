@@ -597,25 +597,6 @@ function ResponsibleUseTooltip() {
 
 // ── TelegramHealthIndicator ──────────────────────────────────────
 
-type WorkerStatus = 'not_triggered' | 'pending' | 'completed' | 'timed_out' | 'not_found';
-
-function getWorkerStatus(
-  triggeredAt: string | null | undefined,
-  hasFindings: boolean,
-  hasNotFoundDiagnostic: boolean,
-): WorkerStatus {
-  // If we have findings or a diagnostic sentinel, the worker definitely ran —
-  // even if the telegram_triggered_at timestamp failed to persist.
-  if (hasFindings) return 'completed';
-  if (hasNotFoundDiagnostic) return 'not_found';
-
-  if (!triggeredAt) return 'not_triggered';
-  const elapsed = Date.now() - new Date(triggeredAt).getTime();
-  // Give the worker 5 minutes before declaring a timeout
-  if (elapsed > 5 * 60 * 1000) return 'timed_out';
-  return 'pending';
-}
-
 function formatRelativeTime(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
   const secs = Math.floor(ms / 1000);
@@ -627,50 +608,6 @@ function formatRelativeTime(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-const STATUS_CONFIG: Record<WorkerStatus, {
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badgeClass: string;
-  dotClass: string;
-}> = {
-  not_triggered: {
-    label: 'Not triggered',
-    description: 'Telegram worker has not been triggered for this scan.',
-    icon: XCircle,
-    badgeClass: 'bg-muted text-muted-foreground border-border',
-    dotClass: 'bg-muted-foreground',
-  },
-  pending: {
-    label: 'Results pending',
-    description: 'Telegram worker is running. Results will appear automatically when ready.',
-    icon: Hourglass,
-    badgeClass: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400',
-    dotClass: 'bg-amber-500 animate-pulse',
-  },
-  completed: {
-    label: 'Completed',
-    description: 'Telegram worker completed and results are stored.',
-    icon: CheckCircle2,
-    badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400',
-    dotClass: 'bg-green-500',
-  },
-  timed_out: {
-    label: 'No results returned',
-    description: 'Worker was triggered but no findings came back. The username may not exist on Telegram, or the worker encountered an error.',
-    icon: AlertTriangle,
-    badgeClass: 'bg-destructive/10 text-destructive border-destructive/30',
-    dotClass: 'bg-destructive',
-  },
-  not_found: {
-    label: 'Username not found',
-    description: 'The Telegram worker could not resolve this username to any user or channel. The account may not exist, be private, or use a different handle.',
-    icon: XCircle,
-    badgeClass: 'bg-orange-500/10 text-orange-600 border-orange-500/30 dark:text-orange-400',
-    dotClass: 'bg-orange-500',
-  },
-};
-
 function TelegramHealthIndicator({
   triggeredAt,
   hasFindings,
@@ -680,9 +617,86 @@ function TelegramHealthIndicator({
   hasFindings: boolean;
   hasNotFoundDiagnostic?: boolean;
 }) {
-  const status = getWorkerStatus(triggeredAt, hasFindings, hasNotFoundDiagnostic);
-  const cfg = STATUS_CONFIG[status];
-  const Icon = cfg.icon;
+  const [workerOnline, setWorkerOnline] = useState<boolean | null>(null);
+  const [healthChecking, setHealthChecking] = useState(false);
+
+  // Check worker health on mount
+  useEffect(() => {
+    let cancelled = false;
+    const checkHealth = async () => {
+      setHealthChecking(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('telegram-worker-health');
+        if (!cancelled) {
+          if (error) {
+            setWorkerOnline(false);
+          } else {
+            setWorkerOnline(data?.connected === true && data?.authorized === true);
+          }
+        }
+      } catch {
+        if (!cancelled) setWorkerOnline(false);
+      } finally {
+        if (!cancelled) setHealthChecking(false);
+      }
+    };
+    checkHealth();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Derive scan findings status
+  const findingsStatus: 'completed' | 'not_found' | 'pending' | 'timed_out' | 'not_triggered' = (() => {
+    if (hasFindings) return 'completed';
+    if (hasNotFoundDiagnostic) return 'not_found';
+    if (!triggeredAt) return 'not_triggered';
+    const elapsed = Date.now() - new Date(triggeredAt).getTime();
+    if (elapsed > 5 * 60 * 1000) return 'timed_out';
+    return 'pending';
+  })();
+
+  // Worker status line
+  const workerLabel = healthChecking
+    ? 'Checking worker…'
+    : workerOnline === true
+      ? 'Worker online'
+      : workerOnline === false
+        ? 'Worker offline / unauthorized'
+        : 'Worker status unknown';
+
+  const workerDotClass = healthChecking
+    ? 'bg-muted-foreground animate-pulse'
+    : workerOnline === true
+      ? 'bg-green-500'
+      : 'bg-destructive';
+
+  const workerBadgeClass = healthChecking
+    ? 'bg-muted text-muted-foreground border-border'
+    : workerOnline === true
+      ? 'bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400'
+      : 'bg-destructive/10 text-destructive border-destructive/30';
+
+  // Findings status config
+  const findingsCfg: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; badgeClass: string; dotClass: string }> = {
+    completed: { label: 'Findings stored', icon: CheckCircle2, badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400', dotClass: 'bg-green-500' },
+    not_found: { label: 'Username not found', icon: XCircle, badgeClass: 'bg-orange-500/10 text-orange-600 border-orange-500/30 dark:text-orange-400', dotClass: 'bg-orange-500' },
+    pending: { label: 'Results pending', icon: Hourglass, badgeClass: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400', dotClass: 'bg-amber-500 animate-pulse' },
+    timed_out: { label: 'No results returned', icon: AlertTriangle, badgeClass: 'bg-destructive/10 text-destructive border-destructive/30', dotClass: 'bg-destructive' },
+    not_triggered: { label: 'Not triggered', icon: XCircle, badgeClass: 'bg-muted text-muted-foreground border-border', dotClass: 'bg-muted-foreground' },
+  };
+  const fc = findingsCfg[findingsStatus];
+  const FindingsIcon = fc.icon;
+
+  // Contextual description
+  const description = (() => {
+    if (workerOnline === false) return 'Telegram worker unavailable — retrigger may fail.';
+    if (workerOnline === true && !hasFindings && findingsStatus !== 'pending') {
+      return 'Worker online — no saved Telegram findings for this scan. Use Explore to browse Telegram.';
+    }
+    if (findingsStatus === 'completed') return 'Worker online and findings are stored for this scan.';
+    if (findingsStatus === 'pending') return 'Worker online — results are being processed.';
+    if (findingsStatus === 'not_found') return 'Worker ran but the username could not be resolved on Telegram.';
+    return '';
+  })();
 
   return (
     <Card className="border-border/40 bg-muted/20">
@@ -695,15 +709,23 @@ function TelegramHealthIndicator({
         </div>
       </CardHeader>
       <CardContent className="px-3 pb-3 space-y-2">
+        {/* Worker reachable signal */}
         <div className="flex items-center justify-between gap-3">
-          {/* Status badge */}
-          <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-medium ${cfg.badgeClass}`}>
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dotClass}`} />
-            <Icon className="h-3 w-3 shrink-0" />
-            {cfg.label}
+          <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-medium ${workerBadgeClass}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${workerDotClass}`} />
+            {healthChecking ? <Loader2 className="h-3 w-3 animate-spin shrink-0" /> : workerOnline ? <CheckCircle2 className="h-3 w-3 shrink-0" /> : <XCircle className="h-3 w-3 shrink-0" />}
+            {workerLabel}
+          </div>
+        </div>
+
+        {/* Scan findings signal */}
+        <div className="flex items-center justify-between gap-3">
+          <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-medium ${fc.badgeClass}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${fc.dotClass}`} />
+            <FindingsIcon className="h-3 w-3 shrink-0" />
+            {fc.label}
           </div>
 
-          {/* Last triggered timestamp */}
           {triggeredAt && (
             <TooltipProvider>
               <Tooltip>
@@ -721,7 +743,9 @@ function TelegramHealthIndicator({
           )}
         </div>
 
-        <p className="text-[10px] text-muted-foreground leading-relaxed">{cfg.description}</p>
+        {description && (
+          <p className="text-[10px] text-muted-foreground leading-relaxed">{description}</p>
+        )}
       </CardContent>
     </Card>
   );

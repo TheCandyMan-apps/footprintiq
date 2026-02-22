@@ -132,3 +132,6 @@ verify_jwt = false
 
 [functions.telegram-explore-search-dialog]
 verify_jwt = false
+
+[functions.telegram-worker-health]
+verify_jwt = false
