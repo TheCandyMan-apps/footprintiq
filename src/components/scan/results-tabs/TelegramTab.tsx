@@ -20,6 +20,7 @@ import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, Ey
 import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFindings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { TelegramExplore } from './TelegramExplore';
 
 interface TelegramTabProps {
   scanId: string;
@@ -871,18 +872,20 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
   if (!hasRealData) {
     return (
       <div className="space-y-4">
+        {/* Explore section – always visible */}
+        <TelegramExplore />
+
         <TelegramHealthIndicator
           triggeredAt={localTriggeredAt}
           hasFindings={false}
           hasNotFoundDiagnostic={hasNotFoundDiagnostic}
         />
-        <div className="py-8 text-center space-y-3">
-          <Send className="h-8 w-8 text-muted-foreground/40 mx-auto" />
-          <p className="text-sm text-muted-foreground">No Telegram data found for this scan.</p>
-          <p className="text-xs text-muted-foreground/60">
-            Telegram intelligence is gathered when available from public profiles and channels.
+        <div className="py-6 text-center space-y-3">
+          <Send className="h-7 w-7 text-muted-foreground/40 mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            No Telegram findings saved for this scan yet — use Explore above to browse Telegram content.
           </p>
-          <div className="flex justify-center pt-2">
+          <div className="flex justify-center pt-1">
             <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" onRetriggered={handleRetriggered} />
           </div>
         </div>
@@ -900,6 +903,9 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
   return (
     <div className="space-y-4">
+      {/* Explore section – always visible */}
+      <TelegramExplore />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
