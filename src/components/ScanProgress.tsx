@@ -5,7 +5,7 @@ import { updateStreakOnScan } from "@/lib/updateStreakOnScan";
 import { UnifiedScanProgress } from "@/components/scan/UnifiedScanProgress";
 import { StepProgressUI } from "@/components/scan/StepProgressUI";
 import { useStepProgress } from "@/hooks/useStepProgress";
-import { classifyErrorAsync, isTierBlockError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
+import { invokeWithRetry, classifyErrorAsync, isTierBlockError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
 import { toast } from "sonner";
 import { ActivityLogger } from "@/lib/activityLogger";
 import type { ScanFormData } from "./ScanForm";
@@ -78,15 +78,6 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const scanStartedRef = useRef(false);
   const completionHandledRef = useRef(false);
 
-  // Utility to prevent indefinite hanging
-  const withTimeout = async <T,>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> => {
-    return new Promise<T>((resolve, reject) => {
-      const id = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
-      promise
-        .then((val) => { clearTimeout(id); resolve(val); })
-        .catch((err) => { clearTimeout(id); reject(err); });
-    });
-  };
 
   // Handle scan completion
   const handleCompletion = useCallback((completedScanId: string, failed: boolean = false) => {
@@ -229,17 +220,20 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         });
 
         try {
-          const invokeResult = await withTimeout(
-            supabase.functions.invoke('n8n-scan-trigger', { body: requestBody }),
-            15000,
-            'n8n-scan-trigger'
+          const invokeResult = await invokeWithRetry(
+            () => supabase.functions.invoke('n8n-scan-trigger', { body: requestBody }),
+            {
+              maxAttempts: 2,
+              timeoutMs: 30000,
+              context: { scanId: preScanId, operation: 'n8n-scan-trigger' },
+            }
           );
           
           if (invokeResult?.error) {
-            console.error('[ScanProgress] n8n-scan-trigger error:', invokeResult.error);
+            console.error('[ScanProgress] n8n-scan-trigger error after retries:', invokeResult.error);
             
             // Classify the error async to properly read FunctionsHttpError response body
-            const classified = await classifyErrorAsync(invokeResult.error);
+            const classified = invokeResult.classified || await classifyErrorAsync(invokeResult.error);
             const isBlock = isTierBlockError(classified);
             
             if (isBlock) {
@@ -280,13 +274,13 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
               return;
             }
             
-            // Real failure - log it
+            // Real failure after all retries exhausted - log it
             setIsFailed(true);
             setTriggerFailed(true);
             
             await ActivityLogger.scanFailed(preScanId, {
               scan_type: scanType,
-              error: invokeResult.error?.message || 'Trigger failed',
+              error: invokeResult.error?.message || 'Trigger failed after retries',
               error_type: classified.type,
             });
             
@@ -304,7 +298,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           console.log('[ScanProgress] Scan trigger acknowledged:', { actualScanId, status: invokeResult?.data?.status });
           
         } catch (invokeErr) {
-          console.warn('[ScanProgress] n8n-scan-trigger did not respond quickly; continuing with polling.', invokeErr);
+          console.warn('[ScanProgress] n8n-scan-trigger did not respond after retries; continuing with polling.', invokeErr);
           // Don't set failed - the scan may still be running
         }
 
