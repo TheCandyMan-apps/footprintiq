@@ -893,17 +893,109 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
     );
   }
 
-  if (!hasRealData) {
-    return (
-      <div className="space-y-4">
-        {/* Explore section – always visible */}
-        <TelegramExplore scanId={scanId} />
+  const profileFindings = hasRealData ? (groupedReal['profile'] || groupedReal['profile_presence'] || groupedReal['telegram_username'] || []) : [];
+  const channelProfileFindings = hasRealData ? (groupedReal['channel_profile'] || []) : [];
+  const channelFindings = hasRealData ? (groupedReal['channel'] || groupedReal['channel_footprint'] || []) : [];
+  const activityIntelFindings = hasRealData ? (groupedReal['activity_intel'] || []) : [];
+  const entityFindings = hasRealData ? (groupedReal['entity'] || groupedReal['related_entity'] || []) : [];
+  const phoneFindings = hasRealData ? (groupedReal['phone_presence'] || []) : [];
 
-        <TelegramHealthIndicator
-          triggeredAt={localTriggeredAt}
-          hasFindings={false}
-          hasNotFoundDiagnostic={hasNotFoundDiagnostic}
-        />
+  return (
+    <div className="space-y-4">
+      {/* Worker health indicator – always visible */}
+      <TelegramHealthIndicator
+        triggeredAt={localTriggeredAt}
+        hasFindings={hasRealData}
+        hasNotFoundDiagnostic={hasNotFoundDiagnostic}
+      />
+
+      {/* Explore section – always visible, above findings */}
+      <TelegramExplore scanId={scanId} />
+
+      {hasRealData ? (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Telegram Intelligence</h3>
+              <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                {realFindings.length} finding{realFindings.length !== 1 ? 's' : ''}
+              </Badge>
+              <PublicDataBadge />
+            </div>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={async () => {
+                        const { error } = await supabase.functions.invoke('telegram-retrigger', {
+                          body: { scan_id: scanId, scan_type: scanType },
+                        });
+                        if (!error) { toast.success('Telegram scan re-triggered.'); handleRetriggered(); }
+                        else toast.error('Failed to re-trigger.');
+                      }}
+                      aria-label="Re-run Telegram scan"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p className="text-xs">Re-run Telegram scan</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <ResponsibleUseTooltip />
+            </div>
+          </div>
+
+          {/* Cards grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {profileFindings.length > 0 && <ProfileCard findings={profileFindings} />}
+            {channelProfileFindings.length > 0 && <ChannelProfileCard findings={channelProfileFindings} />}
+
+            {isPro ? (
+              activityIntelFindings.length > 0 ? <ActivityIntelCard findings={activityIntelFindings} /> : null
+            ) : (
+              <LockedCard icon={Activity} title="Activity Intelligence" description="Behavioural analysis, posting cadence, and risk indicators" />
+            )}
+
+            {isPro ? (
+              channelFindings.length > 0 ? <ChannelCard findings={channelFindings} /> : null
+            ) : (
+              <LockedCard icon={Hash} title="Channel Footprints" description="Channels and groups where the user was observed" />
+            )}
+
+            {isPro ? (
+              entityFindings.length > 0 ? <EntitiesCard findings={entityFindings} /> : null
+            ) : (
+              <LockedCard icon={Users} title="Entities" description="Related users, bots, and entities discovered" />
+            )}
+
+            {isPro ? (
+              <GraphSummaryCard
+                scanId={scanId}
+                loadArtifact={loadArtifact}
+                artifact={artifacts['relationship_graph']}
+                isLoading={artifactLoading['relationship_graph'] || false}
+              />
+            ) : (
+              <LockedCard icon={Network} title="Graph Summary" description="Relationship graph from Telegram data" />
+            )}
+
+            {isPro ? (
+              phoneFindings.length > 0 ? <PhonePresenceCard findings={phoneFindings} /> : null
+            ) : (
+              <LockedCard icon={Phone} title="Telegram Presence" description="Whether a phone number has a Telegram account" />
+            )}
+          </div>
+        </>
+      ) : (
+        /* Empty state – no findings */
         <div className="py-6 text-center space-y-3">
           <Send className="h-7 w-7 text-muted-foreground/40 mx-auto" />
           <p className="text-sm text-muted-foreground">
@@ -913,149 +1005,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
             <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" onRetriggered={handleRetriggered} />
           </div>
         </div>
-      </div>
-    );
-  }
-
-
-  const profileFindings = groupedReal['profile'] || groupedReal['profile_presence'] || groupedReal['telegram_username'] || [];
-  const channelProfileFindings = groupedReal['channel_profile'] || [];
-  const channelFindings = groupedReal['channel'] || groupedReal['channel_footprint'] || [];
-  const activityIntelFindings = groupedReal['activity_intel'] || [];
-  const entityFindings = groupedReal['entity'] || groupedReal['related_entity'] || [];
-  const phoneFindings = groupedReal['phone_presence'] || [];
-
-  return (
-    <div className="space-y-4">
-      {/* Explore section – always visible */}
-      <TelegramExplore scanId={scanId} />
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Send className="h-5 w-5 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Telegram Intelligence</h3>
-          <Badge variant="secondary" className="text-[10px] h-4 px-1">
-            {realFindings.length} finding{realFindings.length !== 1 ? 's' : ''}
-          </Badge>
-          <PublicDataBadge />
-        </div>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={async () => {
-                    const { error } = await supabase.functions.invoke('telegram-retrigger', {
-                      body: { scan_id: scanId, scan_type: scanType },
-                    });
-                    if (!error) { toast.success('Telegram scan re-triggered.'); handleRetriggered(); }
-                    else toast.error('Failed to re-trigger.');
-                  }}
-                  aria-label="Re-run Telegram scan"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p className="text-xs">Re-run Telegram scan</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <ResponsibleUseTooltip />
-        </div>
-      </div>
-
-      {/* Worker health indicator */}
-      <TelegramHealthIndicator
-        triggeredAt={localTriggeredAt}
-        hasFindings={hasRealData}
-        hasNotFoundDiagnostic={hasNotFoundDiagnostic}
-      />
-
-      {/* Cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Profile – always visible */}
-        {profileFindings.length > 0 ? (
-          <ProfileCard findings={profileFindings} />
-        ) : null}
-
-        {/* Channel Profile – always visible (new worker output) */}
-        {channelProfileFindings.length > 0 ? (
-          <ChannelProfileCard findings={channelProfileFindings} />
-        ) : null}
-
-        {/* Activity Intelligence – Pro only (new worker output) */}
-        {isPro ? (
-          activityIntelFindings.length > 0 ? (
-            <ActivityIntelCard findings={activityIntelFindings} />
-          ) : null
-        ) : (
-          <LockedCard
-            icon={Activity}
-            title="Activity Intelligence"
-            description="Behavioural analysis, posting cadence, and risk indicators"
-          />
-        )}
-
-        {/* Channel Footprints – Pro only */}
-        {isPro ? (
-          channelFindings.length > 0 ? (
-            <ChannelCard findings={channelFindings} />
-          ) : null
-        ) : (
-          <LockedCard
-            icon={Hash}
-            title="Channel Footprints"
-            description="Channels and groups where the user was observed"
-          />
-        )}
-
-        {/* Entities – Pro only */}
-        {isPro ? (
-          entityFindings.length > 0 ? (
-            <EntitiesCard findings={entityFindings} />
-          ) : null
-        ) : (
-          <LockedCard
-            icon={Users}
-            title="Entities"
-            description="Related users, bots, and entities discovered"
-          />
-        )}
-
-        {/* Graph Summary – Pro only, lazy-loaded */}
-        {isPro ? (
-          <GraphSummaryCard
-            scanId={scanId}
-            loadArtifact={loadArtifact}
-            artifact={artifacts['relationship_graph']}
-            isLoading={artifactLoading['relationship_graph'] || false}
-          />
-        ) : (
-          <LockedCard
-            icon={Network}
-            title="Graph Summary"
-            description="Relationship graph from Telegram data"
-          />
-        )}
-
-        {/* Phone Presence – Pro only */}
-        {isPro ? (
-          phoneFindings.length > 0 ? (
-            <PhonePresenceCard findings={phoneFindings} />
-          ) : null
-        ) : (
-          <LockedCard
-            icon={Phone}
-            title="Telegram Presence"
-            description="Whether a phone number has a Telegram account"
-          />
-        )}
-      </div>
+      )}
 
       {/* Footer disclaimer */}
       <p className="text-[10px] text-muted-foreground/50 text-center leading-relaxed mt-4">
