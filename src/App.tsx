@@ -346,6 +346,9 @@ const BestOnlinePrivacyScanner = lazy(() => import("./pages/BestOnlinePrivacySca
 const WhatCanPeopleFindAboutMe = lazy(() => import("./pages/WhatCanPeopleFindAboutMe"));
 const AuditYourDigitalFootprint = lazy(() => import("./pages/AuditYourDigitalFootprint"));
 const PersonalDataExposureScan = lazy(() => import("./pages/PersonalDataExposureScan"));
+const FindDatingProfiles = lazy(() => import("./pages/FindDatingProfiles"));
+const BestPeopleLookupSites = lazy(() => import("./pages/BestPeopleLookupSites"));
+const SearchDatingSitesByEmail = lazy(() => import("./pages/SearchDatingSitesByEmail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -709,6 +712,9 @@ function RouterContent() {
                <Route path="/what-can-people-find-about-me" element={<WhatCanPeopleFindAboutMe />} />
                <Route path="/audit-your-digital-footprint" element={<AuditYourDigitalFootprint />} />
                <Route path="/personal-data-exposure-scan" element={<PersonalDataExposureScan />} />
+               <Route path="/find-dating-profiles" element={<FindDatingProfiles />} />
+               <Route path="/best-people-lookup-sites" element={<BestPeopleLookupSites />} />
+               <Route path="/search-dating-sites-by-email" element={<SearchDatingSitesByEmail />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
