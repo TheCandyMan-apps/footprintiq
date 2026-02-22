@@ -873,7 +873,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
     return (
       <div className="space-y-4">
         {/* Explore section – always visible */}
-        <TelegramExplore />
+        <TelegramExplore scanId={scanId} />
 
         <TelegramHealthIndicator
           triggeredAt={localTriggeredAt}
@@ -904,7 +904,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
   return (
     <div className="space-y-4">
       {/* Explore section – always visible */}
-      <TelegramExplore />
+      <TelegramExplore scanId={scanId} />
 
       {/* Header */}
       <div className="flex items-center justify-between">
