@@ -612,15 +612,17 @@ function TelegramHealthIndicator({
   triggeredAt,
   hasFindings,
   hasNotFoundDiagnostic = false,
+  healthRefreshKey = 0,
 }: {
   triggeredAt: string | null | undefined;
   hasFindings: boolean;
   hasNotFoundDiagnostic?: boolean;
+  healthRefreshKey?: number;
 }) {
   const [workerOnline, setWorkerOnline] = useState<boolean | null>(null);
   const [healthChecking, setHealthChecking] = useState(false);
 
-  // Check worker health on mount
+  // Check worker health on mount and after retrigger (healthRefreshKey changes)
   useEffect(() => {
     let cancelled = false;
     const checkHealth = async () => {
@@ -642,7 +644,7 @@ function TelegramHealthIndicator({
     };
     checkHealth();
     return () => { cancelled = true; };
-  }, []);
+  }, [healthRefreshKey]);
 
   // Derive scan findings status
   const findingsStatus: 'completed' | 'not_found' | 'pending' | 'timed_out' | 'not_triggered' = (() => {
@@ -843,6 +845,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
   // Keep a local copy of triggeredAt so it can be refreshed after a retrigger
   // without requiring the parent to re-fetch the whole scan record.
   const [localTriggeredAt, setLocalTriggeredAt] = useState<string | null | undefined>(telegramTriggeredAt);
+  const [healthRefreshKey, setHealthRefreshKey] = useState(0);
 
   // Sync if the parent updates (e.g. on initial load)
   useEffect(() => {
@@ -857,6 +860,8 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
       .eq('id', scanId)
       .maybeSingle();
     if (data) setLocalTriggeredAt((data as any).telegram_triggered_at ?? null);
+    // Also re-check worker health
+    setHealthRefreshKey(k => k + 1);
   }, [scanId]);
 
   const {
@@ -907,6 +912,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
         triggeredAt={localTriggeredAt}
         hasFindings={hasRealData}
         hasNotFoundDiagnostic={hasNotFoundDiagnostic}
+        healthRefreshKey={healthRefreshKey}
       />
 
       {/* Explore section – always visible, above findings */}
