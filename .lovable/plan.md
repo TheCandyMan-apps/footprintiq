@@ -1,90 +1,40 @@
 
-## Fix: Harden the Telegram Worker Error Handling
 
-### What's broken
+## Fix: Only Log `scan.failed` After All Retries Are Exhausted
 
-The `handle_username_lookup` function in `workers/telegram-worker/server.py` uses a narrow string-match filter to decide whether to retry with `ResolveUsernameRequest`:
+### Problem
+The `ScanProgress.tsx` component logs a `scan.failed` activity entry on the first transient failure (e.g. cold-start timeout) even though the scan may succeed on a subsequent attempt or via polling. This creates misleading "Scan Failed" entries in the admin activity logs.
 
-```python
-if "no user" in err_str or "not found" in err_str or "cannot find" in err_str or "username" in err_str or "invalid" in err_str:
-    # try fallback
-else:
-    raise  # ← This causes the 500
+### Root Cause
+- `ScanProgress.tsx` uses `withTimeout()` (a single attempt with a 15-second timeout) to call `n8n-scan-trigger`, not `invokeWithRetry()`.
+- When that single attempt fails transiently, it immediately logs `scan.failed` via `ActivityLogger.scanFailed()`.
+- Meanwhile, `AdvancedScan.tsx` correctly uses `invokeWithRetry()` which retries before reporting failure -- but both paths can fire for the same scan, resulting in a false `scan.failed` entry even when the retry succeeds.
+
+### Changes
+
+**1. `src/components/ScanProgress.tsx`** -- Replace `withTimeout()` with `invokeWithRetry()` for the `n8n-scan-trigger` call, so retries happen before any failure is logged. This aligns it with how `AdvancedScan.tsx` already works.
+
+- Import `invokeWithRetry` instead of (or in addition to) `withTimeout`
+- Wrap the `n8n-scan-trigger` invocation with `invokeWithRetry()` using a short retry config (2 attempts, 15s timeout)
+- Keep the existing error classification and block-detection logic after retries are exhausted
+- Only call `ActivityLogger.scanFailed()` after `invokeWithRetry` returns a final error
+
+**2. `src/pages/AdvancedScan.tsx`** -- No changes needed. It already uses `invokeWithRetry()` and only logs `scan.failed` after all retries are exhausted.
+
+### Technical Details
+
+```text
+Before:
+  ScanProgress -> withTimeout(invoke, 15s) -> fail on 1st timeout -> log scan.failed
+  (scan may still succeed via polling)
+
+After:
+  ScanProgress -> invokeWithRetry(invoke, {maxAttempts: 2, timeout: 15s}) -> fail only after retries -> log scan.failed
+  (transient failures are silently retried)
 ```
 
-Any Telethon error that doesn't contain one of those substrings (e.g. `FloodWaitError`, `UsernameOccupiedError`, `UsernameNotOccupiedError`, `PeerIdInvalidError`, network timeouts) hits the bare `raise` and produces a 500 instead of a graceful 404.
+### Impact
+- Eliminates false `scan.failed` activity log entries caused by transient cold-start timeouts
+- Admin activity logs will only show genuine failures
+- No user-facing behaviour change -- scans that currently recover will continue to do so, just without the misleading log entry
 
-### Fix strategy
-
-1. **Broaden the fallback to catch all non-private, non-flood errors** — instead of matching specific strings, only `raise` for `FloodWaitError` (which needs to be surfaced as a 429) and unknown catastrophic errors. Catch everything else and attempt the `ResolveUsername` fallback before giving up.
-
-2. **Add explicit `FloodWaitError` handling** — return a structured error with a `retry_after` hint so the proxy/n8n can back off gracefully instead of getting a hard 500.
-
-3. **Wrap `GetFullUserRequest` bio fetch more safely** — currently it re-raises on unexpected errors; make it fully silent (non-fatal only).
-
-### Files to change
-
-- `workers/telegram-worker/server.py` — update `handle_username_lookup` error handling (~lines 769–792)
-
-### Technical changes
-
-In `handle_username_lookup`, replace the narrow `if/else raise` block with:
-
-```python
-except Exception as e:
-    err_str = str(e).lower()
-    err_type = type(e).__name__
-
-    # FloodWait must surface as 429, not 500
-    if "floodwait" in err_type.lower() or "flood_wait" in err_str:
-        wait = getattr(e, 'seconds', 60)
-        return error_response("FLOOD_WAIT", f"Rate limited by Telegram — retry after {wait}s", 429)
-
-    # Private/invite link
-    if "invite" in err_str or "private" in err_str:
-        return error_response("PRIVATE_CHANNEL_UNSUPPORTED", "Private account or invite link.")
-
-    # For ALL other errors, attempt ResolveUsername fallback before giving up
-    log.info(f"[username_lookup] get_entity raised {err_type}: {e} — trying ResolveUsername fallback")
-    try:
-        from telethon.tl.functions.contacts import ResolveUsernameRequest
-        resolved = await client(ResolveUsernameRequest(handle))
-        if resolved.users:
-            entity = resolved.users[0]
-        elif resolved.chats:
-            entity = resolved.chats[0]
-        else:
-            return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
-    except Exception as e2:
-        e2_type = type(e2).__name__
-        if "floodwait" in e2_type.lower():
-            wait = getattr(e2, 'seconds', 60)
-            return error_response("FLOOD_WAIT", f"Rate limited — retry after {wait}s", 429)
-        log.warning(f"[username_lookup] ResolveUsername also failed: {e2}")
-        return error_response("INVALID_TARGET", f"Account not found: {handle}", 404)
-```
-
-This ensures:
-- `FloodWaitError` → 429 (proxy/n8n can detect and back off)
-- Private account → 403
-- Any other lookup failure → tries `ResolveUsername`, then gracefully returns 404
-- Nothing propagates as an unhandled 500
-
-### After the code change
-
-The worker code change requires a redeployment. The user will need to run:
-
-```bash
-cd ~/telegram-worker
-gcloud run deploy telegram-worker \
-  --source . \
-  --region europe-west2 \
-  --no-allow-unauthenticated \
-  --project footprintiq
-```
-
-Then retrigger the `Jammmy10` scan using the retrigger button on the Telegram tab — it should resolve and return a profile this time.
-
-### Why previous scans for Jammmy10 also returned not_found
-
-All four previous scans also wrote `telegram.not_found`. The session was live but the entity resolution was silently failing — this fix will make the fallback path fire correctly for accounts that require the MTProto `ResolveUsername` path.
