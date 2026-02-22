@@ -183,6 +183,10 @@ export const INDEXNOW_URLS = [
   // AI Visibility Gap Pages (Batch 2)
   "/audit-your-digital-footprint",
   "/personal-data-exposure-scan",
+  // Dating Profile & People Lookup Cluster
+  "/find-dating-profiles",
+  "/best-people-lookup-sites",
+  "/search-dating-sites-by-email",
 ];
 
 /**
