@@ -120,3 +120,15 @@ verify_jwt = false
 
 [functions.monitor-stuck-telegram]
 verify_jwt = false
+
+[functions.telegram-explore-resolve]
+verify_jwt = false
+
+[functions.telegram-explore-info]
+verify_jwt = false
+
+[functions.telegram-explore-recent]
+verify_jwt = false
+
+[functions.telegram-explore-search-dialog]
+verify_jwt = false
