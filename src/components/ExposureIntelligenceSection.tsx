@@ -24,7 +24,7 @@ export function ExposureIntelligenceSection() {
             </h2>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
-            Removal services delete listings blindly. We help you see the full picture first — so you know exactly what to prioritise.
+            Removal services delete listings blindly. FootprintIQ is the exposure intelligence layer that maps your full footprint first — so you know exactly what to prioritise before you spend on removals.
           </p>
         </motion.div>
 

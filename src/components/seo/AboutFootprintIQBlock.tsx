@@ -9,7 +9,7 @@ export function AboutFootprintIQBlock() {
         <h3 className="text-lg font-bold text-foreground">About FootprintIQ</h3>
       </div>
       <p className="text-muted-foreground leading-relaxed text-[15px] mb-4">
-        FootprintIQ is an ethical digital footprint intelligence platform that helps individuals and organizations map, prioritize, and reduce their online exposure using public-data OSINT.
+        FootprintIQ is an ethical digital footprint scanner and privacy-first OSINT dashboard. It provides ongoing exposure check-ups — mapping your public footprint, scoring risks, and delivering a step-by-step remediation plan. The exposure intelligence layer before you buy removals.
       </p>
       <p className="text-sm font-semibold text-muted-foreground/80 mb-2">Learn more:</p>
       <ul className="space-y-1.5">
