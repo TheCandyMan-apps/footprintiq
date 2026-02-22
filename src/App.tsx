@@ -351,6 +351,9 @@ const PersonalDataExposureScan = lazy(() => import("./pages/PersonalDataExposure
 const FindDatingProfiles = lazy(() => import("./pages/FindDatingProfiles"));
 const BestPeopleLookupSites = lazy(() => import("./pages/BestPeopleLookupSites"));
 const SearchDatingSitesByEmail = lazy(() => import("./pages/SearchDatingSitesByEmail"));
+const BestPersonSearchEngine = lazy(() => import("./pages/BestPersonSearchEngine"));
+const BestSearchEngineForFindingPeople = lazy(() => import("./pages/BestSearchEngineForFindingPeople"));
+const SearchEnginesToFindPeople = lazy(() => import("./pages/SearchEnginesToFindPeople"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -718,7 +721,10 @@ function RouterContent() {
                 <Route path="/best-people-lookup-sites" element={<BestPeopleLookupSites />} />
                 <Route path="/search-dating-sites-by-email" element={<SearchDatingSitesByEmail />} />
                 <Route path="/how-to-delete-facebook-account" element={<HowToDeleteFacebookAccount />} />
-                <Route path="/delete-social-media-accounts" element={<DeleteSocialMediaAccounts />} />
+                 <Route path="/delete-social-media-accounts" element={<DeleteSocialMediaAccounts />} />
+                 <Route path="/best-person-search-engine" element={<BestPersonSearchEngine />} />
+                 <Route path="/best-search-engine-for-finding-people" element={<BestSearchEngineForFindingPeople />} />
+                 <Route path="/search-engines-to-find-people" element={<SearchEnginesToFindPeople />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}

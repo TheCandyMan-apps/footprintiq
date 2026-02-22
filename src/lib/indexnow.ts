@@ -190,6 +190,10 @@ export const INDEXNOW_URLS = [
   // Account Deletion Cluster
   "/how-to-delete-facebook-account",
   "/delete-social-media-accounts",
+  // People Search Engine Cluster
+  "/best-person-search-engine",
+  "/best-search-engine-for-finding-people",
+  "/search-engines-to-find-people",
 ];
 
 /**
