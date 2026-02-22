@@ -107,6 +107,8 @@ const PublicVsPrivateDataOsint = lazy(() => import("./pages/blog/PublicVsPrivate
 const RemoveFromDataBrokersGuide = lazy(() => import("./pages/blog/RemoveFromDataBrokersGuide"));
 const IsFootprintiqDataBroker = lazy(() => import("./pages/blog/IsFootprintiqDataBroker"));
 const AfterHaveIBeenPwned = lazy(() => import("./pages/AfterHaveIBeenPwned"));
+const HowToDeleteFacebookAccount = lazy(() => import("./pages/HowToDeleteFacebookAccount"));
+const DeleteSocialMediaAccounts = lazy(() => import("./pages/DeleteSocialMediaAccounts"));
 const DataBreachCleanupChecklist = lazy(() => import("./pages/DataBreachCleanupChecklist"));
 const BreachVsDigitalFootprintRisk = lazy(() => import("./pages/BreachVsDigitalFootprintRisk"));
 const MonitorOnlineExposureAfterBreach = lazy(() => import("./pages/MonitorOnlineExposureAfterBreach"));
@@ -712,9 +714,11 @@ function RouterContent() {
                <Route path="/what-can-people-find-about-me" element={<WhatCanPeopleFindAboutMe />} />
                <Route path="/audit-your-digital-footprint" element={<AuditYourDigitalFootprint />} />
                <Route path="/personal-data-exposure-scan" element={<PersonalDataExposureScan />} />
-               <Route path="/find-dating-profiles" element={<FindDatingProfiles />} />
-               <Route path="/best-people-lookup-sites" element={<BestPeopleLookupSites />} />
-               <Route path="/search-dating-sites-by-email" element={<SearchDatingSitesByEmail />} />
+                <Route path="/find-dating-profiles" element={<FindDatingProfiles />} />
+                <Route path="/best-people-lookup-sites" element={<BestPeopleLookupSites />} />
+                <Route path="/search-dating-sites-by-email" element={<SearchDatingSitesByEmail />} />
+                <Route path="/how-to-delete-facebook-account" element={<HowToDeleteFacebookAccount />} />
+                <Route path="/delete-social-media-accounts" element={<DeleteSocialMediaAccounts />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
