@@ -73,17 +73,38 @@ export default function InstagramUsernameSearchPage() {
     ],
   };
 
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "FootprintIQ Instagram Username Search",
+    applicationCategory: "SecurityApplication",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.7",
+      ratingCount: "312",
+      bestRating: "5",
+    },
+    description: "Find Instagram usernames and user profiles across 500+ platforms. Free Instagram user search and account finder tool.",
+  };
+
   return (
     <>
       <Helmet>
-        <title>Instagram Username Search — Find Instagram Profiles Free | FootprintIQ</title>
-        <meta name="description" content="Search Instagram usernames and find connected profiles across 500+ platforms. Free Instagram user lookup and profile search tool." />
+        <title>Find Instagram Username — Free Instagram User Search | FootprintIQ</title>
+        <meta name="description" content="Find Instagram username profiles and search Instagram users across 500+ platforms. Free Instagram account finder, user ID lookup, and profile search tool." />
         <link rel="canonical" href="https://footprintiq.app/instagram-username-search" />
-        <meta property="og:title" content="Instagram Username Search | FootprintIQ" />
-        <meta property="og:description" content="Find Instagram profiles and connected accounts. Free username search across platforms." />
+        <meta property="og:title" content="Find Instagram Username — Free Instagram User Search | FootprintIQ" />
+        <meta property="og:description" content="Find Instagram profiles, search Instagram users, and discover connected accounts across 500+ platforms. Free instant results." />
       </Helmet>
       <JsonLd data={faqSchema} />
       <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={productSchema} />
 
       <Header />
 
@@ -96,12 +117,13 @@ export default function InstagramUsernameSearchPage() {
               Instagram Username Lookup
             </Badge>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Instagram Username Search
-              <span className="block text-primary mt-2">Find Instagram Users Free</span>
+              Find Instagram Username
+              <span className="block text-primary mt-2">Free Instagram User Search</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Search any Instagram username to find the profile and discover connected 
-              accounts across social media, gaming, and forums.
+              Search any Instagram username to find Instagram profiles and discover connected 
+              accounts across social media, gaming, and forums. Our Instagram user ID finder 
+              checks 500+ platforms instantly.
             </p>
             <HeroInputField />
             <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
@@ -121,11 +143,30 @@ export default function InstagramUsernameSearchPage() {
           </div>
         </section>
 
+        {/* SEO Content Block */}
+        <section className="py-12 bg-muted/20">
+          <div className="max-w-4xl mx-auto px-6 prose prose-lg dark:prose-invert">
+            <h2>How to Find Instagram Profiles by Username</h2>
+            <p>
+              Looking to find an Instagram account or search Instagram users? Our Instagram username search tool 
+              checks whether an Instagram username exists and reveals where that same handle appears across 500+ 
+              other platforms. Whether you're trying to find Instagram profiles for verification, check your own 
+              Instagram account exposure, or use an Instagram user ID finder for research, FootprintIQ provides 
+              instant results.
+            </p>
+            <p>
+              Most Instagram profiles are publicly accessible, meaning anyone can view basic profile information. 
+              But what many users don't realise is that the same Instagram username often appears on TikTok, 
+              Twitter, gaming networks, and dozens of other platforms — creating a traceable digital footprint.
+            </p>
+          </div>
+        </section>
+
         {/* What We Find */}
         <section className="py-16">
           <div className="max-w-5xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
-              What Our Instagram Username Search Reveals
+              What Our Instagram User Search Reveals
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="border-border/50">

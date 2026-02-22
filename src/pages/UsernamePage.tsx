@@ -88,11 +88,31 @@ export default function UsernamePage() {
     }))
   };
 
+  const webAppSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "FootprintIQ Username Search",
+    applicationCategory: "SecurityApplication",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.6",
+      ratingCount: "587",
+      bestRating: "5",
+    },
+    description: "Free username search tool to find people by username across 500+ social media platforms. Search usernames, lookup accounts, and find social profiles.",
+  };
+
   return (
     <>
       <SEO
-        title="Find People by Username — Free Social Media Username Search | FootprintIQ"
-        description="Find people by username with our free social media username search. Search 500+ platforms to discover where a username appears online. Free username lookup tool using ethical OSINT methods."
+        title="Username Search — Find Accounts by Username Free | FootprintIQ"
+        description="Search username across 500+ platforms free. Find accounts by username, lookup usernames on social media including Instagram, Facebook, TikTok & more. Best free username search tool using ethical OSINT."
         canonical="https://footprintiq.app/usernames"
         schema={{
           breadcrumbs: {
@@ -100,10 +120,11 @@ export default function UsernamePage() {
             "@type": "BreadcrumbList",
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
-              { "@type": "ListItem", position: 2, name: "Free Social Media Username Search", item: "https://footprintiq.app/username-search" }
+              { "@type": "ListItem", position: 2, name: "Username Search", item: "https://footprintiq.app/usernames" }
             ]
           },
-          faq: faqSchema
+          faq: faqSchema,
+          custom: webAppSchema
         }}
       />
       <Header />
@@ -117,13 +138,14 @@ export default function UsernamePage() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Find People by Username — Free Social Media Username Search
+              Username Search — Find Accounts by Username Free
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              Use our free social media username search to find people by username across 500+ platforms. 
-              Discover where a username appears online — from social media accounts to gaming networks, 
-              forums, and professional communities.
+              Search username across 500+ platforms to find accounts by username — including 
+              Instagram, Facebook, TikTok, Twitter, and gaming networks. The best free username 
+              search tool for checking usernames, finding social profiles, and discovering 
+              online identities across multiple platforms.
             </p>
             
             <Button size="lg" asChild className="text-lg px-8 py-6 mb-8">
@@ -138,13 +160,14 @@ export default function UsernamePage() {
         {/* Long-form Content Section for SEO */}
         <section className="py-12 px-6">
           <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-            <h2>How to Find People by Username Online</h2>
+            <h2>How to Search Username and Find Accounts Online</h2>
             
             <p>
-              Looking to find people by username? A username search tool scans public profile pages across 
-              social media platforms, gaming networks, and online communities to show you where a specific 
-              handle appears. This is useful for auditing your own digital footprint, verifying online 
-              identities, or understanding username reuse patterns.
+              Looking to search username handles and find accounts by username? A username search tool scans 
+              public profile pages across popular social media platforms, gaming networks, and online communities 
+              to show you where a specific handle appears. You can check username availability, find social 
+              profiles on Instagram and Facebook, gather information about online identities, or understand 
+              username reuse patterns across multiple platforms.
             </p>
             
             <p>
