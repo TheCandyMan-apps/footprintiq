@@ -21,7 +21,7 @@ export const Hero = ({
         {/* Main headline */}
         {/* Platform positioning */}
         <p className="text-sm font-medium uppercase tracking-widest text-primary mb-4">
-          Online Privacy Scanner
+          Ethical Digital Footprint Scanner
         </p>
 
         {/* Main headline */}
@@ -32,7 +32,7 @@ export const Hero = ({
         
         {/* Subheading */}
         <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-          A free privacy tool that shows you what anyone can find about you online — and how to clean it up.
+          The exposure intelligence layer that maps what anyone can find about you online — and gives you a plan to reduce it.
         </p>
         
         {/* Transparency line */}
