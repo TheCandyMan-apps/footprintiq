@@ -187,6 +187,9 @@ export const INDEXNOW_URLS = [
   "/find-dating-profiles",
   "/best-people-lookup-sites",
   "/search-dating-sites-by-email",
+  // Account Deletion Cluster
+  "/how-to-delete-facebook-account",
+  "/delete-social-media-accounts",
 ];
 
 /**
