@@ -36,7 +36,7 @@ export const WhyChooseUs = () => {
             What We Check
           </h2>
           <p className="text-muted-foreground">
-            We scan publicly available information to show you what others can see
+            Continuous outside-in monitoring across your full digital surface
           </p>
         </div>
 

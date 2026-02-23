@@ -30,15 +30,16 @@ export const Hero = ({
           <span className="block text-primary mt-2">Reduce It.</span>
         </h1>
         
-        {/* Subheading */}
-        <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-          The exposure intelligence layer that maps what anyone can find about you online — and gives you a plan to reduce it.
+        {/* Subheading - outcome-oriented promise */}
+        <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-6 max-w-3xl mx-auto leading-relaxed">
+          See what attackers see before they act. Triage your digital risks before you pay for removals.
         </p>
         
-        {/* Transparency line */}
-        <p className="text-base text-muted-foreground/80 mb-2 max-w-2xl mx-auto">
-          We provide visibility. You make the decisions.
-        </p>
+        {/* Outcome promises */}
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground/80 mb-3 max-w-2xl mx-auto">
+          <span>✦ Privacy-first continuous exposure intelligence</span>
+          <span>✦ No surveillance, no data collection</span>
+        </div>
         <p className="text-sm text-muted-foreground/60 mb-10 max-w-2xl mx-auto">
           Used by over 2,000 people to understand their online visibility.
         </p>

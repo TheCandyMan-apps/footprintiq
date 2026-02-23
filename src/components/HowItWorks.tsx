@@ -4,20 +4,20 @@ import { Card, CardContent } from "@/components/ui/card";
 const steps = [
   {
     icon: <Search className="w-6 h-6" />,
-    title: "Scan",
-    description: "You run a free scan with your username, email, or name",
+    title: "Map & Score",
+    description: "Run a free scan to map your exposure across hundreds of public sources and score your risk",
     step: "1",
   },
   {
     icon: <FileSearch className="w-6 h-6" />,
-    title: "Analyse",
-    description: "We check publicly available data sources for matches",
+    title: "Decide & Act",
+    description: "See what to address via DIY opt-outs vs. what to delegate to vetted removal partners",
     step: "2",
   },
   {
     icon: <UserCheck className="w-6 h-6" />,
-    title: "Understand",
-    description: "You see what exists — and what matters",
+    title: "Maintain",
+    description: "Periodic rescans and alerts keep your digital hygiene strong over time",
     step: "3",
   },
 ];

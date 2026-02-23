@@ -20,11 +20,11 @@ export function ExposureIntelligenceSection() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <Shield className="w-6 h-6 text-primary" />
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              Go Beyond Simple Removal
+              Your Privacy Journey Starts Here
             </h2>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
-            Removal services delete listings blindly. FootprintIQ is the exposure intelligence layer that maps your full footprint first — so you know exactly what to prioritise before you spend on removals.
+            Start with FootprintIQ for the full picture, then plug in removal services and identity-protection suites as execution layers. Intelligence first, action second.
           </p>
         </motion.div>
 
@@ -32,18 +32,18 @@ export function ExposureIntelligenceSection() {
           {[
             {
               icon: Map,
-              title: "Map",
-              description: "Discover every public trace across hundreds of sources.",
+              title: "Step 1: Map & Score",
+              description: "Discover every public trace and score your exposure across hundreds of sources.",
             },
             {
               icon: Target,
-              title: "Prioritize",
-              description: "Score and rank exposures by severity and remediation effort.",
+              title: "Step 2: Decide & Act",
+              description: "Choose what to address yourself with guided checklists vs. what to delegate to removal partners.",
             },
             {
               icon: BarChart3,
-              title: "Reduce",
-              description: "Follow a strategic plan with opt-out links and action steps.",
+              title: "Step 3: Maintain & Monitor",
+              description: "Periodic rescans and alerts keep your digital hygiene strong over time.",
             },
           ].map((item, i) => (
             <motion.div
