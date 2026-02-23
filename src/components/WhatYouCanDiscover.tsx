@@ -4,22 +4,22 @@ const discoveries = [
   {
     icon: <User className="w-6 h-6" />,
     title: "Where your username appears online",
-    description: "Identify accounts and profiles linked to usernames you use"
+    description: "See what attackers see — identify accounts and profiles linked to usernames you use across hundreds of platforms"
   },
   {
     icon: <Mail className="w-6 h-6" />,
     title: "Whether your email is publicly exposed",
-    description: "Check breach databases and public exposure sources"
+    description: "Triage your digital risks — check breach databases and public exposure sources before they're exploited"
   },
   {
     icon: <Database className="w-6 h-6" />,
     title: "Data broker listings linked to your identity",
-    description: "See where people-search sites list your information"
+    description: "Know exactly where people-search sites list your information — the intelligence you need before buying removals"
   },
   {
     icon: <Link2 className="w-6 h-6" />,
     title: "Hidden connections between public information",
-    description: "Understand how identifiers link across platforms"
+    description: "Understand how identifiers link across platforms — the correlation risk most tools miss"
   }
 ];
 
