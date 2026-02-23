@@ -135,3 +135,6 @@ verify_jwt = false
 
 [functions.telegram-worker-health]
 verify_jwt = false
+
+[functions.telegram-explore-enrich]
+verify_jwt = false
