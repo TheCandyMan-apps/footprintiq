@@ -453,6 +453,8 @@ serve(async (req: Request) => {
       return json({ ok: false, scanId, error: "Worker returned invalid JSON" }, 502);
     }
 
+    console.log(`[telegram-proxy] Worker result keys: ${JSON.stringify(Object.keys(result))}, ok=${result.ok}, has entity_metadata=${!!result.entity_metadata}`);
+
     if (!result.ok) {
       // Also check for not-found in parsed response
       const errMsg = result.error || "";
