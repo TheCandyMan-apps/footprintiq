@@ -194,6 +194,10 @@ export const INDEXNOW_URLS = [
   "/best-person-search-engine",
   "/best-search-engine-for-finding-people",
   "/search-engines-to-find-people",
+  // Reference-Grade Resources (AI Citation)
+  "/resources/ethical-osint-framework",
+  "/resources/doxxing-defense",
+  "/resources/digital-footprint-mapping",
 ];
 
 /**
