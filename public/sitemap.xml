@@ -508,6 +508,24 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://footprintiq.app/resources/ethical-osint-framework</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/resources/doxxing-defense</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/resources/digital-footprint-mapping</loc>
+    <lastmod>2026-02-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://footprintiq.app/docs/api</loc>
     <lastmod>2026-02-02</lastmod>
     <changefreq>weekly</changefreq>
