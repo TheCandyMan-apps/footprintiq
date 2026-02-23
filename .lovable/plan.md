@@ -1,65 +1,62 @@
 
-
-# AI Visibility Expansion: Dating Profile Search + People Lookup Clusters
+# Fix Telegram Profile Detection Pipeline
 
 ## Problem
-FootprintIQ is not being cited for two high-volume keyword clusters (combined ~3.7M monthly searches):
-- **"find dating profiles"** / **"search dating sites by email"** (2.4M)
-- **"best people lookup sites"** / **"best person search engine"** / **"best search engine for finding people"** (1.3M, 22 AI mentions)
+The Telegram worker now correctly resolves usernames and returns `{ok: true, entity_metadata: {...}}`. However, the `telegram-proxy` edge function only forwards `result.findings` (which the worker doesn't populate) — resulting in zero findings reaching `n8n-scan-results`, which writes a false `telegram.not_found` sentinel.
 
-No dedicated pages exist targeting these exact queries.
+**Evidence from logs (all recent scans):**
+- Proxy correctly calls `https://telegram-worker-.../telegram/username`
+- Worker returns 404 "Entity not found" (was stale — user confirms now fixed)
+- n8n-scan-results receives `{"findings":[]}` and writes `telegram.not_found`
 
-## Solution: Create 3 New Pages
+## Root Cause
+The `telegram-proxy` at line 547 does: `const findings = (result.findings || [])` — but the worker returns entity data in `entity_metadata`, not in a `findings` array. The proxy never synthesizes a finding from this data.
 
-### Page 1: `/find-dating-profiles`
-**Target keywords**: "find dating profiles", "find dating profiles by email", "dating profile search"
+## Plan
 
-- **Title**: "Find Dating Profiles by Username or Email | Free Search Tool"
-- **H1**: "Find Dating Profiles — Search by Username or Email"
-- Dense ~1,500-word guide explaining how username/email OSINT correlates to dating platform exposure
-- Position FootprintIQ's `includeDating` scan option as the ethical alternative
-- JSON-LD: Article + FAQPage (6 questions) + BreadcrumbList
-- Internal links to `/ethical-osint`, `/username-search`, `/email-breach-check`, `/scan`
-- FAQs targeting exact AI prompts: "Can I find someone's dating profiles?", "How to search dating sites by email"
+### 1. Update `telegram-proxy` to synthesize findings for `action=username`
 
-### Page 2: `/best-people-lookup-sites`
-**Target keywords**: "best people lookup sites", "best person search engine", "best search engine for finding people"
+After parsing a successful worker response (line 464), add logic to create a finding when:
+- `typedAction === "username"`
+- `result.entity_metadata` exists (worker resolved the username)
+- `result.findings` is empty or missing
 
-- **Title**: "Best People Lookup Sites in 2026 — Ethical Alternatives Compared"
-- **H1**: "Best People Lookup Sites — How They Work and Which Are Ethical"
-- Comparison-style page (using existing `ComparisonPageLayout` pattern) listing common people-search sites (Spokeo, TruePeopleSearch, BeenVerified, Whitepages) and positioning FootprintIQ as the ethical, privacy-first alternative
-- ~1,500 words with comparison table
-- JSON-LD: Article + FAQPage + ItemList + BreadcrumbList
-- FAQs: "What is the best free people search engine?", "Are people lookup sites legal?", "What is the most accurate person search engine?"
+The synthesized finding will:
+- Be inserted directly into the `findings` table (using the service client already available)
+- Use `provider: "telegram"`, `kind: "telegram_username"`
+- Extract evidence from `entity_metadata` fields (first_name, last_name, username, phone, is_bot, is_verified, photo, last_seen, etc.)
+- Set `confidence: 0.9` (high — direct MTProto resolution)
+- Include a `meta` object with `title`, `description`, `source: "telegram"` matching the UI's expected format
+- Also delete any prior `telegram.not_found` sentinel for this scan
 
-### Page 3: `/search-dating-sites-by-email`
-**Target keywords**: "search dating sites by email", "find dating profiles by email"
+The finding will also be appended to the `findings` array returned to n8n, so `n8n-scan-results` sees it too and won't write a false `telegram.not_found`.
 
-- **Title**: "Search Dating Sites by Email — Free Email-to-Profile Lookup"
-- **H1**: "Search Dating Sites by Email"
-- Focused guide explaining email-based OSINT enrichment and how breach correlation can reveal dating platform registrations
-- Links to FootprintIQ email scan as the ethical method
-- JSON-LD: Article + FAQPage + BreadcrumbList
-- ~1,200 words
+### 2. Store `entity_metadata` as a scan artifact
 
-## Supporting Changes
+Add `entity_metadata` to the `ARTIFACT_KEYS` list so the full metadata blob is persisted in `scan_artifacts` for the UI's lazy-load artifact system.
 
-### 4. Update `indexnow.ts`
-Add the 3 new URLs to the `INDEXNOW_URLS` array for instant search engine submission.
+### 3. Deploy and retrigger
 
-### 5. Update `robots.txt` fallback route map in `index.html`
-Add entries for the 3 new routes with unique titles and descriptions for non-JS crawlers.
+- Deploy the updated `telegram-proxy` edge function
+- Retrigger the latest jayquee scan (scan `39a59078`) to verify end-to-end
 
-### 6. Add routes to `App.tsx`
-Lazy-load the 3 new page components.
+## Technical Detail
 
-### 7. Cross-link from existing pages
-- Add links from `/find-social-media-accounts`, `/account-finder`, `/social-media-finder`, `/people-search-vs-footprintiq`, and `/email-breach-tools` to the new pages.
+```text
+BEFORE (broken):
+Worker returns: {ok: true, entity_metadata: {first_name, username, ...}}
+Proxy reads:    result.findings || [] --> []
+n8n receives:   {findings: []}
+n8n-scan-results: writes telegram.not_found
 
-## Technical Details
+AFTER (fixed):
+Worker returns: {ok: true, entity_metadata: {first_name, username, ...}}
+Proxy creates:  finding from entity_metadata --> [{provider: "telegram", kind: "telegram_username", ...}]
+Proxy inserts:  finding directly into DB
+Proxy returns:  {findings: [{...}]} to n8n
+n8n-scan-results: stores finding, skips not_found sentinel
+UI displays:    Profile card with Telegram data
+```
 
-- Each page follows the existing Master Structure Rules (1,500+ words, H1-H3 hierarchy, AboutFootprintIQBlock footer, JSON-LD schemas)
-- Pages use existing components: `Header`, `Footer`, `SEO`/`Helmet`, `JsonLd`, `AboutFootprintIQBlock`, `RelatedToolsGrid`, `Accordion` for FAQs
-- Lazy-loaded in `App.tsx` to avoid bundle impact
-- No backend changes required -- these are static SEO content pages
-
+## Files Changed
+- `supabase/functions/telegram-proxy/index.ts` — Add entity_metadata-to-finding synthesis for username action
