@@ -295,6 +295,9 @@ const GoodOsintScanResult = lazy(() => import("./pages/guides/GoodOsintScanResul
 const GuidesIndex = lazy(() => import("./pages/guides/GuidesIndex"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
+const EthicalOsintFramework = lazy(() => import("./pages/resources/EthicalOsintFramework"));
+const DoxxingDefenseGuide = lazy(() => import("./pages/resources/DoxxingDefenseGuide"));
+const DigitalFootprintMapping = lazy(() => import("./pages/resources/DigitalFootprintMapping"));
 const CryptoLandingPage = lazy(() => import("./pages/for/Crypto"));
 const JobSeekersLandingPage = lazy(() => import("./pages/for/JobSeekers"));
 const DevelopersLandingPage = lazy(() => import("./pages/for/Developers"));
@@ -788,7 +791,10 @@ function RouterContent() {
           <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
           
           {/* Embeddable Widget */}
-          <Route path="/embed/widget" element={<EmbedWidget />} />
+           <Route path="/embed/widget" element={<EmbedWidget />} />
+           <Route path="/resources/ethical-osint-framework" element={<EthicalOsintFramework />} />
+           <Route path="/resources/doxxing-defense" element={<DoxxingDefenseGuide />} />
+           <Route path="/resources/digital-footprint-mapping" element={<DigitalFootprintMapping />} />
           <Route path="/install" element={<InstallApp />} />
           
               <Route path="/404" element={<NotFound />} />
