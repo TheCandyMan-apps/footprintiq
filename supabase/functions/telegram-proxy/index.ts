@@ -485,6 +485,7 @@ serve(async (req: Request) => {
       { key: "relationship_graph", type: "relationship_graph" },
       { key: "channel_profile", type: "channel_profile" },   // personal account profile (username lookup)
       { key: "phone_profile", type: "phone_profile" },       // phone presence result (phone_presence action)
+      { key: "entity_metadata", type: "entity_metadata" },   // MTProto-resolved entity data (username action)
     ];
 
     for (const { key, type } of ARTIFACT_KEYS) {
@@ -543,8 +544,8 @@ serve(async (req: Request) => {
       }
     }
 
-    // Strip large payloads from findings response (summaries only)
-    const findings = (result.findings || []).map((f: any) => {
+    // ── Synthesize finding from entity_metadata for username action ──
+    let findings = (result.findings || []).map((f: any) => {
       if (f?.evidence?.messages) {
         return { ...f, evidence: { ...f.evidence, messages: undefined, message_count: f.evidence.messages.length } };
       }
@@ -553,6 +554,77 @@ serve(async (req: Request) => {
       }
       return f;
     });
+
+    if (
+      typedAction === "username" &&
+      result.entity_metadata &&
+      typeof result.entity_metadata === "object" &&
+      findings.length === 0
+    ) {
+      const em = result.entity_metadata;
+      const evidenceArr: Array<{ key: string; value: string }> = [];
+      const fieldMap: Record<string, string> = {
+        first_name: "First Name",
+        last_name: "Last Name",
+        username: "Username",
+        phone: "Phone",
+        is_bot: "Is Bot",
+        is_verified: "Verified",
+        is_premium: "Premium",
+        is_scam: "Scam",
+        is_fake: "Fake",
+        photo: "Profile Photo",
+        last_seen: "Last Seen",
+        about: "Bio",
+        entity_type: "Entity Type",
+      };
+      for (const [k, label] of Object.entries(fieldMap)) {
+        const v = em[k];
+        if (v !== null && v !== undefined && v !== "") {
+          evidenceArr.push({ key: label, value: String(v) });
+        }
+      }
+
+      const displayName = [em.first_name, em.last_name].filter(Boolean).join(" ") || em.username || username;
+
+      const synthesizedFinding = {
+        scan_id: scanId,
+        provider: "telegram",
+        kind: "telegram_username",
+        severity: "info",
+        confidence: 0.9,
+        observed_at: new Date().toISOString(),
+        evidence: evidenceArr,
+        meta: {
+          title: `Telegram Profile: ${displayName}`,
+          description: `Telegram account resolved via MTProto for @${em.username || username}`,
+          source: "telegram",
+          entity_metadata: em,
+        },
+      };
+
+      // Insert finding into DB
+      try {
+        // First remove any stale not_found sentinel
+        await svc.from("findings")
+          .delete()
+          .eq("scan_id", scanId)
+          .eq("provider", "telegram")
+          .eq("kind", "telegram.not_found");
+
+        const { error: findingErr } = await svc.from("findings").insert(synthesizedFinding);
+        if (findingErr) {
+          console.error("[telegram-proxy] Failed to insert synthesized finding:", findingErr);
+        } else {
+          console.log(`[telegram-proxy] Inserted telegram_username finding for scan ${scanId}`);
+        }
+      } catch (dbErr) {
+        console.error("[telegram-proxy] DB error inserting synthesized finding:", dbErr);
+      }
+
+      // Append to findings array so n8n also sees it
+      findings = [synthesizedFinding];
+    }
 
     console.log(`[telegram-proxy] Success [${typedAction}] scan ${scanId}: ${findings.length} findings, ${artifactInserts.length} artifacts`);
 
