@@ -281,7 +281,7 @@ const CheckIfSomeoneIsAScammer = () => {
             </p>
             <h3 className="text-xl font-semibold text-foreground mb-3">What Legitimate Usernames Look Like</h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              A genuine username typically appears on 5–15+ platforms with accounts created over several years. The profile details — photos, bios, locations — show natural evolution over time. There's activity history: posts, comments, contributions, followers gained gradually. This organic digital trail is extremely difficult and time-consuming to fabricate.
+              A genuine username typically appears on 5–15+ platforms with accounts created over several years. The profile details — photos, bios, locations — show natural evolution over time. There's activity history: posts, comments, contributions, followers gained gradually. According to our <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">2026 Username Reuse Research</Link>, <strong>73% of individuals</strong> who reuse a username across three or more platforms appear in data broker records under that identifier — a pattern that scammers' disposable usernames almost never produce.
             </p>
             <h3 className="text-xl font-semibold text-foreground mb-3">What Scammer Usernames Look Like</h3>
             <p className="text-muted-foreground leading-relaxed">
