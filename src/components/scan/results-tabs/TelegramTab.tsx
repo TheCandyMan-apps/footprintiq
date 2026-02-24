@@ -622,6 +622,7 @@ function TelegramHealthIndicator({
 }) {
   const [workerOnline, setWorkerOnline] = useState<boolean | null>(null);
   const [healthChecking, setHealthChecking] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   // Check worker health on mount and after retrigger (healthRefreshKey changes)
   useEffect(() => {
@@ -659,12 +660,12 @@ function TelegramHealthIndicator({
 
   // Worker status line
   const workerLabel = healthChecking
-    ? 'Checking worker…'
+    ? 'Checking status…'
     : workerOnline === true
-      ? 'Worker online'
+      ? 'Data source operational'
       : workerOnline === false
-        ? 'Worker offline / unauthorized'
-        : 'Worker status unknown';
+        ? 'Data source unavailable'
+        : 'Status unknown';
 
   const workerDotClass = healthChecking
     ? 'bg-muted-foreground animate-pulse'
@@ -680,34 +681,37 @@ function TelegramHealthIndicator({
 
   // Findings status config
   const findingsCfg: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; badgeClass: string; dotClass: string }> = {
-    completed: { label: 'Findings stored', icon: CheckCircle2, badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400', dotClass: 'bg-green-500' },
-    not_found: { label: 'Username not found', icon: XCircle, badgeClass: 'bg-orange-500/10 text-orange-600 border-orange-500/30 dark:text-orange-400', dotClass: 'bg-orange-500' },
-    pending: { label: 'Results pending', icon: Hourglass, badgeClass: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400', dotClass: 'bg-amber-500 animate-pulse' },
-    timed_out: { label: 'No results returned', icon: AlertTriangle, badgeClass: 'bg-destructive/10 text-destructive border-destructive/30', dotClass: 'bg-destructive' },
-    not_triggered: { label: 'Not triggered', icon: XCircle, badgeClass: 'bg-muted text-muted-foreground border-border', dotClass: 'bg-muted-foreground' },
+    completed: { label: 'Scan findings recorded', icon: CheckCircle2, badgeClass: 'bg-green-500/10 text-green-600 border-green-500/30 dark:text-green-400', dotClass: 'bg-green-500' },
+    not_found: { label: 'No public profile found', icon: XCircle, badgeClass: 'bg-orange-500/10 text-orange-600 border-orange-500/30 dark:text-orange-400', dotClass: 'bg-orange-500' },
+    pending: { label: 'Analysis in progress', icon: Hourglass, badgeClass: 'bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400', dotClass: 'bg-amber-500 animate-pulse' },
+    timed_out: { label: 'Analysis timed out', icon: AlertTriangle, badgeClass: 'bg-destructive/10 text-destructive border-destructive/30', dotClass: 'bg-destructive' },
+    not_triggered: { label: 'Not yet scanned', icon: XCircle, badgeClass: 'bg-muted text-muted-foreground border-border', dotClass: 'bg-muted-foreground' },
   };
   const fc = findingsCfg[findingsStatus];
   const FindingsIcon = fc.icon;
 
   // Contextual description
   const description = (() => {
-    if (workerOnline === false) return 'Telegram worker unavailable — retrigger may fail.';
+    if (workerOnline === false) return 'Telegram data source is currently unreachable. Scans may be limited.';
     if (workerOnline === true && !hasFindings && findingsStatus !== 'pending') {
-      return 'Worker online — no saved Telegram findings for this scan. Use Explore to browse Telegram.';
+      return 'Public Telegram data is accessible — no findings recorded for this scan yet.';
     }
-    if (findingsStatus === 'completed') return 'Worker online and findings are stored for this scan.';
-    if (findingsStatus === 'pending') return 'Worker online — results are being processed.';
-    if (findingsStatus === 'not_found') return 'Worker ran but the username could not be resolved on Telegram.';
+    if (findingsStatus === 'completed') return 'Data source operational and scan findings have been recorded.';
+    if (findingsStatus === 'pending') return 'Data source operational — analysis is in progress.';
+    if (findingsStatus === 'not_found') return 'The username could not be found on public Telegram.';
     return '';
   })();
+
+  // Admin debug toggle
+  const isDebugMode = typeof window !== 'undefined' && localStorage.getItem('fpiq_debug') === 'true';
 
   return (
     <Card className="border-border/40 bg-muted/20">
       <CardHeader className="pb-2 pt-3 px-3">
-        <div className="flex items-center gap-2">
-          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+       <div className="flex items-center gap-2">
+          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
           <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Telegram Worker Health
+            Telegram Intelligence Status
           </CardTitle>
         </div>
       </CardHeader>
@@ -748,6 +752,25 @@ function TelegramHealthIndicator({
 
         {description && (
           <p className="text-[10px] text-muted-foreground leading-relaxed">{description}</p>
+        )}
+
+        {/* Admin debug toggle */}
+        {isDebugMode && (
+          <div className="pt-1 border-t border-border/30">
+            <button
+              onClick={() => setShowDiagnostics(prev => !prev)}
+              className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            >
+              {showDiagnostics ? 'Hide diagnostics' : 'Show diagnostics'}
+            </button>
+            {showDiagnostics && (
+              <pre className="mt-1 text-[9px] text-muted-foreground/50 bg-muted/30 rounded p-1.5 font-mono leading-relaxed overflow-x-auto">
+{`workerOnline: ${workerOnline}
+findingsStatus: ${findingsStatus}
+triggeredAt: ${triggeredAt ?? 'n/a'}`}
+              </pre>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
