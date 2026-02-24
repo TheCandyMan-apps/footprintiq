@@ -59,6 +59,8 @@ export const INDEXNOW_URLS = [
   "/ethical-osint-charter",
   // Research pages
   "/research/username-reuse-report-2026",
+  "/research/username-reuse-report-2026-download",
+  "/research/media-kit",
   "/research/fact-sheet",
   "/press",
   // Guides

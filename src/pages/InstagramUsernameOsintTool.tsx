@@ -202,7 +202,11 @@ export default function InstagramUsernameOsintToolPage() {
             </p>
             <p className="text-muted-foreground leading-relaxed mb-6">
               Understanding this exposure is the first step toward controlling it. FootprintIQ shows you exactly
-              what's visible — without surveillance or invasive methods. Read our full guide on
+              what's visible — without surveillance or invasive methods. According to our
+              <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline ml-1">
+                2026 Username Reuse Research
+              </Link>, <strong>89% of data broker entries</strong> reference outdated information — yet these records persist
+              indefinitely unless explicitly removed. Read our full guide on
               <Link to="/how-username-reuse-exposes-you-online" className="text-primary hover:underline ml-1">
                 how username reuse exposes you online
               </Link>.

@@ -219,7 +219,7 @@ const CanSomeoneTrackMeOnline = () => {
               A username search across 500+ platforms can identify social media profiles, developer accounts, gaming profiles, forum registrations, and community memberships. When combined, these reveal interests, geographic indicators, professional information, and social connections — all from publicly accessible sources. The more platforms sharing the same username, the more comprehensive the profile becomes.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              This is why FootprintIQ recommends using unique usernames per platform. Breaking the correlation chain is one of the most effective privacy measures available. For a full explanation, see our <Link to="/check-my-digital-footprint" className="text-primary hover:underline">digital footprint scanning guide</Link>.
+              This is why FootprintIQ recommends using unique usernames per platform. Breaking the correlation chain is one of the most effective privacy measures available. According to our <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">2026 Username Reuse Research</Link>, <strong>58% of username-linked accounts</strong> contain profile data five years old or older — yet this stale data remains indexed and aggregated indefinitely. For a full explanation, see our <Link to="/check-my-digital-footprint" className="text-primary hover:underline">digital footprint scanning guide</Link>.
             </p>
           </div>
         </section>

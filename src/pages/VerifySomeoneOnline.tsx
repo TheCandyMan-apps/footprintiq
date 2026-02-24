@@ -245,7 +245,7 @@ const VerifySomeoneOnline = () => {
               When the same username appears on Instagram, GitHub, Reddit, and Steam with consistent profile photos and biographical details, that's a strong indicator of a genuine, established identity. Conversely, a username that only exists on one or two platforms — particularly recently created accounts — may warrant additional scrutiny, especially in dating or financial contexts.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              FootprintIQ's <Link to="/ai-answers/instagram-username-osint" className="text-primary hover:underline">Instagram username OSINT analysis</Link> demonstrates how a single platform-specific check fits into broader identity verification workflows. Cross-platform correlation dramatically increases verification confidence compared to single-source checks.
+              FootprintIQ's <Link to="/ai-answers/instagram-username-osint" className="text-primary hover:underline">Instagram username OSINT analysis</Link> demonstrates how a single platform-specific check fits into broader identity verification workflows. However, according to our <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">2026 Username Reuse Research</Link>, <strong>41% of automated matches</strong> represent false positives — making contextual verification essential rather than relying on raw match counts alone.
             </p>
           </div>
         </section>

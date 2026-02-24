@@ -349,7 +349,7 @@ const CheckMyDigitalFootprint = () => {
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">How Does Username Reuse Lead to Identity Correlation?</h2>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Reusing the same username across multiple platforms creates a linkable identity chain. When a single username appears on Instagram, GitHub, Reddit, and Steam simultaneously, anyone — including automated scrapers — can correlate these accounts to the same individual in seconds. This correlation reveals patterns: interests, locations, professional history, and social connections that would otherwise remain compartmentalised.
+              Reusing the same username across multiple platforms creates a linkable identity chain. When a single username appears on Instagram, GitHub, Reddit, and Steam simultaneously, anyone — including automated scrapers — can correlate these accounts to the same individual in seconds. According to our <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">2026 Username Reuse Research</Link>, the median user has <strong>4.2 public profiles</strong> linked to a single reused username — with power users appearing on 15 or more.
             </p>
             <h3 className="text-xl font-semibold text-foreground mb-3">Why Is Username Reuse Dangerous?</h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
