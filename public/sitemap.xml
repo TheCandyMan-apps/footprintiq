@@ -488,6 +488,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://footprintiq.app/for-protected-users</loc>
+    <lastmod>2026-02-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://footprintiq.app/global-index</loc>
     <lastmod>2026-02-02</lastmod>
     <changefreq>daily</changefreq>
