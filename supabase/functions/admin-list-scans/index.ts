@@ -117,6 +117,43 @@ Deno.serve(wrapHandler(async (req) => {
       throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to list scans');
     }
 
+    // Batch-fetch user metadata for all unique user_ids
+    const uniqueUserIds = [...new Set((scans || []).map((s: any) => s.user_id).filter(Boolean))];
+    const userMap = new Map<string, { email: string; name: string | null }>();
+
+    // Fetch in batches of 50 to avoid overly large requests
+    for (let i = 0; i < uniqueUserIds.length; i += 50) {
+      const batch = uniqueUserIds.slice(i, i + 50);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', batch);
+
+      if (profiles) {
+        for (const p of profiles) {
+          userMap.set(p.id, { email: p.email || p.id, name: p.full_name || null });
+        }
+      }
+
+      // Fallback: for users not in profiles, try auth.admin
+      const missingIds = batch.filter(id => !userMap.has(id));
+      if (missingIds.length > 0) {
+        for (const uid of missingIds) {
+          try {
+            const { data: { user: authUser } } = await supabase.auth.admin.getUserById(uid);
+            if (authUser) {
+              userMap.set(uid, {
+                email: authUser.email || uid,
+                name: authUser.user_metadata?.full_name || null
+              });
+            }
+          } catch {
+            // silently skip
+          }
+        }
+      }
+    }
+
     // Get findings count for each scan - aggregate from all result tables
     const enrichedScans = await Promise.all(
       (scans || []).map(async (scan: any) => {
@@ -141,6 +178,7 @@ Deno.serve(wrapHandler(async (req) => {
         ]);
 
         const totalFindingsCount = (findingsCount || 0) + (socialProfilesCount || 0) + (dataSourcesCount || 0);
+        const userInfo = userMap.get(scan.user_id);
 
         return {
           ...scan,
@@ -151,8 +189,8 @@ Deno.serve(wrapHandler(async (req) => {
             dataSources: dataSourcesCount || 0
           },
           workspaceName: scan.workspaces?.name,
-          userEmail: scan.user_id,
-          userName: null
+          userEmail: userInfo?.email || scan.user_id,
+          userName: userInfo?.name || null
         };
       })
     );
