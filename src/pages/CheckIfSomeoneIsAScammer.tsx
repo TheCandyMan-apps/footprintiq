@@ -348,15 +348,15 @@ const CheckIfSomeoneIsAScammer = () => {
         {/* ═══════════════ CTA BLOCK 1 ═══════════════ */}
         <section className="py-16 px-6">
           <div className="max-w-3xl mx-auto">
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-8 text-center">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-8 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">Suspicious of Someone? Check Before You Trust</h2>
               <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                Run a free cross-platform scan on any username. See whether the person behind the profile has a genuine digital history — or a fabricated one.
+                Scan any username to detect fabricated histories, stock-photo profiles, and fraud database matches — all from publicly available sources.
               </p>
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Run Free Scam Check
+                  Run Scam Assessment
                 </Link>
               </Button>
             </div>
@@ -578,24 +578,24 @@ const CheckIfSomeoneIsAScammer = () => {
         </section>
 
         {/* ═══════════════ CTA BLOCK 2 ═══════════════ */}
-        <section className="py-20 px-6">
+        <section className="py-20 px-6 bg-destructive/5">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Don't Wait Until It's Too Late
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              A five-minute username scan can save you from weeks of manipulation, financial loss, or identity theft. Check before you trust.
+              A five-minute username scan can reveal fabricated identities, stolen photos, and fraud database matches — before you become a target.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Run Free Scam Check
+                  Check for Red Flags
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/pricing">
-                  View Pro Plans <ArrowRight className="ml-2 w-5 h-5" />
+                  See Pro Capabilities <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
             </div>

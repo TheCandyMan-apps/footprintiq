@@ -408,15 +408,15 @@ const VerifySomeoneOnline = () => {
         {/* ═══════════════ CTA BLOCK 1 ═══════════════ */}
         <section className="py-16 px-6">
           <div className="max-w-3xl mx-auto">
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-8 text-center">
+            <div className="rounded-xl border border-accent/20 bg-accent/5 p-8 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">Verify Before You Trust</h2>
               <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                Run a free cross-platform identity scan. See which public profiles, accounts, and data points are linked to a username or email — in minutes.
+                Cross-check a username or email against 500+ public platforms to see whether someone's online identity holds up under scrutiny.
               </p>
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Run Identity Scan
+                  Run Identity Check
                 </Link>
               </Button>
             </div>
@@ -629,24 +629,24 @@ const VerifySomeoneOnline = () => {
         </section>
 
         {/* ═══════════════ CTA BLOCK 2 ═══════════════ */}
-        <section className="py-20 px-6">
+        <section className="py-20 px-6 bg-accent/5">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Trust, but Verify
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Run a free identity scan to check someone's cross-platform presence. Upgrade to Pro for full verification analysis, identity graphs, and safety assessments.
+              A free identity scan reveals cross-platform consistency in minutes. Upgrade to Pro for full verification graphs, confidence scoring, and safety assessments.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Run Identity Scan
+                  Verify a Profile
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/pricing">
-                  View Pro Plans <ArrowRight className="ml-2 w-5 h-5" />
+                  Unlock Full Reports <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
             </div>
