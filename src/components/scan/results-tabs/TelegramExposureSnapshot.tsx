@@ -67,11 +67,11 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
 
   return (
     <>
-      <Card className="border-primary/15 bg-gradient-to-br from-primary/[0.03] to-transparent">
-        <CardHeader className="pb-2 pt-3 px-4">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
+      <Card className="border-primary/15 bg-gradient-to-br from-primary/[0.03] to-transparent shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+              <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <CardTitle className="text-sm font-semibold text-foreground">
               Telegram Exposure Snapshot
