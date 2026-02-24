@@ -68,17 +68,6 @@ const faqs = [
   },
 ];
 
-/* ────────────── Live exposure example data ────────────── */
-const exampleMatches = [
-  { platform: "Instagram", url: "instagram.com/alex_demo", confidence: "High", icon: Globe },
-  { platform: "GitHub", url: "github.com/alex_demo", confidence: "High", icon: Database },
-  { platform: "Reddit", url: "reddit.com/u/alex_demo", confidence: "High", icon: UserCheck },
-  { platform: "Steam", url: "steamcommunity.com/id/alex_demo", confidence: "Medium", icon: Globe },
-  { platform: "TikTok", url: "tiktok.com/@alex_demo", confidence: "Medium", icon: Eye },
-  { platform: "Pinterest", url: "pinterest.com/alex_demo", confidence: "Medium", icon: Globe },
-  { platform: "Keybase", url: "keybase.io/alex_demo", confidence: "Low", icon: Shield },
-];
-
 /* ────────────── Free vs Pro comparison ────────────── */
 const comparisonRows = [
   { feature: "Username scan across 500+ platforms", free: true, pro: true },
@@ -293,36 +282,35 @@ const CheckMyDigitalFootprint = () => {
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-2 mb-2">
               <Eye className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">Live Exposure Example</h3>
+              <h3 className="text-lg font-semibold text-foreground">What Does a Typical Digital Footprint Reveal?</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-6">
-              Here's what a scan for the demo username <code className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono">alex_demo</code> reveals across public sources:
+              We scanned the username <code className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs font-mono">traveler_jay</code> across 500+ platforms. Here's what a typical self-exposure audit uncovers:
             </p>
-            <div className="space-y-2 mb-6">
-              {exampleMatches.map((m) => (
-                <div key={m.platform} className="flex items-center justify-between p-3 rounded-lg bg-card border border-border">
-                  <div className="flex items-center gap-3">
-                    <m.icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <div>
-                      <span className="text-sm font-medium text-foreground">{m.platform}</span>
-                      <span className="text-xs text-muted-foreground ml-2">{m.url}</span>
-                    </div>
-                  </div>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    m.confidence === "High"
-                      ? "bg-destructive/10 text-destructive"
-                      : m.confidence === "Medium"
-                        ? "bg-amber-500/10 text-amber-600"
-                        : "bg-muted text-muted-foreground"
-                  }`}>
-                    {m.confidence}
-                  </span>
+            <div className="grid sm:grid-cols-2 gap-3 mb-6">
+              {[
+                { value: "8", label: "Platform matches detected", color: "text-primary" },
+                { value: "2", label: "Inactive legacy accounts still indexed", color: "text-muted-foreground" },
+                { value: "1", label: "Data broker listing with outdated address", color: "text-destructive" },
+                { value: "3", label: "Social platforms sharing identical bio text", color: "text-yellow-600" },
+              ].map((stat, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+                  <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+                  <span className="text-sm text-muted-foreground">{stat.label}</span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              This is a simplified example. Actual scans may return significantly more results depending on the identifier's exposure level.
+            <p className="text-sm text-muted-foreground mb-6">
+              Most people don't realise how much exposure they create through everyday activity. Signing up for a travel forum five years ago, leaving the same bio across three social platforms, or forgetting about an old account that still lists a previous address — these small, routine actions accumulate into a detailed profile that anyone can piece together. When platforms share identical bio text or profile photos, it becomes trivial to link accounts and build a composite picture of your habits, location history, and personal details.
             </p>
+            <div className="flex justify-center">
+              <Button size="lg" asChild>
+                <Link to="/scan">
+                  <Search className="w-5 h-5 mr-2" />
+                  Run My Free Exposure Check
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
 
