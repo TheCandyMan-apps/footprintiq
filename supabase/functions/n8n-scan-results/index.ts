@@ -437,10 +437,20 @@ serve(async (req) => {
     if (isTelegramCallback) {
       console.log(`[n8n-scan-results] Telegram callback for ${scanId} — findings stored: ${findingsToInsert.length}, scan NOT finalized`);
 
-      // If the workflow returned zero findings, write the 'telegram.not_found' diagnostic sentinel
-      // so the UI health indicator can correctly transition from "Results pending" → "Username not found"
+      // If the workflow returned zero findings, check if the proxy already inserted findings
+      // directly (e.g. synthesized from entity_metadata). Only write the sentinel if DB is truly empty.
       if (findingsToInsert.length === 0) {
-        console.log(`[n8n-scan-results] No Telegram findings — writing telegram.not_found sentinel for ${scanId}`);
+        const { count: existingCount } = await supabase
+          .from('findings')
+          .select('id', { count: 'exact', head: true })
+          .eq('scan_id', scanId)
+          .eq('provider', 'telegram')
+          .neq('kind', 'telegram.not_found');
+
+        if ((existingCount ?? 0) > 0) {
+          console.log(`[n8n-scan-results] Telegram proxy already inserted ${existingCount} finding(s) for ${scanId} — skipping not_found sentinel`);
+        } else {
+        console.log(`[n8n-scan-results] No Telegram findings in DB — writing telegram.not_found sentinel for ${scanId}`);
         // Delete any stale sentinel first to avoid unique constraint issues
         await supabase
           .from('findings')
@@ -474,6 +484,7 @@ serve(async (req) => {
         } else {
           console.log(`[n8n-scan-results] telegram.not_found sentinel written for ${scanId}`);
         }
+        } // end else (no existing findings)
       }
 
       return new Response(JSON.stringify({
