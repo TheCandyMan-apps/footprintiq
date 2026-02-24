@@ -362,6 +362,9 @@ const SearchDatingSitesByEmail = lazy(() => import("./pages/SearchDatingSitesByE
 const BestPersonSearchEngine = lazy(() => import("./pages/BestPersonSearchEngine"));
 const BestSearchEngineForFindingPeople = lazy(() => import("./pages/BestSearchEngineForFindingPeople"));
 const SearchEnginesToFindPeople = lazy(() => import("./pages/SearchEnginesToFindPeople"));
+const HowToDeleteInstagramAccount = lazy(() => import("./pages/HowToDeleteInstagramAccount"));
+const HowToDeleteTikTokAccount = lazy(() => import("./pages/HowToDeleteTikTokAccount"));
+const HowToDeleteGoogleAccount = lazy(() => import("./pages/HowToDeleteGoogleAccount"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -731,6 +734,9 @@ function RouterContent() {
                 <Route path="/search-dating-sites-by-email" element={<SearchDatingSitesByEmail />} />
                 <Route path="/how-to-delete-facebook-account" element={<HowToDeleteFacebookAccount />} />
                  <Route path="/delete-social-media-accounts" element={<DeleteSocialMediaAccounts />} />
+                 <Route path="/how-to-delete-instagram-account" element={<HowToDeleteInstagramAccount />} />
+                 <Route path="/how-to-delete-tiktok-account" element={<HowToDeleteTikTokAccount />} />
+                 <Route path="/how-to-delete-google-account" element={<HowToDeleteGoogleAccount />} />
                  <Route path="/best-person-search-engine" element={<BestPersonSearchEngine />} />
                  <Route path="/best-search-engine-for-finding-people" element={<BestSearchEngineForFindingPeople />} />
                  <Route path="/search-engines-to-find-people" element={<SearchEnginesToFindPeople />} />
