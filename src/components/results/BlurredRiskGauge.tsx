@@ -20,6 +20,10 @@ interface BlurredRiskGaugeProps {
   highConfidenceCount: number;
   /** Number of exposures/breaches */
   exposuresCount: number;
+  /** Override the calculated score with a fixed value (0-100) */
+  scoreOverride?: number;
+  /** Contextual label shown beneath the blurred score */
+  contextLabel?: string;
   className?: string;
 }
 
@@ -54,12 +58,14 @@ export function BlurredRiskGauge({
   signalsCount,
   highConfidenceCount,
   exposuresCount,
+  scoreOverride,
+  contextLabel,
   className,
 }: BlurredRiskGaugeProps) {
   const navigate = useNavigate();
   
-  // Calculate the preview score
-  const previewScore = calculatePreviewRiskScore(signalsCount, highConfidenceCount, exposuresCount);
+  // Use override or calculate the preview score
+  const previewScore = scoreOverride ?? calculatePreviewRiskScore(signalsCount, highConfidenceCount, exposuresCount);
   const { label, colorClass } = getRiskLevel(previewScore);
   
   // Calculate gauge fill percentage
@@ -106,12 +112,15 @@ export function BlurredRiskGauge({
           
           {/* Overlay with CTA */}
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-transparent via-background/60 to-background/90 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <Lock className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground">
                 Risk score calculated
               </span>
             </div>
+            {contextLabel && (
+              <p className="text-xs text-muted-foreground mb-2 text-center max-w-[220px]">{contextLabel}</p>
+            )}
             <Button 
               variant="default"
               size="sm"
