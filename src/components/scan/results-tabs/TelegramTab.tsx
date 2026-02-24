@@ -949,38 +949,38 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
       {/* ── Provider Selector ──────────────────────────────────── */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-1">
+        <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-1 flex-wrap">
           <button
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-background shadow-sm border border-border/50 text-foreground transition-colors"
             disabled
           >
             <Send className="h-3 w-3" />
             Telegram
+            <Badge variant="outline" className="ml-1 text-[9px] px-1.5 py-0 h-4 border-primary/30 text-primary font-medium">Active</Badge>
           </button>
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/50 cursor-not-allowed transition-colors"
-            disabled
-            title="Coming soon"
-          >
-            <MessageSquare className="h-3 w-3" />
-            Discord
-          </button>
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/50 cursor-not-allowed transition-colors"
-            disabled
-            title="Coming soon"
-          >
-            <Hash className="h-3 w-3" />
-            X Threads
-          </button>
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/50 cursor-not-allowed transition-colors"
-            disabled
-            title="Coming soon"
-          >
-            <Phone className="h-3 w-3" />
-            WhatsApp
-          </button>
+          <TooltipProvider delayDuration={200}>
+            {[
+              { icon: MessageSquare, label: 'Discord', status: 'Planned', tooltip: 'Public server and channel analysis — on the roadmap.' },
+              { icon: Hash, label: 'X Threads', status: 'Planned', tooltip: 'Public thread and reply-chain analysis — on the roadmap.' },
+              { icon: Phone, label: 'WhatsApp', status: 'Coming Soon', tooltip: 'Public group discovery and metadata analysis — coming soon.' },
+            ].map(({ icon: Icon, label, status, tooltip }) => (
+              <Tooltip key={label}>
+                <TooltipTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/60 cursor-default transition-colors"
+                    disabled
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                    <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground/50 font-medium leading-none">{status}</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs max-w-[220px]">
+                  {tooltip}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </TooltipProvider>
         </div>
       </div>
 
