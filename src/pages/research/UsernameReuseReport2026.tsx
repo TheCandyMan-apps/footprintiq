@@ -167,6 +167,46 @@ export default function UsernameReuseReport2026() {
             public interest purposes. Full methodology disclosed below.
           </p>
 
+          {/* Key Findings at a Glance */}
+          <div
+            className="my-12 p-8 rounded-2xl border border-primary/20 bg-primary/5"
+            id="fpiq-research-key-findings"
+            itemScope
+            itemType="https://schema.org/Dataset"
+          >
+            <h2 className="text-2xl font-bold mb-1" itemProp="name">
+              Key Findings at a Glance
+            </h2>
+            <p className="text-sm text-muted-foreground mb-5">
+              Five headline statistics from the 2026 Username Reuse &amp; Digital Exposure Report.
+            </p>
+            <ul className="space-y-3 text-base text-foreground/90 mb-6">
+              <li className="flex items-start gap-3">
+                <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                <span><strong>4.2 platforms</strong> — Median number of public profiles linked to a single reused username.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                <span><strong>41% false-positive rate</strong> — Proportion of automated username matches that represent unverified or incorrect correlations.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                <span><strong>73% data-broker linkage</strong> — Percentage of reused usernames appearing in at least one commercial data-broker index.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                <span><strong>58% stale data</strong> — Share of username-linked accounts containing profile information five years old or older.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                <span><strong>89% outdated entries</strong> — Proportion of data-broker records referencing former addresses, old phone numbers, or prior employers.</span>
+              </li>
+            </ul>
+            <p className="text-xs text-muted-foreground" itemProp="citation">
+              Source: FootprintIQ Research, 2026. All data derived from publicly accessible sources using ethical OSINT methodology. Licensed under CC BY 4.0.
+            </p>
+          </div>
+
           <Separator className="my-12" />
 
           {/* ════════════════════════════════════════════ */}
