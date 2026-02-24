@@ -944,7 +944,43 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
       />
 
       {/* Explore section – Pro only */}
-      <FeatureGate feature="advanced_scan">
+      <FeatureGate
+        feature="advanced_scan"
+        fallback={
+          <Card className="relative overflow-hidden border-primary/15 bg-gradient-to-br from-primary/[0.04] via-primary/[0.02] to-transparent">
+            <CardContent className="py-8 px-6 flex flex-col items-center text-center gap-4">
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+                <Send className="h-5 w-5 text-primary" />
+              </div>
+              <div className="space-y-2 max-w-sm">
+                <h3 className="text-base font-semibold text-foreground">Unlock Telegram Intelligence</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">Upgrade to Pro to:</p>
+                <ul className="text-sm text-muted-foreground space-y-1.5 text-left mx-auto w-fit">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    <span>Explore Telegram usernames, channels, and groups</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    <span>Search public message history</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    <span>Visualise relationship graphs</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    <span>Access unredacted findings and evidence</span>
+                  </li>
+                </ul>
+              </div>
+              <Button asChild className="h-10 px-6 mt-1">
+                <a href="/settings/billing">Upgrade to Pro</a>
+              </Button>
+            </CardContent>
+          </Card>
+        }
+      >
         <TelegramExplore scanId={scanId} />
       </FeatureGate>
 
