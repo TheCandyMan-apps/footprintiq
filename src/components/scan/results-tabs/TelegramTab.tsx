@@ -939,6 +939,14 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
   return (
     <div className="space-y-6">
+      {/* ── Introduction ───────────────────────────────────────── */}
+      <div className="space-y-1.5">
+        <h2 className="text-base font-semibold text-foreground tracking-tight">Messaging Intelligence</h2>
+        <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
+          Understand how your identity appears across public messaging platforms. Analyse visible associations, channel participation, and interaction patterns using publicly accessible data.
+        </p>
+      </div>
+
       {/* ── Provider Selector ──────────────────────────────────── */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-1">
