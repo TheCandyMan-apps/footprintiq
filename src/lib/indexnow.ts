@@ -212,6 +212,12 @@ export const INDEXNOW_URLS = [
   "/resources/ethical-osint-framework",
   "/resources/doxxing-defense",
   "/resources/digital-footprint-mapping",
+  // Segment Landing Pages
+  "/for-individuals",
+  "/for-protected-users",
+  "/for-professionals",
+  // Trust
+  "/trust/data-ethics",
 ];
 
 /**
