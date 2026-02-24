@@ -1,193 +1,479 @@
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
-import { SEO } from '@/components/SEO';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Shield, Lock, FileCheck, Award, Eye, Database, UserCheck, Clock } from 'lucide-react';
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { SEO, organizationSchema } from "@/components/SEO";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Shield, Lock, Eye, Database, UserCheck, Scale, AlertTriangle,
+  FileText, BookOpen, CheckCircle, XCircle, Clock, ShieldCheck,
+  KeyRound, Globe, Server, Ban
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Trust() {
-  const securityFeatures = [
-    {
-      icon: Lock,
-      title: 'AES-256 Encryption',
-      description: 'All data is encrypted at rest and in transit using industry-standard AES-256 encryption, ensuring your information remains secure.',
-      badge: 'Active',
-      color: 'text-blue-500',
-    },
-    {
-      icon: Eye,
-      title: 'No Logs Policy',
-      description: 'We do not store your search queries or personal information. Scan results are temporarily processed and immediately deleted after viewing.',
-      badge: 'Enforced',
-      color: 'text-green-500',
-    },
-    {
-      icon: FileCheck,
-      title: 'GDPR Compliant',
-      description: 'Fully compliant with GDPR regulations. We respect your data rights including access, rectification, erasure, and portability.',
-      badge: 'Certified',
-      color: 'text-purple-500',
-    },
-    {
-      icon: Award,
-      title: 'SOC 2 Ready',
-      description: 'Following SOC 2 Type II security controls and best practices to ensure the highest level of data protection and operational security.',
-      badge: 'In Progress',
-      color: 'text-orange-500',
-    },
-  ];
+  const origin = "https://footprintiq.app";
 
-  const privacyPractices = [
-    {
-      icon: Database,
-      title: 'Minimal Data Collection',
-      description: 'We only collect the minimum data necessary to perform your scan. No unnecessary tracking or profiling.',
+  const breadcrumbs = {
+    "@context": "https://schema.org" as const,
+    "@type": "BreadcrumbList" as const,
+    itemListElement: [
+      { "@type": "ListItem" as const, position: 1, name: "Home", item: origin },
+      { "@type": "ListItem" as const, position: 2, name: "Trust & Safety" },
+    ],
+  };
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "Trust, Safety & Ethical OSINT | FootprintIQ",
+    description:
+      "Learn how FootprintIQ uses ethical OSINT practices, privacy-first data handling, and transparent safeguards to protect users.",
+    author: {
+      "@type": "Organization",
+      name: "FootprintIQ",
+      url: origin,
     },
-    {
-      icon: UserCheck,
-      title: 'User Control',
-      description: 'You maintain full control over your data. Request deletion at any time through your account settings.',
+    publisher: {
+      "@type": "Organization",
+      name: "FootprintIQ",
+      url: origin,
     },
-    {
-      icon: Clock,
-      title: 'Automatic Data Deletion',
-      description: 'Scan data is automatically purged after 90 days. Search terms are never stored.',
-    },
-  ];
+    datePublished: "2026-02-01",
+    dateModified: "2026-02-24",
+    url: `${origin}/trust`,
+    mainEntityOfPage: `${origin}/trust`,
+    inLanguage: "en",
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Does FootprintIQ access private accounts or dark web data?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. FootprintIQ analyses publicly accessible data only. No private accounts are scraped, no authentication is bypassed, and no dark web sources are accessed.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Does FootprintIQ sell or share user data?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. FootprintIQ does not sell, resell, or share scan results with any third party. The platform is not a data broker.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How long does FootprintIQ store scan data?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Scan results are retained only for the duration necessary for the user to review them. Raw scan data is not stored permanently. Users can request deletion at any time.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What safeguards exist against misuse?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "FootprintIQ enforces rate limits, terms-of-use compliance, anti-stalking safeguards, and ethical use policies. Abusive accounts are suspended.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is FootprintIQ GDPR compliant?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "FootprintIQ follows GDPR principles including data minimisation, purpose limitation, and the right to erasure. Users can request complete data deletion.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Can I use FootprintIQ without creating an account?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. A limited free scan is available without registration. Full features require an account, but FootprintIQ collects only the minimum identifiers necessary.",
+        },
+      },
+    ],
+  };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <SEO 
-        title="Trust & Security - FootprintIQ"
-        description="Learn about our security measures, privacy practices, and compliance certifications. Your data security is our top priority."
-        canonical="https://footprintiq.app/trust"
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
+      <SEO
+        title="Trust, Safety & Ethical OSINT | FootprintIQ"
+        description="Learn how FootprintIQ uses ethical OSINT practices, privacy-first data handling, and transparent safeguards to protect users."
+        canonical={`${origin}/trust`}
+        ogType="article"
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs,
+        }}
       />
-      
+      <JsonLd data={articleSchema} />
+      <JsonLd data={faqSchema} />
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="py-20 px-6 bg-gradient-to-b from-background to-secondary/20">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
-              <Shield className="w-4 h-4" />
-              <span className="text-sm font-medium">Security & Privacy</span>
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Your Trust is Our Priority
-            </h1>
-            
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              We implement industry-leading security measures and privacy practices to protect your data at every step.
-            </p>
+        <article className="max-w-4xl mx-auto px-6 py-12">
+          {/* Badges */}
+          <div className="flex flex-wrap items-center gap-3 text-sm mb-6">
+            <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+              <Shield className="w-3 h-3 mr-1" />
+              Trust & Safety
+            </Badge>
+            <Badge variant="outline">Updated February 2026</Badge>
           </div>
-        </section>
 
-        {/* Security Features */}
-        <section className="py-20 px-6">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Security Certifications</h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              {securityFeatures.map((feature, index) => (
-                <Card key={index} className="border-2 hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-lg bg-muted ${feature.color}`}>
-                          <feature.icon className="w-6 h-6" />
-                        </div>
-                        <CardTitle>{feature.title}</CardTitle>
-                      </div>
-                      <Badge variant="secondary">{feature.badge}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
+          {/* H1 */}
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            Trust, Safety & Ethical OSINT
+          </h1>
+          <div className="h-1 w-32 bg-gradient-to-r from-primary via-primary-glow to-accent rounded-full mb-8" />
+
+          <p className="text-xl text-foreground/80 leading-relaxed mb-12">
+            FootprintIQ is built on the principle that individuals should be able to understand
+            their own digital exposure — using ethical, transparent methods and publicly accessible
+            data only. This page explains how we operate, what we do and do not do, and the
+            safeguards in place to protect users.
+          </p>
+
+          <Separator className="my-12" />
+
+          {/* ═══ 1. Ethical OSINT for Self-Protection ═══ */}
+          <section id="ethical-osint">
+            <h2 className="text-3xl font-bold mb-6 pb-3 border-b border-border flex items-center gap-3">
+              <Shield className="w-6 h-6 text-primary" />
+              Ethical OSINT for Self-Protection
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              FootprintIQ uses open-source intelligence (OSINT) techniques to help users audit
+              their own digital footprint. Every scan analyses publicly available data — the same
+              information already accessible to search engines, data brokers, and anyone with a
+              web browser.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4 mb-8">
+              {[
+                { icon: Globe, label: "Public data only", desc: "No private account scraping or authentication bypass" },
+                { icon: Ban, label: "No dark-web intrusion", desc: "No access to dark web markets, forums, or hidden services" },
+                { icon: XCircle, label: "No data resale", desc: "Scan results are never sold, shared, or brokered" },
+                { icon: ShieldCheck, label: "Defensive self-assessment", desc: "Designed for users to understand their own exposure" },
+              ].map((item) => (
+                <div key={item.label} className="p-4 rounded-xl border border-border bg-card">
+                  <div className="flex items-center gap-3 mb-2">
+                    <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
+                    <h3 className="font-semibold text-foreground text-sm">{item.label}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
               ))}
             </div>
-          </div>
-        </section>
+            <p className="text-muted-foreground leading-relaxed">
+              For a detailed overview of ethical OSINT principles, see our{" "}
+              <Link to="/ethical-osint-charter" className="text-primary hover:underline">
+                Ethical OSINT Charter
+              </Link>{" "}
+              and{" "}
+              <Link to="/ethical-osint-for-individuals" className="text-primary hover:underline">
+                Ethical OSINT for Individuals
+              </Link>{" "}
+              guide.
+            </p>
+          </section>
 
-        {/* Privacy Practices */}
-        <section className="py-20 px-6 bg-secondary/20">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Privacy Practices</h2>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              {privacyPractices.map((practice, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <practice.icon className="w-5 h-5" />
-                      </div>
-                      <CardTitle className="text-lg">{practice.title}</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{practice.description}</p>
-                  </CardContent>
-                </Card>
+          <Separator className="my-12" />
+
+          {/* ═══ 2. Data Ethics & Sources ═══ */}
+          <section id="data-ethics">
+            <h2 className="text-3xl font-bold mb-6 pb-3 border-b border-border flex items-center gap-3">
+              <Database className="w-6 h-6 text-primary" />
+              Data Ethics & Sources
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="p-6 rounded-xl border border-border bg-card">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-primary" />
+                  Sources We Use
+                </h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Public social media profiles (visible without login)</li>
+                  <li>• Public forum and community registrations</li>
+                  <li>• Breach disclosure databases (public metadata only)</li>
+                  <li>• Data broker opt-out previews and public listings</li>
+                  <li>• Archived web content from public internet archives</li>
+                  <li>• DNS and WHOIS records (publicly accessible)</li>
+                </ul>
+              </div>
+              <div className="p-6 rounded-xl border border-border bg-card">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-destructive" />
+                  Sources We Never Use
+                </h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Private or authenticated account content</li>
+                  <li>• Dark web markets, forums, or hidden services</li>
+                  <li>• Purchased data broker records</li>
+                  <li>• Government or law-enforcement databases</li>
+                  <li>• Intercepted communications or surveillance feeds</li>
+                  <li>• Scraped data behind CAPTCHAs or login walls</li>
+                </ul>
+              </div>
+            </div>
+            <p className="text-muted-foreground leading-relaxed">
+              FootprintIQ does not operate as a data broker. We do not aggregate, package, or
+              resell personal information. Scan results belong to the user who initiated them.
+              For full details on data sourcing, see{" "}
+              <Link to="/how-we-source-data" className="text-primary hover:underline">
+                How We Source Data
+              </Link>.
+            </p>
+          </section>
+
+          <Separator className="my-12" />
+
+          {/* ═══ 3. Logging & Data Retention ═══ */}
+          <section id="data-retention">
+            <h2 className="text-3xl font-bold mb-6 pb-3 border-b border-border flex items-center gap-3">
+              <Clock className="w-6 h-6 text-primary" />
+              Logging & Data Retention
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              FootprintIQ follows a minimal-logging approach. We collect only the data necessary
+              to operate the service and deliver scan results.
+            </p>
+            <div className="space-y-4 mb-6">
+              {[
+                { label: "Search queries", policy: "Not stored permanently. Processed in memory and discarded after scan completion." },
+                { label: "Scan results", policy: "Retained for user review. Users can request deletion at any time via account settings." },
+                { label: "Account data", policy: "Email and authentication credentials only. No unnecessary profiling or tracking." },
+                { label: "Server logs", policy: "Minimal operational logs retained for security monitoring. No query content logged." },
+              ].map((item) => (
+                <div key={item.label} className="p-4 rounded-xl border border-border bg-card">
+                  <h3 className="font-semibold text-foreground text-sm mb-1">{item.label}</h3>
+                  <p className="text-sm text-muted-foreground">{item.policy}</p>
+                </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* Data Protection Statement */}
-        <section className="py-20 px-6">
-          <div className="max-w-4xl mx-auto">
-            <Card className="border-2 border-primary/20">
-              <CardHeader>
-                <CardTitle className="text-2xl">Our Commitment to Your Privacy</CardTitle>
-                <CardDescription>What we do and don't do with your data</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-green-500">✓ What We Do:</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Encrypt all data with AES-256 encryption</li>
-                    <li>• Process scans in secure, isolated environments</li>
-                    <li>• Automatically delete search queries immediately after use</li>
-                    <li>• Provide full transparency in our data handling</li>
-                    <li>• Give you complete control over your data</li>
-                  </ul>
-                </div>
-                
-                <div className="space-y-3 pt-4 border-t">
-                  <h3 className="font-semibold text-red-500">✗ What We Don't Do:</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Store your search terms or queries</li>
-                    <li>• Share your data with third parties for marketing</li>
-                    <li>• Track your browsing behavior outside our platform</li>
-                    <li>• Sell or monetize your personal information</li>
-                    <li>• Use your data to train AI models without consent</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Contact Section */}
-        <section className="py-20 px-6 bg-secondary/20">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">Questions About Security?</h2>
-            <p className="text-muted-foreground mb-8">
-              Our security team is here to answer any questions you may have about our practices.
+            <p className="text-sm text-muted-foreground">
+              For complete details, see our{" "}
+              <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
             </p>
-            <a 
-              href="mailto:security@footprintiq.app" 
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
-            >
-              <Shield className="w-5 h-5" />
-              Contact Security Team
-            </a>
+          </section>
+
+          <Separator className="my-12" />
+
+          {/* ═══ 4. Abuse Prevention & Guardrails ═══ */}
+          <section id="abuse-prevention">
+            <h2 className="text-3xl font-bold mb-6 pb-3 border-b border-border flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-primary" />
+              Abuse Prevention & Guardrails
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              FootprintIQ is designed for self-assessment and legitimate security research. Multiple
+              safeguards prevent misuse:
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              {[
+                { icon: Scale, title: "Rate limits", desc: "Automated throttling prevents bulk scanning and enumeration attacks." },
+                { icon: FileText, title: "Terms enforcement", desc: "Violations of the Terms of Service result in immediate account suspension." },
+                { icon: Shield, title: "Anti-stalking safeguards", desc: "Scan patterns are monitored for indicators of targeted harassment or surveillance." },
+                { icon: BookOpen, title: "Ethical use policy", desc: "All users agree to a Responsible Use Policy that prohibits doxxing, harassment, and unauthorised investigation." },
+              ].map((item) => (
+                <div key={item.title} className="p-4 rounded-xl border border-border bg-card">
+                  <div className="flex items-center gap-3 mb-2">
+                    <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
+                    <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-muted-foreground leading-relaxed">
+              If you believe FootprintIQ is being used in violation of our policies, contact{" "}
+              <a href="mailto:abuse@footprintiq.app" className="text-primary hover:underline">
+                abuse@footprintiq.app
+              </a>.
+            </p>
+          </section>
+
+          <Separator className="my-12" />
+
+          {/* ═══ 5. Privacy Mode & User Control ═══ */}
+          <section id="privacy-controls">
+            <h2 className="text-3xl font-bold mb-6 pb-3 border-b border-border flex items-center gap-3">
+              <UserCheck className="w-6 h-6 text-primary" />
+              Privacy Mode & User Control
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              FootprintIQ is built to be usable with minimal personal exposure:
+            </p>
+            <ul className="space-y-3 text-muted-foreground mb-6">
+              <li className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span><strong className="text-foreground">Pseudonymous usage:</strong> Limited free scans are available without creating an account. No real name is required for registration.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span><strong className="text-foreground">Minimal identifiers:</strong> Only an email address is required for account creation. No phone number, address, or government ID.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span><strong className="text-foreground">Data deletion controls:</strong> Users can request complete account and data deletion at any time. Deletion is permanent and irreversible.</span>
+              </li>
+            </ul>
+          </section>
+
+          <Separator className="my-12" />
+
+          {/* ═══ 6. Security & Compliance ═══ */}
+          <section id="security-compliance">
+            <h2 className="text-3xl font-bold mb-6 pb-3 border-b border-border flex items-center gap-3">
+              <Lock className="w-6 h-6 text-primary" />
+              Security & Compliance
+            </h2>
+            <div className="space-y-4 mb-6">
+              {[
+                { icon: KeyRound, title: "Encryption in transit", desc: "All connections use TLS 1.3. No unencrypted data transmission." },
+                { icon: Server, title: "Encryption at rest", desc: "Data at rest is encrypted using AES-256 industry-standard encryption." },
+                { icon: Lock, title: "Access controls", desc: "Role-based access controls limit internal data access to authorised personnel only." },
+                { icon: Eye, title: "Security review practices", desc: "Regular security assessments and dependency audits are conducted to identify and remediate vulnerabilities." },
+                { icon: Globe, title: "GDPR principles", desc: "Data minimisation, purpose limitation, storage limitation, and the right to erasure are implemented throughout the platform." },
+              ].map((item) => (
+                <div key={item.title} className="flex items-start gap-4 p-4 rounded-xl border border-border bg-card">
+                  <item.icon className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-foreground text-sm mb-1">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Security questions? Contact{" "}
+              <a href="mailto:security@footprintiq.app" className="text-primary hover:underline">
+                security@footprintiq.app
+              </a>.
+            </p>
+          </section>
+
+          <Separator className="my-12" />
+
+          {/* ═══ 7. Research Transparency ═══ */}
+          <section id="research-transparency">
+            <h2 className="text-3xl font-bold mb-6 pb-3 border-b border-border flex items-center gap-3">
+              <BookOpen className="w-6 h-6 text-primary" />
+              Research Transparency
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              FootprintIQ publishes original research with full methodology disclosure. Our findings
+              are reproducible, our data sources are documented, and our limitations are stated
+              explicitly.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              The{" "}
+              <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">
+                2026 Username Reuse & Digital Exposure Report
+              </Link>{" "}
+              analyses cross-platform username patterns using ethical OSINT methodology. Key findings
+              include a 41% false-positive rate in automated matching, a median of 4.2 linked
+              profiles per reused username, and 89% data staleness in broker records — all derived
+              from publicly accessible sources.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-8">
+              Research methodology, statistical findings, and ethical boundaries are disclosed in
+              full. The report is licensed under CC BY 4.0 and may be cited freely with attribution.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Button asChild variant="outline">
+                <Link to="/research/username-reuse-report-2026">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Read the 2026 Report
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/research/media-kit">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Media Kit & Citations
+                </Link>
+              </Button>
+            </div>
+          </section>
+
+          <Separator className="my-12" />
+
+          {/* ═══ FAQ ═══ */}
+          <section id="faq">
+            <h2 className="text-3xl font-bold mb-8 pb-3 border-b border-border">
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-4">
+              {[
+                {
+                  q: "Does FootprintIQ access private accounts or dark web data?",
+                  a: "No. FootprintIQ analyses publicly accessible data only. No private accounts are scraped, no authentication is bypassed, and no dark web sources are accessed.",
+                },
+                {
+                  q: "Does FootprintIQ sell or share user data?",
+                  a: "No. FootprintIQ does not sell, resell, or share scan results with any third party. The platform is not a data broker. Results are delivered only to the person who initiated the scan.",
+                },
+                {
+                  q: "How long does FootprintIQ store scan data?",
+                  a: "Scan results are retained only for the duration necessary for the user to review them. Raw scan data is not stored permanently. Users can request deletion at any time via account settings.",
+                },
+                {
+                  q: "What safeguards exist against misuse?",
+                  a: "FootprintIQ enforces rate limits, terms-of-use compliance, anti-stalking safeguards, and ethical use policies. Accounts found to be engaging in harassment, doxxing, or unauthorised surveillance are suspended immediately.",
+                },
+                {
+                  q: "Is FootprintIQ GDPR compliant?",
+                  a: "FootprintIQ follows GDPR principles including data minimisation, purpose limitation, and the right to erasure. Users can request complete data deletion at any time.",
+                },
+                {
+                  q: "Can I use FootprintIQ without creating an account?",
+                  a: "Yes. A limited free scan is available without registration. Full features require an account, but only an email address is needed — no phone number, real name, or government ID.",
+                },
+              ].map((item) => (
+                <details
+                  key={item.q}
+                  className="group rounded-xl border border-border p-5 open:bg-muted/20 transition-colors"
+                >
+                  <summary className="font-semibold cursor-pointer text-foreground group-open:mb-3">
+                    {item.q}
+                  </summary>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          <Separator className="my-12" />
+
+          {/* CTA */}
+          <div className="p-8 bg-gradient-to-br from-primary/5 via-primary-glow/5 to-accent/5 rounded-3xl border border-primary/20">
+            <h3 className="text-2xl font-bold mb-3">See What's Publicly Visible About You</h3>
+            <p className="text-muted-foreground mb-6 text-lg">
+              Use FootprintIQ to audit your username and understand your digital exposure —
+              ethically, transparently, and on your terms.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Button asChild className="font-medium">
+                <Link to="/check-my-digital-footprint">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Check My Digital Footprint
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="font-medium">
+                <Link to="/pricing">
+                  View Plans
+                </Link>
+              </Button>
+            </div>
           </div>
-        </section>
+        </article>
       </main>
 
       <Footer />
