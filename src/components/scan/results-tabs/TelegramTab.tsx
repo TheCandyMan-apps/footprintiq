@@ -21,6 +21,7 @@ import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFi
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { TelegramExplore } from './TelegramExplore';
+import { TelegramExposureSnapshot } from './TelegramExposureSnapshot';
 import { FeatureGate } from '@/components/tier-gating/FeatureGate';
 
 interface TelegramTabProps {
@@ -946,6 +947,9 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
       {hasRealData ? (
         <>
+          {/* Exposure Snapshot */}
+          <TelegramExposureSnapshot findings={realFindings} isPro={isPro} />
+
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
