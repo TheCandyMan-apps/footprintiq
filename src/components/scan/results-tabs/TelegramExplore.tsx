@@ -262,13 +262,10 @@ export function TelegramExplore({ scanId }: TelegramExploreProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Send className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm">Telegram Explore</CardTitle>
-          <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-primary/30 text-primary">
-            Beta
-          </Badge>
+          <CardTitle className="text-sm">Telegram Intelligence Suite</CardTitle>
         </div>
         <CardDescription className="text-xs">
-          Browse Telegram users, channels, and groups interactively.
+          Resolve Telegram users, channels, and groups. Discover public associations and interaction patterns.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

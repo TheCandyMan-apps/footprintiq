@@ -1031,7 +1031,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
         <div className="py-6 text-center space-y-3">
           <Send className="h-7 w-7 text-muted-foreground/40 mx-auto" />
           <p className="text-sm text-muted-foreground">
-            No Telegram findings saved for this scan yet — use Explore above to browse Telegram content.
+            No Telegram findings saved for this scan yet — use the Intelligence Suite above to browse Telegram content.
           </p>
           <div className="flex justify-center pt-1">
             <RetriggerButton scanId={scanId} scanType={scanType} variant="icon" onRetriggered={handleRetriggered} />
