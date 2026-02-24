@@ -272,7 +272,7 @@ const VerifySomeoneOnline = () => {
               ))}
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              This is about personal safety, not surveillance. Verifying publicly available details before meeting a stranger is a responsible step that protects both parties. FootprintIQ provides the tools to do this efficiently and ethically.
+              This is about personal safety, not surveillance. Verifying publicly available details before meeting a stranger is a responsible step that protects both parties. FootprintIQ's <Link to="/research/username-reuse-report-2026#dating-social-overlap" className="text-primary hover:underline">identity correlation study shows</Link> that <strong>67% of dating-app profiles</strong> share a username or bio fragment with a social media account — making cross-platform verification both practical and essential.
             </p>
           </div>
         </section>

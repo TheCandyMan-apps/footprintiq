@@ -226,7 +226,7 @@ export default function InstagramUsernameOsintToolPage() {
                   <Users className="h-8 w-8 text-primary mb-4" />
                   <h3 className="font-semibold mb-2">Identity Correlation</h3>
                   <p className="text-sm text-muted-foreground">
-                    Discover how your Instagram username links your professional, personal, and anonymous accounts into one traceable identity.
+                    Discover how your Instagram username links your professional, personal, and anonymous accounts into one traceable identity. FootprintIQ's <Link to="/research/username-reuse-report-2026#cross-platform-reuse" className="text-primary hover:underline">identity correlation study shows</Link> that <strong>44% of users</strong> reuse the same profile image across platforms — a powerful linking signal.
                   </p>
                 </CardContent>
               </Card>

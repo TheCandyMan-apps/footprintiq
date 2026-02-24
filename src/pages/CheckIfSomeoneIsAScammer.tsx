@@ -313,7 +313,7 @@ const CheckIfSomeoneIsAScammer = () => {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Scam profiles follow recognisable patterns when examined at scale. A username that appears across multiple freshly created accounts — but has zero long-term history — is a strong indicator of a fabricated identity. When profile photos match stock imagery and dating bios mirror known scam scripts, these signals compound into a clear red-flag profile. Legitimate users build digital histories gradually; scammers manufacture presence rapidly across disposable accounts designed to be abandoned once the fraud is complete.
+                  Scam profiles follow recognisable patterns when examined at scale. A username that appears across multiple freshly created accounts — but has zero long-term history — is a strong indicator of a fabricated identity. When profile photos match stock imagery and dating bios mirror known scam scripts, these signals compound into a clear red-flag profile. According to our <Link to="/research/username-reuse-report-2026#false-positive-analysis" className="text-primary hover:underline">2026 research</Link>, legitimate users build digital histories gradually across a median of <strong>4.2 platforms</strong> — scammers manufacture presence rapidly across disposable accounts designed to be abandoned once the fraud is complete.
                 </p>
                 <div className="flex justify-center pt-2">
                   <Button asChild size="lg">
