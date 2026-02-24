@@ -21,6 +21,7 @@ import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFi
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { TelegramExplore } from './TelegramExplore';
+import { FeatureGate } from '@/components/tier-gating/FeatureGate';
 
 interface TelegramTabProps {
   scanId: string;
@@ -915,8 +916,10 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
         healthRefreshKey={healthRefreshKey}
       />
 
-      {/* Explore section – always visible, above findings */}
-      <TelegramExplore scanId={scanId} />
+      {/* Explore section – Pro only */}
+      <FeatureGate feature="advanced_scan">
+        <TelegramExplore scanId={scanId} />
+      </FeatureGate>
 
       {hasRealData ? (
         <>
