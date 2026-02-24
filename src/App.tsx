@@ -137,6 +137,7 @@ const CleanUpOnlinePresence = lazy(() => import("./pages/guides/CleanUpOnlinePre
 const RemoveFromDataBrokersGuideNew = lazy(() => import("./pages/guides/RemoveFromDataBrokers"));
 const MonitorOnlineExposure = lazy(() => import("./pages/guides/MonitorOnlineExposure"));
 const WhatGoogleKnowsAboutYou = lazy(() => import("./pages/guides/WhatGoogleKnowsAboutYou"));
+const TelegramOsintSearch = lazy(() => import("./pages/guides/TelegramOsintSearch"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -706,6 +707,7 @@ function RouterContent() {
              <Route path="/guides/remove-from-data-brokers" element={<RemoveFromDataBrokersGuideNew />} />
              <Route path="/guides/monitor-online-exposure" element={<MonitorOnlineExposure />} />
              <Route path="/guides/what-google-knows-about-you" element={<WhatGoogleKnowsAboutYou />} />
+             <Route path="/guides/telegram-osint-search" element={<TelegramOsintSearch />} />
              <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
              <Route path="/best-osint-tools" element={<BestOsintTools />} />

@@ -50,6 +50,7 @@ export const qaGuideLinks: RelatedGuideLink[] = [
   { label: "How To Remove Yourself From Data Broker Sites", to: "/guides/remove-from-data-brokers" },
   { label: "Best Way To Monitor Your Online Exposure", to: "/guides/monitor-online-exposure" },
   { label: "How To See What Google Knows About You", to: "/guides/what-google-knows-about-you" },
+  { label: "Telegram Profile Search & Messenger OSINT Guide", to: "/guides/telegram-osint-search" },
 ];
 
 export function QAGuideLayout({ data }: { data: QAGuideData }) {

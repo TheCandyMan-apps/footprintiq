@@ -153,6 +153,7 @@ export const INDEXNOW_URLS = [
   "/guides/remove-from-data-brokers",
   "/guides/monitor-online-exposure",
   "/guides/what-google-knows-about-you",
+  "/guides/telegram-osint-search",
   // Blog (key posts)
   "/blog/digital-exposure-report-2026",
   "/blog/what-is-osint",

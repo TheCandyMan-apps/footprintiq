@@ -57,6 +57,12 @@ const allTools = [
     icon: Search,
   },
   {
+    to: "/guides/telegram-osint-search",
+    title: "Telegram OSINT Guide",
+    desc: "Learn how to search Telegram profiles ethically",
+    icon: Globe,
+  },
+  {
     to: "/ai-answers-hub",
     title: "AI Answers Hub",
     desc: "Get answers to OSINT and digital privacy questions",
