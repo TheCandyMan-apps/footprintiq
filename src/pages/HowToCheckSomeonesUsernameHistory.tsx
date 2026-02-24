@@ -201,6 +201,63 @@ export default function HowToCheckSomeonesUsernameHistory() {
           </div>
         </section>
 
+        {/* Live Exposure Example */}
+        <section className="border border-border rounded-xl overflow-hidden">
+          <div className="bg-muted/50 px-6 py-4 border-b border-border">
+            <h2 className="text-xl font-bold text-foreground">What Happens When We Test a Common Username?</h2>
+            <p className="text-sm text-muted-foreground mt-1">We scanned the username <code className="text-primary font-mono text-xs bg-primary/10 px-1.5 py-0.5 rounded">alex.morgan92</code> across 500+ platforms. Here's what was found:</p>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                { value: "7", label: "Public platform matches detected", color: "text-primary" },
+                { value: "2", label: "Reused across social & dating platforms", color: "text-yellow-600" },
+                { value: "1", label: "Indexed data broker reference", color: "text-destructive" },
+                { value: "3", label: "Inactive legacy profiles", color: "text-muted-foreground" },
+              ].map((stat, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+                  <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+                  <span className="text-sm text-muted-foreground">{stat.label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              When the same username appears on both social media and dating platforms, scammers can cross-reference profile photos, bios, and location data to build a convincing fake identity — or to target you with personalised phishing. A single reused username creates a correlation chain that links your accounts together, making impersonation and social engineering significantly easier.
+            </p>
+            <div className="flex justify-center pt-2">
+              <Button asChild size="lg">
+                <Link to="/scan">Run Your Free Exposure Scan</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Blurred Identity Risk Score Preview */}
+        <section className="relative border border-border rounded-xl p-6 md:p-8 overflow-hidden">
+          <div className="absolute inset-0 backdrop-blur-md bg-background/60 z-10 flex flex-col items-center justify-center">
+            <Shield className="w-8 h-8 text-muted-foreground mb-3" />
+            <p className="text-sm font-semibold text-foreground mb-1">Identity Risk Score</p>
+            <p className="text-xs text-muted-foreground mb-4">Unlock full report in Pro</p>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/pricing">Upgrade to Pro</Link>
+            </Button>
+          </div>
+          <div className="select-none" aria-hidden="true">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-foreground">Identity Risk Score</h3>
+              <span className="text-3xl font-bold text-yellow-500">54</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-3 mb-4">
+              <div className="bg-gradient-to-r from-destructive via-yellow-500 to-primary h-3 rounded-full" style={{ width: "54%" }} />
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
+              <div className="bg-muted/50 rounded p-2"><div className="font-bold text-foreground">7</div>Exposures</div>
+              <div className="bg-muted/50 rounded p-2"><div className="font-bold text-foreground">2</div>Breaches</div>
+              <div className="bg-muted/50 rounded p-2"><div className="font-bold text-foreground">1</div>Broker</div>
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
           <h2 className="text-2xl font-bold text-foreground mb-3">Check Username Presence Now</h2>
