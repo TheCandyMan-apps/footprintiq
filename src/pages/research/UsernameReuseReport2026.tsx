@@ -910,6 +910,70 @@ export default function UsernameReuseReport2026() {
 
             <Separator className="my-12" />
 
+            {/* ═══ Ethical OSINT for Self-Protection ═══ */}
+            <h2 id="ethical-osint-self-protection" className="flex items-center gap-3">
+              <Lock className="w-6 h-6 text-primary" />
+              Ethical OSINT for Self-Protection
+            </h2>
+
+            <p>
+              FootprintIQ exists to help individuals understand their own digital exposure. 
+              It is not a surveillance tool, a people-search engine, or a data broker. The 
+              distinction matters — and it shapes every aspect of how the platform operates.
+            </p>
+
+            <h3>What FootprintIQ Does Not Do</h3>
+            <ul>
+              <li><strong>Does not scrape private data:</strong> All analysis is limited to publicly accessible sources — no logins bypassed, no private APIs accessed, no sealed records queried</li>
+              <li><strong>Does not sell or broker data:</strong> No user scan results are stored for resale, shared with advertisers, or made available to third parties</li>
+              <li><strong>Does not monitor individuals:</strong> Scans are one-time, user-initiated actions — not ongoing surveillance or passive tracking</li>
+              <li><strong>Does not make identity assertions:</strong> Results are presented as probabilistic correlations, not definitive identity claims</li>
+            </ul>
+
+            <h3>Public OSINT Sources Only</h3>
+            <p>
+              Every data point surfaced by FootprintIQ comes from sources that are already 
+              publicly accessible: social media profiles visible without login, forum posts 
+              indexed by search engines, breach disclosure databases with public metadata, 
+              and data broker previews. The platform does not create new exposure — it reveals 
+              exposure that already exists.
+            </p>
+
+            <h3>How This Differs from Data Brokers</h3>
+            <p>
+              Traditional data brokers aggregate personal information from public records, 
+              purchase histories, and third-party data exchanges, then package and sell unified 
+              profiles for profit. FootprintIQ operates on the opposite model:
+            </p>
+            <ul>
+              <li><strong>Data brokers profit from exposure.</strong> FootprintIQ helps users reduce it.</li>
+              <li><strong>Data brokers aggregate without consent.</strong> FootprintIQ scans only when a user requests it.</li>
+              <li><strong>Data brokers retain records indefinitely.</strong> FootprintIQ does not maintain a searchable database of individuals.</li>
+              <li><strong>Data brokers sell to anyone.</strong> FootprintIQ delivers results only to the person who initiated the scan.</li>
+            </ul>
+
+            <p>
+              The purpose is self-protection: giving individuals the same visibility into their 
+              public exposure that data brokers and bad actors already have — so they can make 
+              informed decisions about what to keep, what to remove, and where to tighten their 
+              privacy settings.
+            </p>
+
+            <BlogCallout type="info" title="Privacy-First by Design">
+              <p>
+                FootprintIQ is built on the principle that awareness should precede action. Before 
+                paying for removal services or changing privacy settings, users need a clear, honest 
+                map of what is actually exposed. That map is what FootprintIQ provides — nothing more, 
+                nothing less. See the{" "}
+                <Link to="/ethical-osint-charter" className="text-primary hover:underline">
+                  Ethical OSINT Charter
+                </Link>{" "}
+                for our full commitment.
+              </p>
+            </BlogCallout>
+
+            <Separator className="my-12" />
+
             {/* ═══ 11. Conclusions ═══ */}
             <h2 id="conclusions">Conclusions</h2>
 
