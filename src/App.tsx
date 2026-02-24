@@ -371,6 +371,10 @@ const HowUsernameReuseExposesYouOnline = lazy(() => import("./pages/HowUsernameR
 const VerifySomeoneOnline = lazy(() => import("./pages/VerifySomeoneOnline"));
 const CheckIfSomeoneIsAScammer = lazy(() => import("./pages/CheckIfSomeoneIsAScammer"));
 const CanSomeoneTrackMeOnline = lazy(() => import("./pages/CanSomeoneTrackMeOnline"));
+const RomanceScamWarningSigns = lazy(() => import("./pages/RomanceScamWarningSigns"));
+const HowToCheckSomeonesUsernameHistory = lazy(() => import("./pages/HowToCheckSomeonesUsernameHistory"));
+const HowToProtectYourDigitalIdentity = lazy(() => import("./pages/HowToProtectYourDigitalIdentity"));
+const RemoveYourselfFromDataBrokerSites = lazy(() => import("./pages/RemoveYourselfFromDataBrokerSites"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -749,6 +753,10 @@ function RouterContent() {
                  <Route path="/verify-someone-online" element={<VerifySomeoneOnline />} />
                  <Route path="/check-if-someone-is-a-scammer" element={<CheckIfSomeoneIsAScammer />} />
                  <Route path="/can-someone-track-me-online" element={<CanSomeoneTrackMeOnline />} />
+                 <Route path="/romance-scam-warning-signs" element={<RomanceScamWarningSigns />} />
+                 <Route path="/how-to-check-someones-username-history" element={<HowToCheckSomeonesUsernameHistory />} />
+                 <Route path="/how-to-protect-your-digital-identity" element={<HowToProtectYourDigitalIdentity />} />
+                 <Route path="/remove-yourself-from-data-broker-sites" element={<RemoveYourselfFromDataBrokerSites />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
