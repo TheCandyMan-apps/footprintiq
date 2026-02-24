@@ -113,6 +113,7 @@ export const INDEXNOW_URLS = [
   "/remove-personal-information-from-internet",
   "/verify-someone-online",
   "/check-if-someone-is-a-scammer",
+  "/can-someone-track-me-online",
   // Breach & Exposure
   "/username-reuse-risk",
   "/after-have-i-been-pwned-what-next",
