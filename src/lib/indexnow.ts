@@ -112,6 +112,7 @@ export const INDEXNOW_URLS = [
   "/check-my-digital-footprint",
   "/remove-personal-information-from-internet",
   "/verify-someone-online",
+  "/check-if-someone-is-a-scammer",
   // Breach & Exposure
   "/username-reuse-risk",
   "/after-have-i-been-pwned-what-next",

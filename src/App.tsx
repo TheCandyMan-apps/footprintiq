@@ -369,6 +369,7 @@ const InstagramUsernameOsintTool = lazy(() => import("./pages/InstagramUsernameO
 const AIAnswersInstagramUsernameOsint = lazy(() => import("./pages/ai-answers/InstagramUsernameOsint"));
 const HowUsernameReuseExposesYouOnline = lazy(() => import("./pages/HowUsernameReuseExposesYouOnline"));
 const VerifySomeoneOnline = lazy(() => import("./pages/VerifySomeoneOnline"));
+const CheckIfSomeoneIsAScammer = lazy(() => import("./pages/CheckIfSomeoneIsAScammer"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -745,6 +746,7 @@ function RouterContent() {
                  <Route path="/best-search-engine-for-finding-people" element={<BestSearchEngineForFindingPeople />} />
                  <Route path="/search-engines-to-find-people" element={<SearchEnginesToFindPeople />} />
                  <Route path="/verify-someone-online" element={<VerifySomeoneOnline />} />
+                 <Route path="/check-if-someone-is-a-scammer" element={<CheckIfSomeoneIsAScammer />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
