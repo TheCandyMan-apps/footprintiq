@@ -4,7 +4,7 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FileText, BookOpen, Shield, Scale, BarChart3, AlertTriangle, Users, Database, Lock, CheckSquare, Eye } from "lucide-react";
+import { ArrowLeft, FileText, BookOpen, Shield, Scale, BarChart3, AlertTriangle, Users, Database, Lock, CheckSquare, Eye, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
@@ -1184,6 +1184,42 @@ export default function UsernameReuseReport2026() {
                 </div>
               </Link>
             </div>
+          </div>
+
+          {/* Media & Research Inquiries */}
+          <div id="media-contact" className="mt-16 p-8 rounded-2xl border-2 border-primary/20 bg-primary/5">
+            <div className="flex items-start gap-4 mb-6">
+              <Mail className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+              <div>
+                <h2 className="text-2xl font-bold mb-1">Media & Research Inquiries</h2>
+                <p className="text-muted-foreground">
+                  For citations, interviews, or clarification on findings in this report.
+                </p>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Contact</p>
+                <p className="text-sm text-muted-foreground">
+                  Email: <a href="mailto:research@footprintiq.app" className="text-primary hover:underline">research@footprintiq.app</a>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Founder: <strong className="text-foreground">Robin Clifford</strong>
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Resources</p>
+                <p className="text-sm text-muted-foreground">
+                  <Link to="/research/media-kit" className="text-primary hover:underline">Media Kit & Citation Guide →</Link>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <Link to="/research/username-reuse-report-2026-download" className="text-primary hover:underline">Download Report (PDF) →</Link>
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground border-t border-border/50 pt-4">
+              This research is licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">CC BY 4.0</a>. You may cite or reference the findings with attribution to FootprintIQ Research (2026).
+            </p>
           </div>
 
           {/* Outreach Section */}
