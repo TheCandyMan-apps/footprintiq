@@ -308,6 +308,10 @@ const SearchUsernamePage = lazy(() => import("./pages/SearchUsername"));
 const TikTokUsernameSearchPage = lazy(() => import("./pages/TikTokUsernameSearch"));
 const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsernameSearch"));
 const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
+const PlaybooksHub = lazy(() => import("./pages/playbooks/PlaybooksHub"));
+const ExecutiveTravelCheck = lazy(() => import("./pages/playbooks/ExecutiveTravelCheck"));
+const JournalistRiskAudit = lazy(() => import("./pages/playbooks/JournalistRiskAudit"));
+const PreEmploymentExposureReview = lazy(() => import("./pages/playbooks/PreEmploymentExposureReview"));
 
 // AI Answers Hub - OSINT Explainer Pages
 const AIAnswersWhatIsUsernameOsintScan = lazy(() => import("./pages/ai-answers/WhatIsUsernameOsintScan"));
@@ -797,6 +801,10 @@ function RouterContent() {
            <Route path="/resources/ethical-osint-framework" element={<EthicalOsintFramework />} />
            <Route path="/resources/doxxing-defense" element={<DoxxingDefenseGuide />} />
            <Route path="/resources/digital-footprint-mapping" element={<DigitalFootprintMapping />} />
+          <Route path="/playbooks" element={<PlaybooksHub />} />
+          <Route path="/playbooks/executive-travel-check" element={<ExecutiveTravelCheck />} />
+          <Route path="/playbooks/journalist-risk-audit" element={<JournalistRiskAudit />} />
+          <Route path="/playbooks/pre-employment-exposure-review" element={<PreEmploymentExposureReview />} />
           <Route path="/install" element={<InstallApp />} />
           
               <Route path="/404" element={<NotFound />} />
