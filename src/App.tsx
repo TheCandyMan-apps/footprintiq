@@ -368,6 +368,7 @@ const HowToDeleteGoogleAccount = lazy(() => import("./pages/HowToDeleteGoogleAcc
 const InstagramUsernameOsintTool = lazy(() => import("./pages/InstagramUsernameOsintTool"));
 const AIAnswersInstagramUsernameOsint = lazy(() => import("./pages/ai-answers/InstagramUsernameOsint"));
 const HowUsernameReuseExposesYouOnline = lazy(() => import("./pages/HowUsernameReuseExposesYouOnline"));
+const VerifySomeoneOnline = lazy(() => import("./pages/VerifySomeoneOnline"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -743,6 +744,7 @@ function RouterContent() {
                  <Route path="/best-person-search-engine" element={<BestPersonSearchEngine />} />
                  <Route path="/best-search-engine-for-finding-people" element={<BestSearchEngineForFindingPeople />} />
                  <Route path="/search-engines-to-find-people" element={<SearchEnginesToFindPeople />} />
+                 <Route path="/verify-someone-online" element={<VerifySomeoneOnline />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
