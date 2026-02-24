@@ -453,6 +453,10 @@ serve(async (req: Request) => {
       return json({ ok: false, scanId, error: "Worker returned invalid JSON" }, 502);
     }
 
+    // Normalize: worker returns "entity" but our code expects "entity_metadata"
+    if (result.entity && !result.entity_metadata) {
+      result.entity_metadata = result.entity;
+    }
     console.log(`[telegram-proxy] Worker result keys: ${JSON.stringify(Object.keys(result))}, ok=${result.ok}, has entity_metadata=${!!result.entity_metadata}`);
 
     if (!result.ok) {
