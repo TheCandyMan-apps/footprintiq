@@ -211,6 +211,32 @@ export const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Solutions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  Solutions
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48 bg-card/95 backdrop-blur-sm">
+                <DropdownMenuItem asChild>
+                  <Link to="/for-individuals" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">For Individuals</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/for-protected-users" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">For Protected Users</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/for-professionals" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">For Professionals</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Trust & Safety */}
+            <Link to="/trust" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              Trust & Safety
+            </Link>
+
             {/* Tools */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -515,6 +541,39 @@ export const Header = () => {
                 >
                   Pricing
                 </button>
+              </div>
+
+              {/* Solutions Section */}
+              <div className="flex flex-col gap-1 border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 py-2">Solutions</p>
+                <Link
+                  to="/for-individuals"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  For Individuals
+                </Link>
+                <Link
+                  to="/for-protected-users"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  For Protected Users
+                </Link>
+                <Link
+                  to="/for-professionals"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  For Professionals
+                </Link>
+                <Link
+                  to="/trust"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Trust & Safety
+                </Link>
               </div>
 
               {/* Tools Section */}
