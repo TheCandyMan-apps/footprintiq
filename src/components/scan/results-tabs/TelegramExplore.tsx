@@ -258,13 +258,15 @@ export function TelegramExplore({ scanId }: TelegramExploreProps) {
   }, [messages, target, scanId]);
 
   return (
-    <Card className="border-primary/20 bg-primary/[0.02]">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <Send className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm">Telegram Intelligence Suite</CardTitle>
+    <Card className="border-primary/20 bg-primary/[0.02] shadow-sm">
+      <CardHeader className="pb-3 pt-4 px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/10">
+            <Send className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-sm font-semibold">Telegram Intelligence Suite</CardTitle>
         </div>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-xs ml-[38px]">
           Resolve Telegram users, channels, and groups. Discover public associations and interaction patterns.
         </CardDescription>
       </CardHeader>

@@ -188,13 +188,15 @@ function GraphSummaryCard({
   const edgeCount = artifact?.data?.edges?.length ?? artifact?.data?.edge_count ?? 0;
 
   return (
-    <Card className="border-border/40">
-      <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <Network className="h-4 w-4 text-[hsl(var(--primary))]" />
-          <CardTitle className="text-sm">Graph Summary</CardTitle>
+    <Card className="border-border/40 shadow-sm">
+      <CardHeader className="pb-2 pt-4 px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/10">
+            <Network className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-sm font-semibold">Relationship Graph</CardTitle>
         </div>
-        <CardDescription className="text-xs">Relationship graph from Telegram data</CardDescription>
+        <CardDescription className="text-xs ml-[38px]">Visualise public associations from Telegram data</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button
@@ -710,11 +712,13 @@ function TelegramHealthIndicator({
   const isDebugMode = typeof window !== 'undefined' && localStorage.getItem('fpiq_debug') === 'true';
 
   return (
-    <Card className="border-border/40 bg-muted/20">
-      <CardHeader className="pb-2 pt-3 px-3">
-       <div className="flex items-center gap-2">
-          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-          <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+    <Card className="border-border/40 bg-muted/20 shadow-sm">
+      <CardHeader className="pb-2 pt-4 px-4">
+       <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted/50">
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Telegram Intelligence Status
           </CardTitle>
         </div>
@@ -934,7 +938,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
   const phoneFindings = hasRealData ? (groupedReal['phone_presence'] || []) : [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Worker health indicator – always visible */}
       <TelegramHealthIndicator
         triggeredAt={localTriggeredAt}
