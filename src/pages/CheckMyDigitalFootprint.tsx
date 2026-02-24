@@ -428,12 +428,12 @@ const CheckMyDigitalFootprint = () => {
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-8 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">See What's Publicly Visible About You</h2>
               <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                Enter a username or email to discover which platforms, breach databases, and data brokers have your information. No credit card required.
+                Discover which platforms, breach databases, and data brokers hold your information — before someone else does.
               </p>
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Start Free Exposure Scan
+                  Scan My Footprint Free
                 </Link>
               </Button>
             </div>
@@ -554,24 +554,24 @@ const CheckMyDigitalFootprint = () => {
         </section>
 
         {/* ═══════════════ CTA BLOCK 2 ═══════════════ */}
-        <section className="py-20 px-6">
+        <section className="py-20 px-6 bg-muted/20">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Take Control of Your Digital Footprint
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Run a free scan to see what's publicly visible. Upgrade to Pro for full exposure analysis, identity correlation mapping, and guided remediation.
+              Start with a free scan to map your exposure. Upgrade to Pro for full correlation analysis, breach context, and a step-by-step remediation plan.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Run Free Scan
+                  Map My Exposure
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/pricing">
-                  View Pro Plans <ArrowRight className="ml-2 w-5 h-5" />
+                  Compare Plans <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
             </div>

@@ -397,15 +397,15 @@ const CanSomeoneTrackMeOnline = () => {
         {/* ═══════════════ CTA BLOCK ═══════════════ */}
         <section className="py-16 px-6">
           <div className="max-w-3xl mx-auto">
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-8 text-center">
+            <div className="rounded-xl border border-secondary/40 bg-secondary/10 p-8 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">Find Out What's Actually Visible About You</h2>
               <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                Instead of worrying about hypothetical tracking, see exactly what's publicly accessible right now. A free scan takes minutes and gives you actionable results.
+                Replace guesswork with facts. See exactly which platforms and data brokers expose your information — and what remains private.
               </p>
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Run Free Exposure Scan
+                  Audit My Visibility
                 </Link>
               </Button>
             </div>
@@ -568,24 +568,24 @@ const CanSomeoneTrackMeOnline = () => {
         </section>
 
         {/* ═══════════════ FINAL CTA ═══════════════ */}
-        <section className="py-20 px-6">
+        <section className="py-20 px-6 bg-secondary/10">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Stop Guessing. Start Knowing.
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Run a free exposure scan to see exactly what's publicly visible about you. Replace anxiety with actionable intelligence.
+              A free exposure scan separates myth from reality — showing you exactly what's discoverable and what stays private.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/scan">
                   <Search className="w-5 h-5 mr-2" />
-                  Run Free Scan
+                  Check My Privacy
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto" asChild>
                 <Link to="/pricing">
-                  View Pro Plans <ArrowRight className="ml-2 w-5 h-5" />
+                  Explore Pro Features <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
             </div>
