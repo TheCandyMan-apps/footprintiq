@@ -223,7 +223,7 @@ export default function UsernameReuseReport2026() {
             prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline">
 
             {/* ═══ 1. Executive Summary ═══ */}
-            <h2 id="fpiq-research-executive" className="flex items-center gap-3">
+            <h2 id="executive-summary" className="flex items-center gap-3">
               <BookOpen className="w-6 h-6 text-primary" />
               Executive Summary
             </h2>
@@ -292,7 +292,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 2. Research Methodology ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="methodology" className="flex items-center gap-3">
               <Scale className="w-6 h-6 text-primary" />
               Research Methodology
             </h2>
@@ -345,7 +345,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 3. Cross-Platform Reuse Findings ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="cross-platform-reuse" className="flex items-center gap-3">
               <Users className="w-6 h-6 text-primary" />
               Cross-Platform Reuse Findings
             </h2>
@@ -398,7 +398,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ VISUAL DATA BLOCKS ═══ */}
-            <h2 id="fpiq-research-visuals" className="flex items-center gap-3">
+            <h2 id="data-visualisations" className="flex items-center gap-3">
               <Eye className="w-6 h-6 text-primary" />
               Research Data Visualisations
             </h2>
@@ -616,7 +616,7 @@ export default function UsernameReuseReport2026() {
             </figure>
 
             <Separator className="my-12" />
-            <h2 className="flex items-center gap-3">
+            <h2 id="false-positive-analysis" className="flex items-center gap-3">
               <AlertTriangle className="w-6 h-6 text-primary" />
               False Positive Analysis
             </h2>
@@ -660,7 +660,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 5. Dating + Social Overlap Patterns ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="dating-social-overlap" className="flex items-center gap-3">
               <Users className="w-6 h-6 text-primary" />
               Dating & Social Media Overlap Patterns
             </h2>
@@ -704,7 +704,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 6. Data Broker Exposure Trends ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="data-broker-exposure" className="flex items-center gap-3">
               <Database className="w-6 h-6 text-primary" />
               Data Broker Exposure Trends
             </h2>
@@ -753,7 +753,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 7. Identity Risk Scoring Model Overview ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="risk-scoring-model" className="flex items-center gap-3">
               <BarChart3 className="w-6 h-6 text-primary" />
               Identity Risk Scoring Model Overview
             </h2>
@@ -792,7 +792,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 8. Risk Distribution Snapshot ═══ */}
-            <h2>Risk Distribution Snapshot</h2>
+            <h2 id="risk-distribution">Risk Distribution Snapshot</h2>
 
             <p>
               Based on our aggregated analysis, the distribution of digital exposure risk across 
@@ -838,7 +838,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 9. Exposure Reduction Checklist ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="exposure-checklist" className="flex items-center gap-3">
               <CheckSquare className="w-6 h-6 text-primary" />
               Exposure Reduction Checklist
             </h2>
@@ -873,7 +873,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 10. Ethical Use & Disclaimer ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="ethical-use" className="flex items-center gap-3">
               <Shield className="w-6 h-6 text-primary" />
               Ethical Use & Disclaimer
             </h2>
@@ -911,7 +911,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 11. Conclusions ═══ */}
-            <h2>Conclusions</h2>
+            <h2 id="conclusions">Conclusions</h2>
 
             <p>
               Username reuse is a widespread practice with long-term implications for digital 
@@ -941,7 +941,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 12. Quotable Research Statements ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="quotable-statements" className="flex items-center gap-3">
               <BookOpen className="w-6 h-6 text-primary" />
               Quotable Research Statements
             </h2>
@@ -974,7 +974,7 @@ export default function UsernameReuseReport2026() {
             <Separator className="my-12" />
 
             {/* ═══ 13. FAQ ═══ */}
-            <h2>Frequently Asked Questions</h2>
+            <h2 id="faq">Frequently Asked Questions</h2>
 
             <div className="not-prose space-y-6 my-8">
               <details className="group rounded-xl border border-border p-5 open:bg-muted/20 transition-colors">
