@@ -201,6 +201,11 @@ export const INDEXNOW_URLS = [
   "/best-person-search-engine",
   "/best-search-engine-for-finding-people",
   "/search-engines-to-find-people",
+  // Supporting Pillar Pages
+  "/romance-scam-warning-signs",
+  "/how-to-check-someones-username-history",
+  "/how-to-protect-your-digital-identity",
+  "/remove-yourself-from-data-broker-sites",
   // Reference-Grade Resources (AI Citation)
   "/resources/ethical-osint-framework",
   "/resources/doxxing-defense",
