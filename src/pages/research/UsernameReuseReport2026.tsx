@@ -1082,6 +1082,33 @@ export default function UsernameReuseReport2026() {
             </div>
           </div>
 
+          {/* Outreach Section */}
+          <div className="mt-16 p-8 rounded-2xl border border-border bg-muted/20">
+            <h2 className="text-2xl font-bold mb-3">For Journalists &amp; Researchers</h2>
+            <p className="text-muted-foreground mb-6">
+              This report is licensed under CC BY 4.0. You may cite or reference the findings with attribution.
+            </p>
+            <p className="text-sm font-medium mb-3">Available statistics include:</p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-6">
+              <li>4.2 median public profiles per reused username</li>
+              <li>41% false-positive rate across automated OSINT tools</li>
+              <li>73% of reused usernames linked to data broker records</li>
+              <li>58% of username-linked accounts contain data 5+ years old</li>
+              <li>89% of data broker entries reference outdated information</li>
+            </ul>
+            <div className="flex flex-wrap gap-4 items-center">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/research/media-kit">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Media Kit &amp; Citation Guide
+                </Link>
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Press enquiries: <a href="mailto:press@footprintiq.app" className="text-primary hover:underline">press@footprintiq.app</a>
+              </span>
+            </div>
+          </div>
+
           {/* Citation Widget */}
           <CitationWidget 
             title="2026 Username Reuse & Digital Exposure Report"
