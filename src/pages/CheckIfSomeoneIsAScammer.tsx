@@ -500,9 +500,11 @@ const CheckIfSomeoneIsAScammer = () => {
               Pro scans generate a risk assessment score based on cross-platform signal density, account age patterns, and fraud database exposure — giving you a single metric to evaluate identity trustworthiness.
             </p>
             <BlurredRiskGauge
-              signalsCount={6}
-              highConfidenceCount={5}
+              signalsCount={11}
+              highConfidenceCount={6}
               exposuresCount={2}
+              scoreOverride={72}
+              contextLabel="High anomaly indicators detected"
               className="mb-4"
             />
           </div>

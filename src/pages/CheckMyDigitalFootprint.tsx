@@ -521,6 +521,8 @@ const CheckMyDigitalFootprint = () => {
               signalsCount={7}
               highConfidenceCount={3}
               exposuresCount={2}
+              scoreOverride={61}
+              contextLabel="Moderate exposure from legacy accounts"
               className="mb-4"
             />
           </div>

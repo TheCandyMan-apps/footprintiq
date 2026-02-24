@@ -490,9 +490,11 @@ const CanSomeoneTrackMeOnline = () => {
               Pro scans calculate a tracking surface score based on cross-platform visibility, metadata exposure, and data broker presence — giving you a single metric to measure and track your privacy posture over time.
             </p>
             <BlurredRiskGauge
-              signalsCount={9}
-              highConfidenceCount={4}
+              signalsCount={3}
+              highConfidenceCount={1}
               exposuresCount={1}
+              scoreOverride={29}
+              contextLabel="Low tracking feasibility, moderate metadata exposure"
               className="mb-4"
             />
           </div>

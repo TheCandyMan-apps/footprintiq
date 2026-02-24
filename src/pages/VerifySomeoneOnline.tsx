@@ -551,9 +551,11 @@ const VerifySomeoneOnline = () => {
               Pro scans generate an identity consistency score based on cross-platform signal density, account age patterns, and breach exposure — giving you a single metric to evaluate how trustworthy someone's online presence appears.
             </p>
             <BlurredRiskGauge
-              signalsCount={8}
-              highConfidenceCount={4}
+              signalsCount={5}
+              highConfidenceCount={2}
               exposuresCount={1}
+              scoreOverride={38}
+              contextLabel="Low-to-moderate inconsistency risk"
               className="mb-4"
             />
           </div>
