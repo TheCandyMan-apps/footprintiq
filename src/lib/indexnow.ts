@@ -111,6 +111,7 @@ export const INDEXNOW_URLS = [
   "/dark-web-monitoring",
   "/check-my-digital-footprint",
   "/remove-personal-information-from-internet",
+  "/verify-someone-online",
   // Breach & Exposure
   "/username-reuse-risk",
   "/after-have-i-been-pwned-what-next",
