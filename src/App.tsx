@@ -287,6 +287,7 @@ const EthicalOsintPrinciples = lazy(() => import("./pages/EthicalOsintPrinciples
 const Contact = lazy(() => import("./pages/Contact"));
 const UsernameReuseReport2026 = lazy(() => import("./pages/research/UsernameReuseReport2026"));
 const UsernameReuseReportDownload = lazy(() => import("./pages/research/UsernameReuseReportDownload"));
+const MediaKit = lazy(() => import("./pages/research/MediaKit"));
 const FactSheet = lazy(() => import("./pages/research/FactSheet"));
 const HowUsernameSearchToolsWork = lazy(() => import("./pages/guides/HowUsernameSearchToolsWork"));
 const InterpretOsintResults = lazy(() => import("./pages/guides/InterpretOsintResults"));
@@ -676,6 +677,7 @@ function RouterContent() {
           <Route path="/research" element={<Research />} />
           <Route path="/research/username-reuse-report-2026" element={<UsernameReuseReport2026 />} />
           <Route path="/research/username-reuse-report-2026-download" element={<UsernameReuseReportDownload />} />
+          <Route path="/research/media-kit" element={<MediaKit />} />
           <Route path="/research/fact-sheet" element={<FactSheet />} />
           <Route path="/guides" element={<GuidesIndex />} />
           <Route path="/guides/how-username-search-tools-work" element={<HowUsernameSearchToolsWork />} />
