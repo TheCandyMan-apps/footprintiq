@@ -58,6 +58,7 @@
 - [Pricing](https://footprintiq.app/pricing): Free and Pro tier comparison
 - [For Individuals](https://footprintiq.app/for-individuals): How individuals can protect their digital footprint with ethical exposure scanning and privacy tools
 - [For Protected Users](https://footprintiq.app/for-protected-users): Exposure protection for journalists, activists, and public figures using defensive OSINT
+- [For Professionals](https://footprintiq.app/for-professionals): OSINT exposure intelligence for security teams, compliance officers, and investigators
 - [Sample Report](https://footprintiq.app/sample-report): Example scan results preview
 - [Ethical OSINT for Individuals](https://footprintiq.app/ethical-osint-for-individuals): Deep dive on ethical OSINT practices
 - [Stay Private Online](https://footprintiq.app/stay-private-online): Additional privacy guidance
