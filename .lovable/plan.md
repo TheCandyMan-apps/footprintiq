@@ -1,62 +1,45 @@
 
-# Fix Telegram Profile Detection Pipeline
 
-## Problem
-The Telegram worker now correctly resolves usernames and returns `{ok: true, entity_metadata: {...}}`. However, the `telegram-proxy` edge function only forwards `result.findings` (which the worker doesn't populate) — resulting in zero findings reaching `n8n-scan-results`, which writes a false `telegram.not_found` sentinel.
+## Refactor: Telegram Worker Health → Telegram Intelligence Status
 
-**Evidence from logs (all recent scans):**
-- Proxy correctly calls `https://telegram-worker-.../telegram/username`
-- Worker returns 404 "Entity not found" (was stale — user confirms now fixed)
-- n8n-scan-results receives `{"findings":[]}` and writes `telegram.not_found`
+### What Changes
 
-## Root Cause
-The `telegram-proxy` at line 547 does: `const findings = (result.findings || [])` — but the worker returns entity data in `entity_metadata`, not in a `findings` array. The proxy never synthesizes a finding from this data.
+The `TelegramHealthIndicator` component in `TelegramTab.tsx` will be updated with user-friendly language and an optional admin debug toggle. No backend changes needed.
 
-## Plan
+### UI Label Changes
 
-### 1. Update `telegram-proxy` to synthesize findings for `action=username`
+| Current (Infrastructure) | New (Intelligence) |
+|---|---|
+| "Telegram Worker Health" | "Telegram Intelligence Status" |
+| "Worker online" | "Data source operational" |
+| "Worker offline / unauthorized" | "Data source unavailable" |
+| "Checking worker..." | "Checking status..." |
+| "Worker status unknown" | "Status unknown" |
+| "Findings stored" | "Scan findings recorded" |
+| "Username not found" | "No public profile found" |
+| "Results pending" | "Analysis in progress" |
+| "No results returned" | "Analysis timed out" |
+| "Not triggered" | "Not yet scanned" |
 
-After parsing a successful worker response (line 464), add logic to create a finding when:
-- `typedAction === "username"`
-- `result.entity_metadata` exists (worker resolved the username)
-- `result.findings` is empty or missing
+### Description Text Changes
 
-The synthesized finding will:
-- Be inserted directly into the `findings` table (using the service client already available)
-- Use `provider: "telegram"`, `kind: "telegram_username"`
-- Extract evidence from `entity_metadata` fields (first_name, last_name, username, phone, is_bot, is_verified, photo, last_seen, etc.)
-- Set `confidence: 0.9` (high — direct MTProto resolution)
-- Include a `meta` object with `title`, `description`, `source: "telegram"` matching the UI's expected format
-- Also delete any prior `telegram.not_found` sentinel for this scan
+| Current | New |
+|---|---|
+| "Telegram worker unavailable — retrigger may fail." | "Telegram data source is currently unreachable. Scans may be limited." |
+| "Worker online — no saved Telegram findings..." | "Public Telegram data is accessible — no findings recorded for this scan yet." |
+| "Worker online and findings are stored for this scan." | "Data source operational and scan findings have been recorded." |
+| "Worker online — results are being processed." | "Data source operational — analysis is in progress." |
+| "Worker ran but the username could not be resolved on Telegram." | "The username could not be found on public Telegram." |
 
-The finding will also be appended to the `findings` array returned to n8n, so `n8n-scan-results` sees it too and won't write a false `telegram.not_found`.
+### Admin Debug Toggle
 
-### 2. Store `entity_metadata` as a scan artifact
+A small "Show diagnostics" text button will be added at the bottom of the card, visible only when a debug flag is active (e.g., `localStorage.getItem('fpiq_debug') === 'true'`). When toggled, it reveals the raw worker status (`workerOnline`, `findingsStatus`, `triggeredAt` timestamp) in a muted code block. This keeps low-level info accessible for admins without cluttering the user view.
 
-Add `entity_metadata` to the `ARTIFACT_KEYS` list so the full metadata blob is persisted in `scan_artifacts` for the UI's lazy-load artifact system.
+### Icon Change
 
-### 3. Deploy and retrigger
+Replace the `Activity` icon in the card header with `Shield` (from lucide-react) to reinforce the intelligence/security framing.
 
-- Deploy the updated `telegram-proxy` edge function
-- Retrigger the latest jayquee scan (scan `39a59078`) to verify end-to-end
+### Files Modified
 
-## Technical Detail
+- **`src/components/scan/results-tabs/TelegramTab.tsx`** — All changes are within the `TelegramHealthIndicator` function (lines ~600-755). Only UI labels, descriptions, icon, and the debug toggle are affected. Backend health-check logic remains untouched.
 
-```text
-BEFORE (broken):
-Worker returns: {ok: true, entity_metadata: {first_name, username, ...}}
-Proxy reads:    result.findings || [] --> []
-n8n receives:   {findings: []}
-n8n-scan-results: writes telegram.not_found
-
-AFTER (fixed):
-Worker returns: {ok: true, entity_metadata: {first_name, username, ...}}
-Proxy creates:  finding from entity_metadata --> [{provider: "telegram", kind: "telegram_username", ...}]
-Proxy inserts:  finding directly into DB
-Proxy returns:  {findings: [{...}]} to n8n
-n8n-scan-results: stores finding, skips not_found sentinel
-UI displays:    Profile card with Telegram data
-```
-
-## Files Changed
-- `supabase/functions/telegram-proxy/index.ts` — Add entity_metadata-to-finding synthesis for username action
