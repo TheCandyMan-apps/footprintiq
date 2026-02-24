@@ -165,32 +165,70 @@ export default function UsernameReuseReport2026() {
             prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline">
 
             {/* ═══ 1. Executive Summary ═══ */}
-            <h2 className="flex items-center gap-3">
+            <h2 id="fpiq-research-executive" className="flex items-center gap-3">
               <BookOpen className="w-6 h-6 text-primary" />
               Executive Summary
             </h2>
 
-            <BlogCallout type="info" title="Key Statistical Highlights">
+            <p>
+              This report presents an independent analysis of cross-platform username reuse and its 
+              measurable contribution to personal digital exposure. Drawing exclusively on publicly 
+              accessible data and ethical OSINT methodology, the research examines how a single 
+              identifier — a username — can serve as a persistent, searchable thread connecting 
+              accounts across platforms, years, and life stages. The findings apply to individuals, 
+              organisations assessing employee exposure, and researchers studying digital identity 
+              persistence.
+            </p>
+
+            <BlogCallout type="info" title="Headline Statistics">
               <ul className="list-disc pl-4 space-y-2 text-sm">
-                <li><strong>73% of individuals</strong> who reuse a single username across three or more platforms appear in data broker records under that identifier.</li>
-                <li><strong>58% of accounts</strong> linked to a reused username contain profile data five years old or older.</li>
-                <li><strong>4.2 platforms</strong> is the median number of public profiles linked to a single username.</li>
-                <li><strong>41% of automated "matches"</strong> from people-search tools represent false positives or unverified correlations.</li>
-                <li><strong>89% of data broker entries</strong> reference outdated information — prior addresses, former employers, old phone numbers.</li>
-                <li><strong>67% of dating-app profiles</strong> share usernames or bio fragments with at least one social media account.</li>
-                <li><strong>34% of high-exposure individuals</strong> had legacy forum or gaming accounts as their oldest discoverable presence.</li>
-                <li><strong>Only 12% of users</strong> surveyed had ever audited their own digital footprint proactively.</li>
+                <li><strong>4.2 platforms</strong> — the median number of public profiles linked to a single reused username, with power users appearing on 15 or more.</li>
+                <li><strong>41% false-positive rate</strong> — the proportion of automated people-search matches that represent namespace collisions, recycled handles, or unverified correlations.</li>
+                <li><strong>73% data-broker linkage</strong> — the share of individuals reusing a username across three or more platforms who appear in commercial data broker records under that identifier.</li>
+                <li><strong>58% stale-data persistence</strong> — the proportion of username-linked accounts containing profile information five years old or older, yet still indexed and aggregated.</li>
+                <li><strong>89% outdated broker entries</strong> — the share of data broker records referencing prior addresses, former employers, or discontinued phone numbers.</li>
               </ul>
             </BlogCallout>
 
             <p>
-              Username reuse is one of the most overlooked contributors to personal digital exposure. 
-              When the same handle is registered across multiple platforms over years, it becomes a 
-              connective thread that links otherwise separate accounts into a unified, searchable 
-              identity. Combined with automated aggregation by data brokers and the indefinite 
-              persistence of public account data, username reuse creates a compounding visibility 
-              risk that grows over time rather than fading. This report provides an evidence-based 
-              analysis of these patterns and their real-world implications.
+              Despite growing awareness of data breaches and social engineering, username reuse 
+              receives comparatively little attention as an exposure vector. Unlike a compromised 
+              password — which triggers alerts, resets, and remediation workflows — a reused 
+              username operates silently. It does not expire. It does not trigger warnings. It 
+              simply persists, accruing linkable data across every platform where it was registered. 
+              Most users select a preferred handle early in their online life and continue using it 
+              across new services for convenience, unaware that each registration extends the 
+              searchable surface area tied to their identity.
+            </p>
+
+            <p>
+              The effect compounds over time. An account created on a gaming forum in 2010, a 
+              photography community in 2014, and a professional network in 2020 may each appear 
+              harmless in isolation. Linked through a shared username, they form a composite profile 
+              that reveals interests, location history, professional affiliations, and social 
+              connections — all without requiring any authentication bypass or private data access. 
+              Data brokers automate this correlation at scale, assembling unified records that are 
+              then sold or exposed through people-search services.
+            </p>
+
+            <BlogPullQuote author="FootprintIQ Research, 2026">
+              A reused username is not a security flaw in the traditional sense — it is a 
+              permanent, self-imposed correlation key that most people never audit and few 
+              platforms warn about.
+            </BlogPullQuote>
+
+            <p>
+              The implications extend beyond individual privacy. Organisations face insider-threat 
+              and social-engineering risks when employees' personal and professional identities are 
+              trivially linkable. Journalists, activists, and public figures face targeted exposure 
+              when a single handle connects their public commentary to private interests. And for 
+              everyday users, the gap between perceived anonymity and actual discoverability 
+              continues to widen as aggregation tools improve and historical platform data remains 
+              indefinitely available.
+            </p>
+
+            <p>
+              <strong>Username reuse remains one of the most overlooked identity exposure risks in 2026.</strong>
             </p>
 
             <Separator className="my-12" />
