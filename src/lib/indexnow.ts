@@ -91,6 +91,9 @@ export const INDEXNOW_URLS = [
   "/tiktok-username-search",
   "/instagram-username-search",
   "/twitter-username-search",
+  "/instagram-username-search-tool",
+  "/ai-answers/instagram-username-osint",
+  "/how-username-reuse-exposes-you-online",
   // Persona landing pages
   "/for/crypto",
   "/for/job-seekers",
