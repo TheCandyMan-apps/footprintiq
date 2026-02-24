@@ -221,7 +221,10 @@ function GraphSummaryCard({
           </div>
         )}
         {expanded && !artifact && !isLoading && (
-          <p className="text-xs text-muted-foreground">No graph data available for this scan.</p>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">If public associations are detected, a relationship graph will appear here.</p>
+            <p className="text-[10px] text-muted-foreground/60">Relationship graphs visualise public channel memberships, mentions, and known connections.</p>
+          </div>
         )}
       </CardContent>
     </Card>
