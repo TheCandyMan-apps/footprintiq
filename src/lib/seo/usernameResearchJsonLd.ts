@@ -11,9 +11,23 @@ export function buildUsernameResearchJsonLd(origin: string) {
   const reportUrl = `${origin}/research/username-reuse-report-2026`;
   const factSheetUrl = `${origin}/research/fact-sheet`;
   
+  const modifiedDate = "2026-02-24";
+  
   return {
     "@context": "https://schema.org",
     "@graph": [
+      // Person: Robin Clifford as author
+      {
+        "@type": "Person",
+        "@id": `${origin}/#author`,
+        "name": "Robin Clifford",
+        "jobTitle": "Founder",
+        "worksFor": {
+          "@id": `${origin}/#organization`
+        },
+        "url": `${origin}/research/media-kit`
+      },
+      
       // Organization: FootprintIQ as publisher
       {
         "@type": "Organization",
@@ -22,9 +36,12 @@ export function buildUsernameResearchJsonLd(origin: string) {
         "url": origin,
         "slogan": PLATFORM_TAGLINE,
         "description": "An ethical digital footprint intelligence platform using open-source intelligence (OSINT) techniques.",
+        "founder": {
+          "@id": `${origin}/#author`
+        },
         "sameAs": [
           `${origin}/about`,
-          `${origin}/press`
+          `${origin}/research/media-kit`
         ]
       },
       
@@ -42,11 +59,12 @@ export function buildUsernameResearchJsonLd(origin: string) {
         "abstract": "This report analyses username reuse as a visibility pattern affecting digital exposure. Key findings include a 41% false positive rate in automated username matching, 89% data staleness in aggregated records, and a median of 4.2 linked public profiles per reused username. The research emphasises ethical, consent-based open-source intelligence methodologies.",
         "url": reportUrl,
         "datePublished": "2026-01-01",
-        "dateModified": "2026-02-01",
+        "dateModified": modifiedDate,
         "inLanguage": "en",
-        "author": {
-          "@id": `${origin}/#organization`
-        },
+        "author": [
+          { "@id": `${origin}/#author` },
+          { "@id": `${origin}/#organization` }
+        ],
         "publisher": {
           "@id": `${origin}/#organization`
         },
@@ -100,7 +118,7 @@ export function buildUsernameResearchJsonLd(origin: string) {
         "description": "Aggregated, anonymised findings from systematic analysis of username patterns across public digital platforms. Data covers false positive rates, profile linkage frequencies, and data age distributions.",
         "url": reportUrl,
         "datePublished": "2026-01-01",
-        "dateModified": "2026-02-01",
+        "dateModified": modifiedDate,
         "creator": {
           "@id": `${origin}/#organization`
         },
@@ -215,13 +233,15 @@ export function buildUsernameResearchJsonLd(origin: string) {
         "name": "Username Reuse & Digital Exposure: Patterns, Risks, and Ethical Analysis",
         "headline": "Username Reuse & Digital Exposure Report (2026)",
         "abstract": "A systematic analysis of username reuse patterns across digital platforms. Findings indicate 41% false positive rates in automated matching, 89% data staleness in aggregated records, and ethical OSINT principles for consent-based digital footprint assessment.",
-        "author": {
-          "@id": `${origin}/#organization`
-        },
+        "author": [
+          { "@id": `${origin}/#author` },
+          { "@id": `${origin}/#organization` }
+        ],
         "publisher": {
           "@id": `${origin}/#organization`
         },
         "datePublished": "2026-01-01",
+        "dateModified": modifiedDate,
         "url": reportUrl,
         "sameAs": reportUrl,
         "isAccessibleForFree": true,
