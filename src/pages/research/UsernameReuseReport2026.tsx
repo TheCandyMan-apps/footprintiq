@@ -4,7 +4,7 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, FileText, BookOpen, Shield, Scale, BarChart3, AlertTriangle, Users, Database, Lock, CheckSquare } from "lucide-react";
+import { ArrowLeft, FileText, BookOpen, Shield, Scale, BarChart3, AlertTriangle, Users, Database, Lock, CheckSquare, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
@@ -13,6 +13,24 @@ import { CitationWidget } from "@/components/CitationWidget";
 import { CreativeCommonsNotice } from "@/components/seo/CreativeCommonsNotice";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildUsernameResearchJsonLd } from "@/lib/seo/usernameResearchJsonLd";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+
+const REUSE_FREQUENCY_DATA = [
+  { category: "Social Media", percentage: 78 },
+  { category: "Forums", percentage: 62 },
+  { category: "Gaming", percentage: 54 },
+  { category: "Dating", percentage: 67 },
+  { category: "Professional", percentage: 23 },
+  { category: "E-Commerce", percentage: 31 },
+  { category: "Streaming", percentage: 46 },
+];
+
+const RISK_DISTRIBUTION_DATA = [
+  { name: "Low (0–25)", value: 18, fill: "hsl(var(--chart-2))" },
+  { name: "Moderate (26–55)", value: 44, fill: "hsl(var(--chart-4))" },
+  { name: "High (56–79)", value: 29, fill: "hsl(var(--chart-5))" },
+  { name: "Severe (80–100)", value: 9, fill: "hsl(var(--destructive))" },
+];
 
 export default function UsernameReuseReport2026() {
   const origin = "https://footprintiq.app";
@@ -339,7 +357,225 @@ export default function UsernameReuseReport2026() {
 
             <Separator className="my-12" />
 
-            {/* ═══ 4. False Positive Analysis ═══ */}
+            {/* ═══ VISUAL DATA BLOCKS ═══ */}
+            <h2 id="fpiq-research-visuals" className="flex items-center gap-3">
+              <Eye className="w-6 h-6 text-primary" />
+              Research Data Visualisations
+            </h2>
+
+            <p>
+              The following visualisations summarise key quantitative findings from this report. 
+              Each chart represents aggregated, anonymised data derived from publicly accessible 
+              sources using the methodology described above.
+            </p>
+
+            {/* ── Figure 1: Bar Chart — Cross-Platform Reuse Frequency ── */}
+            <figure className="not-prose my-10" role="img" aria-label="Bar chart showing cross-platform username reuse frequency by platform category. Social media leads at 78%, followed by dating at 67%, forums at 62%, gaming at 54%, streaming at 46%, e-commerce at 31%, and professional networks at 23%.">
+              <h3 className="text-xl font-semibold text-primary mb-2">Figure 1: Cross-Platform Reuse Frequency</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This chart shows the percentage of users who reuse the same username across each 
+                platform category. Social media has the highest reuse rate (78%), while professional 
+                networks have the lowest (23%), reflecting greater awareness of identity separation 
+                in workplace contexts.
+              </p>
+              <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={REUSE_FREQUENCY_DATA} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="category" 
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} 
+                      axisLine={{ stroke: "hsl(var(--border))" }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} 
+                      axisLine={{ stroke: "hsl(var(--border))" }}
+                      tickLine={false}
+                      unit="%"
+                      domain={[0, 100]}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--card))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))"
+                      }}
+                      formatter={(value: number) => [`${value}%`, "Reuse Rate"]}
+                    />
+                    <Bar dataKey="percentage" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <figcaption className="mt-3 text-xs text-muted-foreground italic text-center">
+                Figure 1 — Username reuse frequency by platform category (n = aggregated sample, 2026). 
+                Source: FootprintIQ Research.
+              </figcaption>
+            </figure>
+
+            {/* ── Figure 2: Pie Chart — Risk Distribution ── */}
+            <figure className="not-prose my-10" role="img" aria-label="Pie chart showing digital exposure risk distribution. Moderate risk accounts for 44% of users, High risk 29%, Low risk 18%, and Severe risk 9%.">
+              <h3 className="text-xl font-semibold text-primary mb-2">Figure 2: Risk Distribution by Exposure Level</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Nearly half (44%) of assessed individuals fall into the Moderate risk category, 
+                indicating meaningful but manageable exposure. The Severe category (9%) represents 
+                users with extensive cross-platform reuse, active data broker records, and multiple 
+                breach exposures.
+              </p>
+              <div className="rounded-xl border border-border bg-card p-4 md:p-6 flex justify-center">
+                <ResponsiveContainer width="100%" height={340}>
+                  <PieChart>
+                    <Pie
+                      data={RISK_DISTRIBUTION_DATA}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={120}
+                      paddingAngle={3}
+                      dataKey="value"
+                      label={({ name, value }) => `${value}%`}
+                      labelLine={{ stroke: "hsl(var(--muted-foreground))" }}
+                    >
+                      {RISK_DISTRIBUTION_DATA.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--card))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))"
+                      }}
+                      formatter={(value: number) => [`${value}%`, "Share"]}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      iconType="circle"
+                      formatter={(value: string) => <span className="text-xs text-muted-foreground">{value}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <figcaption className="mt-3 text-xs text-muted-foreground italic text-center">
+                Figure 2 — Distribution of exposure risk levels across the assessed population. 
+                Source: FootprintIQ Research, 2026.
+              </figcaption>
+            </figure>
+
+            {/* ── Figure 3: Correlation Diagram (text-based structured) ── */}
+            <figure className="not-prose my-10" role="img" aria-label="Structured diagram showing how a single reused username correlates data across platforms, data brokers, breach databases, and web archives into a unified exposure profile.">
+              <h3 className="text-xl font-semibold text-primary mb-2">Figure 3: Username Correlation Chain</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This diagram illustrates how a single reused username acts as a correlation key, 
+                connecting data from independent sources into a unified exposure profile. Each 
+                arrow represents an automated or manual linkage pathway.
+              </p>
+              <div className="rounded-xl border border-border bg-card p-6 md:p-8 font-mono text-sm space-y-4">
+                {/* Central node */}
+                <div className="text-center">
+                  <div className="inline-block px-6 py-3 rounded-lg bg-primary/10 border-2 border-primary text-primary font-bold text-base">
+                    🔑 Reused Username
+                  </div>
+                </div>
+                {/* Branches */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+                  <div className="rounded-lg border border-border p-4 bg-muted/20">
+                    <p className="text-primary font-semibold mb-2">↓ Social Platforms</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Profile name, bio text, profile image, follower graph, post history, location tags
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border p-4 bg-muted/20">
+                    <p className="text-primary font-semibold mb-2">↓ Forums & Communities</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Post history, join date, interests, writing style, reputation score
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border p-4 bg-muted/20">
+                    <p className="text-primary font-semibold mb-2">↓ Data Brokers</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Name, addresses, phone numbers, relatives, employment history, public records
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border p-4 bg-muted/20">
+                    <p className="text-primary font-semibold mb-2">↓ Breach Databases</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Email addresses, hashed credentials, registration dates, associated services
+                    </p>
+                  </div>
+                </div>
+                {/* Convergence */}
+                <div className="text-center mt-4">
+                  <div className="inline-flex items-center gap-2 text-muted-foreground text-xs">
+                    <span>↓</span><span>↓</span><span>↓</span><span>↓</span>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="inline-block px-6 py-3 rounded-lg bg-destructive/10 border-2 border-destructive/50 text-destructive font-bold">
+                    Unified Exposure Profile
+                  </div>
+                </div>
+              </div>
+              <figcaption className="mt-3 text-xs text-muted-foreground italic text-center">
+                Figure 3 — How a reused username links independent data sources into a single discoverable profile. 
+                Source: FootprintIQ Research, 2026.
+              </figcaption>
+            </figure>
+
+            {/* ── Figure 4: Heatmap — Exposure Category Breakdown ── */}
+            <figure className="not-prose my-10" role="img" aria-label="Heatmap-style table showing exposure intensity across six data categories for four risk levels. Higher risk levels show stronger exposure signals across all categories, with Data Broker Presence and Platform Spread showing the strongest overall signals.">
+              <h3 className="text-xl font-semibold text-primary mb-2">Figure 4: Exposure Category Heatmap</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This heatmap illustrates how exposure intensity varies across data categories 
+                and risk levels. Darker cells indicate stronger signal presence. Users in the 
+                Severe category show high-to-critical intensity across all six scoring dimensions, 
+                while Low-risk users exhibit minimal signals outside basic platform spread.
+              </p>
+              <div className="rounded-xl border border-border bg-card overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="p-3 text-left text-muted-foreground font-medium">Category</th>
+                      <th className="p-3 text-center text-muted-foreground font-medium">Low</th>
+                      <th className="p-3 text-center text-muted-foreground font-medium">Moderate</th>
+                      <th className="p-3 text-center text-muted-foreground font-medium">High</th>
+                      <th className="p-3 text-center text-muted-foreground font-medium">Severe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: "Platform Spread", levels: ["bg-primary/10", "bg-primary/25", "bg-primary/50", "bg-primary/80"] },
+                      { label: "Data Recency", levels: ["bg-primary/5", "bg-primary/20", "bg-primary/40", "bg-primary/70"] },
+                      { label: "Bio & Image Consistency", levels: ["bg-primary/5", "bg-primary/15", "bg-primary/40", "bg-primary/75"] },
+                      { label: "Cross-Platform Linkability", levels: ["bg-primary/10", "bg-primary/30", "bg-primary/55", "bg-primary/80"] },
+                      { label: "Data Broker Presence", levels: ["bg-primary/5", "bg-primary/25", "bg-primary/55", "bg-primary/85"] },
+                      { label: "Breach History", levels: ["bg-primary/5", "bg-primary/15", "bg-primary/35", "bg-primary/65"] },
+                    ].map((row) => (
+                      <tr key={row.label} className="border-b border-border/50">
+                        <td className="p-3 font-medium text-foreground">{row.label}</td>
+                        {row.levels.map((bg, i) => (
+                          <td key={i} className="p-3 text-center">
+                            <div className={`mx-auto w-10 h-10 rounded-md ${bg} flex items-center justify-center`}>
+                              <span className="text-xs font-semibold text-foreground/70">
+                                {["—", "●", "●●", "●●●"][i]}
+                              </span>
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <figcaption className="mt-3 text-xs text-muted-foreground italic text-center">
+                Figure 4 — Exposure signal intensity by category and risk level. Darker shading indicates 
+                stronger signal presence. Source: FootprintIQ Research, 2026.
+              </figcaption>
+            </figure>
+
+            <Separator className="my-12" />
             <h2 className="flex items-center gap-3">
               <AlertTriangle className="w-6 h-6 text-primary" />
               False Positive Analysis
