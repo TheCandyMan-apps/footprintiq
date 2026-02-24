@@ -323,6 +323,44 @@ const VerifySomeoneOnline = () => {
           </div>
         </section>
 
+        {/* ═══════════════ LIVE EXPOSURE: IDENTITY CROSS-CHECK ═══════════════ */}
+        <section className="py-16 px-6">
+          <div className="max-w-3xl mx-auto">
+            <div className="border border-border rounded-xl overflow-hidden">
+              <div className="bg-muted/50 px-6 py-4 border-b border-border">
+                <h2 className="text-xl font-bold text-foreground">What Happens When We Cross-Check a Profile Identity?</h2>
+                <p className="text-sm text-muted-foreground mt-1">We ran a verification scan on the username <code className="text-primary font-mono text-xs bg-primary/10 px-1.5 py-0.5 rounded">sarah_fitlife</code> across 500+ platforms. Here's what surfaced:</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {[
+                    { value: "2", label: "Instagram & TikTok share identical profile photos", color: "text-primary" },
+                    { value: "1", label: "Dating app uses cropped version of same image", color: "text-yellow-600" },
+                    { value: "1", label: "Linked bio points to unrelated domain", color: "text-destructive" },
+                    { value: "3", label: "Location inconsistencies across platforms", color: "text-amber-500" },
+                  ].map((stat, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+                      <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+                      <span className="text-sm text-muted-foreground">{stat.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Identity verification isn't about finding exposure — it's about spotting inconsistencies. When a profile photo is recycled across social and dating platforms but the bio link leads to an unrelated domain, or when claimed locations shift between profiles, these discrepancies suggest the identity may not be what it appears. Genuine people tend to have organic, evolving digital trails. Fabricated profiles display a patchwork of borrowed details that don't hold up under cross-platform scrutiny.
+                </p>
+                <div className="flex justify-center pt-2">
+                  <Button asChild size="lg">
+                    <Link to="/scan">
+                      <Search className="w-5 h-5 mr-2" />
+                      Verify This Identity Now
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ═══════════════ 5. Red Flags of Identity Inconsistencies ═══════════════ */}
         <section className="py-16 px-6">
           <div className="max-w-3xl mx-auto">
