@@ -28,11 +28,11 @@ const platforms = [
   },
   {
     name: "Instagram",
-    path: "/how-to-delete-facebook-account",
+    path: "/how-to-delete-instagram-account",
     gracePeriod: "30 days",
     dataDownload: true,
     difficulty: "Medium",
-    notes: "Managed through Meta Accounts Center. Same 30-day grace period as Facebook.",
+    notes: "Permanent deletion only via web browser. Mobile app only offers deactivation.",
   },
   {
     name: "Twitter / X",
@@ -44,7 +44,7 @@ const platforms = [
   },
   {
     name: "TikTok",
-    path: null,
+    path: "/how-to-delete-tiktok-account",
     gracePeriod: "30 days",
     dataDownload: true,
     difficulty: "Easy",
