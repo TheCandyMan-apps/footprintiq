@@ -223,14 +223,23 @@ export default function Trust() {
                 </ul>
               </div>
             </div>
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed mb-4">
               FootprintIQ does not operate as a data broker. We do not aggregate, package, or
               resell personal information. Scan results belong to the user who initiated them.
-              For full details on data sourcing, see{" "}
-              <Link to="/how-we-source-data" className="text-primary hover:underline">
-                How We Source Data
-              </Link>.
             </p>
+            <div className="flex flex-wrap gap-4">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/trust/data-ethics">
+                  <Database className="w-4 h-4 mr-2" />
+                  Read Full Data Ethics Policy
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/how-we-source-data">
+                  How We Source Data →
+                </Link>
+              </Button>
+            </div>
           </section>
 
           <Separator className="my-12" />

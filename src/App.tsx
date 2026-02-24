@@ -197,6 +197,7 @@ const Insights = lazy(() => import("./pages/Insights"));
 const Automation = lazy(() => import("./pages/Automation"));
 const Agents = lazy(() => import("./pages/Agents"));
 const TrustAIAgents = lazy(() => import("./pages/TrustAIAgents"));
+const TrustDataEthics = lazy(() => import("./pages/TrustDataEthics"));
 const MarketplaceReview = lazy(() => import("./pages/admin/MarketplaceReview"));
 const QualityLab = lazy(() => import("./pages/admin/QualityLab"));
 const ObservabilityDashboard = lazy(() => import("./pages/admin/ObservabilityDashboard"));
@@ -771,6 +772,7 @@ function RouterContent() {
           <Route path="/automation" element={<Automation />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/trust/ai-agents" element={<TrustAIAgents />} />
+          <Route path="/trust/data-ethics" element={<TrustDataEthics />} />
           <Route path="/reduce-digital-footprint" element={<ReduceDigitalFootprint />} />
           <Route path="/how-identity-theft-starts" element={<HowIdentityTheftStarts />} />
           <Route path="/digital-privacy-glossary" element={<DigitalPrivacyGlossary />} />
