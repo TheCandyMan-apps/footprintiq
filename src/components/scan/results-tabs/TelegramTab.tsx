@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock, RefreshCw, CheckCircle2, XCircle, Hourglass } from 'lucide-react';
+import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock, RefreshCw, CheckCircle2, XCircle, Hourglass, MessageSquare } from 'lucide-react';
 import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFindings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -939,6 +939,56 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
   return (
     <div className="space-y-6">
+      {/* ── Provider Selector ──────────────────────────────────── */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-1">
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-background shadow-sm border border-border/50 text-foreground transition-colors"
+            disabled
+          >
+            <Send className="h-3 w-3" />
+            Telegram
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/50 cursor-not-allowed transition-colors"
+            disabled
+            title="Coming soon"
+          >
+            <MessageSquare className="h-3 w-3" />
+            Discord
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/50 cursor-not-allowed transition-colors"
+            disabled
+            title="Coming soon"
+          >
+            <Hash className="h-3 w-3" />
+            X Threads
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/50 cursor-not-allowed transition-colors"
+            disabled
+            title="Coming soon"
+          >
+            <Phone className="h-3 w-3" />
+            WhatsApp
+          </button>
+        </div>
+      </div>
+
+      {/* ── Provider Header ────────────────────────────────────── */}
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+          <Send className="h-4 w-4 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Telegram Intelligence</h2>
+          <p className="text-[11px] text-muted-foreground">Public OSINT from Telegram users, channels, and groups</p>
+        </div>
+      </div>
+
+      {/* ── Telegram Content ───────────────────────────────────── */}
+      <div className="space-y-6">
       {/* Worker health indicator – always visible */}
       <TelegramHealthIndicator
         triggeredAt={localTriggeredAt}
@@ -1094,6 +1144,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
           Read our Ethical OSINT Charter
         </a>
       </p>
+      </div>
     </div>
   );
 }
