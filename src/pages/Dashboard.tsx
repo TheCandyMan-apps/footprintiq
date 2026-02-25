@@ -685,7 +685,7 @@ const Dashboard = () => {
       <SEO title="Dashboard — FootprintIQ" description="View your OSINT scans, findings, and entity relationships" canonical="https://footprintiq.app/dashboard" />
       <AnnouncementBar message="💡 Pro Tip: Use AI Analyst to get instant insights from your scan results." link="/ai-analyst" linkText="Try AI Analyst" storageKey="ai-analyst-dashboard-tip" variant="update" />
       <ScrollProgressBar />
-      <div className="min-h-screen bg-background flex flex-col w-full animate-fadeIn relative z-10">
+      <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden animate-fadeIn relative z-10">
         <Header />
 
         {/* Hero Section */}
