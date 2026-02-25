@@ -78,7 +78,7 @@ const UsernameReuseRisk = () => {
       url: "https://footprintiq.app",
     },
     datePublished: "2026-02-13",
-    dateModified: "2026-02-13",
+    dateModified: "2026-02-25",
     mainEntityOfPage: "https://footprintiq.app/username-reuse-risk",
   };
 
@@ -198,6 +198,27 @@ const UsernameReuseRisk = () => {
                     Username Search Tools
                   </Link>
                 </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 2026 Update Callout */}
+        <section className="py-8">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="p-6 rounded-xl border border-primary/30 bg-primary/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <RefreshCw className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-semibold text-primary uppercase tracking-wide">Updated February 2026</span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Our <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline font-medium">2026 Username Reuse & Digital Exposure Report</Link> confirms
+                  that <strong className="text-foreground">41% of automated username matches are false positives</strong>, and the median user is linked across <strong className="text-foreground">4.2 platforms</strong>.
+                  Meanwhile, <strong className="text-foreground">73% of data broker listings</strong> reference username-correlated records —
+                  making username reuse one of the primary vectors for unwanted exposure. Understanding{" "}
+                  <Link to="/is-username-search-accurate" className="text-primary hover:underline">whether username search results are accurate</Link> is critical before acting on findings.
+                </p>
               </div>
             </div>
           </div>
@@ -411,7 +432,11 @@ const UsernameReuseRisk = () => {
                 <Link to="/username-search-tools" className="text-primary hover:underline">
                   username search tools
                 </Link>{" "}
-                page for a deeper look at available scanning options.
+                page for a deeper look at scanning options, or read our guide on{" "}
+                <Link to="/is-username-search-accurate" className="text-primary hover:underline">
+                  whether username search is accurate
+                </Link>{" "}
+                to understand the limitations of automated results.
               </p>
             </div>
           </div>
