@@ -233,8 +233,8 @@ export const Header = () => {
             </DropdownMenu>
 
             {/* Trust & Safety */}
-            <Link to="/trust" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Trust & Safety
+            <Link to="/trust" className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+              Trust &amp; Safety
             </Link>
 
             {/* Tools */}
