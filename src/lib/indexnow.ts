@@ -118,6 +118,7 @@ export const INDEXNOW_URLS = [
   "/can-someone-track-me-online",
   // Breach & Exposure
   "/username-reuse-risk",
+  "/is-username-search-accurate",
   "/after-have-i-been-pwned-what-next",
   "/data-breach-cleanup-checklist",
   "/breach-vs-digital-footprint-risk",

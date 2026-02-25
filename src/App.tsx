@@ -348,6 +348,7 @@ const UsernameLookup = lazy(() => import("./pages/UsernameLookup"));
 const AccountFinder = lazy(() => import("./pages/AccountFinder"));
 const FindSocialMediaAccounts = lazy(() => import("./pages/FindSocialMediaAccounts"));
 const UsernameReuseRisk = lazy(() => import("./pages/UsernameReuseRisk"));
+const IsUsernameSearchAccurate = lazy(() => import("./pages/IsUsernameSearchAccurate"));
 const RemovePersonalInformation = lazy(() => import("./pages/RemovePersonalInformation"));
 const CheckMyDigitalFootprint = lazy(() => import("./pages/CheckMyDigitalFootprint"));
 const BestOsintTools = lazy(() => import("./pages/BestOsintTools"));
@@ -703,7 +704,8 @@ function RouterContent() {
             <Route path="/username-lookup" element={<UsernameLookup />} />
             <Route path="/account-finder" element={<AccountFinder />} />
             <Route path="/find-social-media-accounts" element={<FindSocialMediaAccounts />} />
-             <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
+              <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
+             <Route path="/is-username-search-accurate" element={<IsUsernameSearchAccurate />} />
              <Route path="/after-have-i-been-pwned-what-next" element={<AfterHaveIBeenPwned />} />
              <Route path="/data-breach-cleanup-checklist" element={<DataBreachCleanupChecklist />} />
              <Route path="/breach-vs-digital-footprint-risk" element={<BreachVsDigitalFootprintRisk />} />

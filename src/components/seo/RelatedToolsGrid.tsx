@@ -57,6 +57,12 @@ const allTools = [
     icon: Search,
   },
   {
+    to: "/is-username-search-accurate",
+    title: "Is Username Search Accurate?",
+    desc: "Learn the truth about username search accuracy and false positives",
+    icon: Search,
+  },
+  {
     to: "/guides/telegram-osint-search",
     title: "Telegram OSINT Guide",
     desc: "Learn how to search Telegram profiles ethically",
