@@ -75,7 +75,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     label: 'Pro Annual',
     description: 'All Pro features, billed annually. Save 34% vs monthly.',
     priceMonthly: 9.92, // £119/12
-    stripePriceId: 'price_1T2KcMA3ptI9drWal0ujIdd',
+    stripePriceId: 'price_1T2KcMA3ptI9drLWal0ujIdd',
     monthlyScanLimit: 100,
     allowedProviders: ['maigret', 'sherlock', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint'],
     features: [
