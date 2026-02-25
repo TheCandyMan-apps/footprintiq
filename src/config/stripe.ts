@@ -26,7 +26,7 @@ export const SUBSCRIPTION_PLANS = {
   pro_annual: {
     name: 'PRO Annual',
     price: 119,
-    priceId: 'price_1T2KcMA3ptI9drWal0ujIdd',
+    priceId: 'price_1T2KcMA3ptI9drLWal0ujIdd',
     productId: 'prod_TfNh5g6CTii7RT',
     tier: 'pro',
     currency: 'GBP',
@@ -132,7 +132,7 @@ export const PRICE_TO_TIER_MAP: Record<string, 'free' | 'pro' | 'business' | 'en
   'price_1ShgNPA3ptI9drLW40rbWMjq': 'pro',
   
   // Pro Annual
-  'price_1Si2vkA3ptI9drLWCQrxU4Dc': 'pro',
+  'price_1T2KcMA3ptI9drLWal0ujIdd': 'pro',
   
   // Business
   'price_1ShdxJA3ptI9drLWjndMjptw': 'business',
