@@ -1,45 +1,27 @@
 
 
-## Refactor: Telegram Worker Health → Telegram Intelligence Status
+## Fix: Friendly Rate Limit Error Handling on Auth Pages
 
-### What Changes
+### Problem
+When Supabase Auth returns an "email rate limit exceeded" error (e.g., from rapid signups or verification resends), the raw technical error message is shown directly to the user. This is confusing and unhelpful.
 
-The `TelegramHealthIndicator` component in `TelegramTab.tsx` will be updated with user-friendly language and an optional admin debug toggle. No backend changes needed.
+### Solution
+Add error message mapping in `Auth.tsx` to catch rate-limit and other common auth errors, replacing them with friendly, actionable messages.
 
-### UI Label Changes
+### Changes
 
-| Current (Infrastructure) | New (Intelligence) |
-|---|---|
-| "Telegram Worker Health" | "Telegram Intelligence Status" |
-| "Worker online" | "Data source operational" |
-| "Worker offline / unauthorized" | "Data source unavailable" |
-| "Checking worker..." | "Checking status..." |
-| "Worker status unknown" | "Status unknown" |
-| "Findings stored" | "Scan findings recorded" |
-| "Username not found" | "No public profile found" |
-| "Results pending" | "Analysis in progress" |
-| "No results returned" | "Analysis timed out" |
-| "Not triggered" | "Not yet scanned" |
+**File: `src/pages/Auth.tsx`** (lines 246-252, the signup catch block)
 
-### Description Text Changes
+Replace the raw `error.message` toast with a helper that detects common auth error patterns:
 
-| Current | New |
-|---|---|
-| "Telegram worker unavailable — retrigger may fail." | "Telegram data source is currently unreachable. Scans may be limited." |
-| "Worker online — no saved Telegram findings..." | "Public Telegram data is accessible — no findings recorded for this scan yet." |
-| "Worker online and findings are stored for this scan." | "Data source operational and scan findings have been recorded." |
-| "Worker online — results are being processed." | "Data source operational — analysis is in progress." |
-| "Worker ran but the username could not be resolved on Telegram." | "The username could not be found on public Telegram." |
+- `over_email_send_rate` / "rate limit" --> "Too many attempts. Please wait a minute before trying again."
+- `user_already_exists` --> "An account with this email already exists. Try signing in instead."
+- `weak_password` --> "Please choose a stronger password."
+- Default fallback --> "Something went wrong. Please try again."
 
-### Admin Debug Toggle
+Also apply the same pattern to the **sign-in** catch block (around line 120-130) for consistency.
 
-A small "Show diagnostics" text button will be added at the bottom of the card, visible only when a debug flag is active (e.g., `localStorage.getItem('fpiq_debug') === 'true'`). When toggled, it reveals the raw worker status (`workerOnline`, `findingsStatus`, `triggeredAt` timestamp) in a muted code block. This keeps low-level info accessible for admins without cluttering the user view.
+### Technical Details
 
-### Icon Change
-
-Replace the `Activity` icon in the card header with `Shield` (from lucide-react) to reinforce the intelligence/security framing.
-
-### Files Modified
-
-- **`src/components/scan/results-tabs/TelegramTab.tsx`** — All changes are within the `TelegramHealthIndicator` function (lines ~600-755). Only UI labels, descriptions, icon, and the debug toggle are affected. Backend health-check logic remains untouched.
+A small helper function (e.g., `getFriendlyAuthError`) will be added at the top of the file that maps known Supabase auth error strings to user-friendly messages. Both the sign-up and sign-in error handlers will use it. No new dependencies required.
 
