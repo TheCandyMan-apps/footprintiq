@@ -615,7 +615,12 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
           </div>
         ) : results.length === 0 ? (
           <div className="py-12 text-center space-y-4">
-            {isTerminalStatus ? (
+            {recentlyCompleted ? (
+              <div className="flex flex-col items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">Loading results…</p>
+              </div>
+            ) : isTerminalStatus ? (
               job.scan_type === 'email' ? (
                 // Positive messaging for email scans with no breaches found
                 <div className="max-w-md mx-auto space-y-4">
