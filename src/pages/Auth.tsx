@@ -23,6 +23,26 @@ const authSchema = z.object({
 const signUpSchema = authSchema.extend({
   fullName: z.string().trim().min(1, "Full name is required").max(100, "Full name must be less than 100 characters")
 });
+function getFriendlyAuthError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('over_email_send_rate') || lower.includes('rate limit') || lower.includes('too many requests')) {
+    return 'Too many attempts. Please wait a minute before trying again.';
+  }
+  if (lower.includes('user_already_exists') || lower.includes('already registered')) {
+    return 'An account with this email already exists. Try signing in instead.';
+  }
+  if (lower.includes('weak_password') || lower.includes('password is too weak')) {
+    return 'Please choose a stronger password (at least 8 characters with a mix of letters and numbers).';
+  }
+  if (lower.includes('invalid login credentials') || lower.includes('invalid_credentials')) {
+    return 'Incorrect email or password. Please try again.';
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'Please verify your email address before signing in. Check your inbox for a confirmation link.';
+  }
+  return 'Something went wrong. Please try again.';
+}
+
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -247,7 +267,7 @@ const Auth = () => {
       resetTurnstile();
       toast({
         title: "Sign up failed",
-        description: error.message,
+        description: getFriendlyAuthError(error.message || ''),
         variant: "destructive"
       });
     } finally {
@@ -289,7 +309,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: "Sign in failed",
-        description: error.message,
+        description: getFriendlyAuthError(error.message || ''),
         variant: "destructive",
       });
     } else {
