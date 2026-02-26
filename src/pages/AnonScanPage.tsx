@@ -77,7 +77,7 @@ export default function AnonScanPage() {
     if (scanId) {
       navigate(`/results/${scanId}?anon=1`);
     }
-  }, [identifier, isRestrictedType, triggerScan, navigate]);
+  }, [identifier, isRestrictedType, triggerScan, navigate, turnstileToken]);
 
   return (
     <>
