@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useAnonymousScan } from "@/hooks/useAnonymousScan";
+import { TurnstileWidget } from "@/components/security/TurnstileWidget";
+import type { TurnstileWidgetRef } from "@/components/security/TurnstileWidget";
 import {
   Shield, ArrowRight, User, Mail, Phone, UserCircle,
   AlertCircle, Lock, Loader2,
@@ -42,6 +44,8 @@ export default function AnonScanPage() {
   const { triggerScan, isLoading, error, rateLimited } = useAnonymousScan();
   const navigate = useNavigate();
   const submittedRef = useRef(false);
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const detectedType = useMemo((): DetectedType | null => {
     const t = identifier.trim();
@@ -64,8 +68,11 @@ export default function AnonScanPage() {
     }
 
     submittedRef.current = true;
-    const scanId = await triggerScan(trimmed);
+    const scanId = await triggerScan(trimmed, turnstileToken || undefined);
     submittedRef.current = false;
+    // Reset turnstile after submission
+    turnstileRef.current?.reset();
+    setTurnstileToken(null);
 
     if (scanId) {
       navigate(`/results/${scanId}?anon=1`);
@@ -166,11 +173,22 @@ export default function AnonScanPage() {
                 </div>
               )}
 
+              {/* Turnstile bot protection */}
+              {!isRestrictedType && (
+                <div className="flex justify-center">
+                  <TurnstileWidget
+                    ref={turnstileRef}
+                    onToken={setTurnstileToken}
+                    onError={() => setTurnstileToken(null)}
+                  />
+                </div>
+              )}
+
               <Button
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={!identifier.trim() || isLoading}
+                disabled={!identifier.trim() || isLoading || (!isRestrictedType && !turnstileToken)}
               >
                 {isLoading ? (
                   <>

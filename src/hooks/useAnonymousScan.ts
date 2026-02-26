@@ -29,7 +29,7 @@ export function useAnonymousScan() {
     isLoading: false,
   });
 
-  const triggerScan = useCallback(async (username: string): Promise<string | null> => {
+  const triggerScan = useCallback(async (username: string, turnstileToken?: string): Promise<string | null> => {
     setState({ scanId: null, error: null, rateLimited: false, isLoading: true });
 
     const scanId = crypto.randomUUID();
@@ -45,7 +45,7 @@ export function useAnonymousScan() {
           "Content-Type": "application/json",
           apikey: anonKey,
         },
-        body: JSON.stringify({ username, scanId, session_fingerprint }),
+        body: JSON.stringify({ username, scanId, session_fingerprint, turnstile_token: turnstileToken }),
       });
 
       const data = await res.json();
