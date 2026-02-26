@@ -9,6 +9,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceTurnstile } from "../_shared/turnstile.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,11 +59,25 @@ serve(async (req) => {
       username,
       session_fingerprint,
       scanId: providedScanId,
+      turnstile_token,
     } = body as {
       username?: string;
       session_fingerprint?: string;
       scanId?: string;
+      turnstile_token?: string;
     };
+
+    // ── Turnstile bot protection ──────────────────────────────────
+    const turnstileError = await enforceTurnstile(
+      req,
+      { turnstile_token },
+      null, // anonymous user
+      corsHeaders
+    );
+    if (turnstileError) {
+      console.warn("[anon-scan-trigger] Turnstile verification failed");
+      return turnstileError;
+    }
 
     // ── Validate input ────────────────────────────────────────────
     const target = (username as string | undefined)?.trim();
