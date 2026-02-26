@@ -10363,6 +10363,42 @@ export type Database = {
           },
         ]
       }
+      shared_reports_safe: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          has_password: boolean | null
+          id: string | null
+          is_active: boolean | null
+          scan_id: string | null
+          share_token: string | null
+          user_id: string | null
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          has_password?: never
+          id?: string | null
+          is_active?: boolean | null
+          scan_id?: string | null
+          share_token?: string | null
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          has_password?: never
+          id?: string | null
+          is_active?: boolean | null
+          scan_id?: string | null
+          share_token?: string | null
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_credits: {

@@ -69,6 +69,15 @@ serve(async (req) => {
     if (!target || target.length < 2) {
       return json({ error: "username must be at least 2 characters" }, 400);
     }
+    if (target.length > 50) {
+      return json({ error: "username must be 50 characters or fewer" }, 400);
+    }
+
+    // Only allow safe username characters (alphanumeric, dots, underscores, hyphens)
+    const usernamePattern = /^[a-zA-Z0-9._-]+$/;
+    if (!usernamePattern.test(target)) {
+      return json({ error: "Username contains invalid characters. Only letters, numbers, dots, underscores, and hyphens are allowed." }, 400);
+    }
 
     const invalidValues = ["true", "false", "null", "undefined", "nan"];
     if (invalidValues.includes(target.toLowerCase())) {
