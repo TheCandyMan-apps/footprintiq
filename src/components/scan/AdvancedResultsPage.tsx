@@ -355,15 +355,37 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     return () => clearInterval(interval);
   }, [job?.status, isTerminalStatus]);
 
+  // Track whether we're still retrying after scan completion (race condition guard)
+  const [recentlyCompleted, setRecentlyCompleted] = useState(false);
+  const recentlyCompletedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Reload results when scan completes but we have no results (handles missed realtime events + race conditions)
   useEffect(() => {
     if (!job?.status || !['completed', 'completed_empty', 'completed_partial'].includes(job.status) || results.length > 0) return;
-    // Retry at 1s, 3s, and 6s to handle slow DB commit propagation
+    
+    // Mark as recently completed — show loading spinner instead of "no results" for up to 15s
+    setRecentlyCompleted(true);
+    recentlyCompletedTimerRef.current = setTimeout(() => setRecentlyCompleted(false), 15000);
+    
+    // Trigger refetch which starts the 30s polling loop in useRealtimeResults
+    refetchResults();
+    // Also retry at staggered intervals for redundancy
     const t1 = setTimeout(() => refetchResults(), 1000);
     const t2 = setTimeout(() => refetchResults(), 3000);
     const t3 = setTimeout(() => refetchResults(), 6000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    return () => { 
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      if (recentlyCompletedTimerRef.current) clearTimeout(recentlyCompletedTimerRef.current);
+    };
   }, [job?.status, results.length]);
+
+  // Clear recentlyCompleted as soon as results arrive
+  useEffect(() => {
+    if (results.length > 0 && recentlyCompleted) {
+      setRecentlyCompleted(false);
+      if (recentlyCompletedTimerRef.current) clearTimeout(recentlyCompletedTimerRef.current);
+    }
+  }, [results.length, recentlyCompleted]);
 
   const loadJob = async () => {
     try {
@@ -573,9 +595,16 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
           </div>
         ) : results.length === 0 ? (
           <div className="py-12">
-            {isTerminalStatus
-              ? <LowResultsNotice variant="zero" />
-              : <p className="text-sm text-muted-foreground text-center">Waiting for results...</p>}
+            {recentlyCompleted ? (
+              <div className="flex flex-col items-center justify-center text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">Loading results…</p>
+              </div>
+            ) : isTerminalStatus ? (
+              <LowResultsNotice variant="zero" />
+            ) : (
+              <p className="text-sm text-muted-foreground text-center">Waiting for results...</p>
+            )}
           </div>
         ) : (
           /* ===== FULL TABBED INTERFACE ===== */

@@ -410,15 +410,36 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     return () => clearInterval(interval);
   }, [job?.status]);
 
+  // Track whether we're still retrying after scan completion (race condition guard)
+  const [recentlyCompleted, setRecentlyCompleted] = useState(false);
+  const recentlyCompletedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Reload results when scan completes but we have no results yet (race condition guard)
   useEffect(() => {
     if (!job?.status || !['completed', 'completed_empty', 'completed_partial'].includes(job.status) || results.length > 0) return;
-    // Retry at 1s, 3s, and 6s to handle slow DB commit propagation
+    
+    // Mark as recently completed — show loading spinner instead of "no results" for up to 15s
+    setRecentlyCompleted(true);
+    recentlyCompletedTimerRef.current = setTimeout(() => setRecentlyCompleted(false), 15000);
+    
+    // Trigger refetch which starts the 30s polling loop in useRealtimeResults
+    refetch();
     const t1 = setTimeout(() => refetch(), 1000);
     const t2 = setTimeout(() => refetch(), 3000);
     const t3 = setTimeout(() => refetch(), 6000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    return () => { 
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      if (recentlyCompletedTimerRef.current) clearTimeout(recentlyCompletedTimerRef.current);
+    };
   }, [job?.status, results.length]);
+
+  // Clear recentlyCompleted as soon as results arrive
+  useEffect(() => {
+    if (results.length > 0 && recentlyCompleted) {
+      setRecentlyCompleted(false);
+      if (recentlyCompletedTimerRef.current) clearTimeout(recentlyCompletedTimerRef.current);
+    }
+  }, [results.length, recentlyCompleted]);
 
    // Post-scan upgrade modal removed to reduce upsell fatigue (session replay feedback)
 
@@ -594,7 +615,12 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
           </div>
         ) : results.length === 0 ? (
           <div className="py-12 text-center space-y-4">
-            {isTerminalStatus ? (
+            {recentlyCompleted ? (
+              <div className="flex flex-col items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">Loading results…</p>
+              </div>
+            ) : isTerminalStatus ? (
               job.scan_type === 'email' ? (
                 // Positive messaging for email scans with no breaches found
                 <div className="max-w-md mx-auto space-y-4">
