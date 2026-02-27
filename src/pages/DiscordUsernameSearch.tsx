@@ -180,7 +180,9 @@ export default function DiscordUsernameSearch() {
             </ul>
             <p>
               FootprintIQ scans across hundreds of publicly indexed sources to identify potential
-              digital footprint connections linked to a Discord-style username.
+              digital footprint connections linked to a Discord-style username. Running a{" "}
+              <Link to="/digital-footprint-scan" className="text-primary underline underline-offset-4 hover:text-primary/80">digital footprint scan</Link>{" "}
+              can help you understand the full scope of your exposure beyond a single platform.
             </p>
 
             <h2>Why Discord Usernames Matter for OSINT</h2>
@@ -192,7 +194,9 @@ export default function DiscordUsernameSearch() {
             <p>
               Cybersecurity professionals, privacy-conscious individuals, and digital investigators
               use username analysis to assess exposure risk. FootprintIQ brings that methodology
-              into an ethical, privacy-first platform.
+              into an ethical, privacy-first platform through its{" "}
+              <Link to="/usernames" className="text-primary underline underline-offset-4 hover:text-primary/80">username search tool</Link>,
+              which covers hundreds of public sources in a single scan.
             </p>
 
             <h2>What You Can Discover</h2>
@@ -207,7 +211,9 @@ export default function DiscordUsernameSearch() {
             </ul>
             <p>
               This helps answer the question: <em>"What can someone find about me using just my
-              username?"</em>
+              username?"</em> The same methodology applies to other platforms — for example, you can also run a{" "}
+              <Link to="/kik-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Kik username search</Link>{" "}
+              to check exposure on messaging apps.
             </p>
 
             <h2>Why Check Your Digital Footprint?</h2>
@@ -218,7 +224,9 @@ export default function DiscordUsernameSearch() {
             </p>
             <p>
               Digital exposure is not just a concern for influencers or public figures. It affects
-              everyday users.
+              everyday users. If you're unsure where to start, our guide on{" "}
+              <Link to="/blog/how-to-check-whats-online-about-you" className="text-primary underline underline-offset-4 hover:text-primary/80">how to check what's online about you</Link>{" "}
+              walks through practical steps anyone can follow.
             </p>
           </div>
         </section>
