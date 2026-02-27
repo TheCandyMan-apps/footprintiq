@@ -1191,9 +1191,11 @@ function ProfilePreviewRow({ profile }: { profile: AggregatedProfile }) {
           </div>
         )}
       </div>
-    </div>
+      </div>
     </div>
     <InlineUpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+    </>
   );
+}
 
 export default FreeResultsPage;
