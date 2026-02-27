@@ -306,6 +306,7 @@ const DatingProfileLookup = lazy(() => import("./pages/DatingProfileLookup"));
 const LinkedInUsernameSearch = lazy(() => import("./pages/LinkedInUsernameSearch"));
 const TelegramUsernameSearch2 = lazy(() => import("./pages/TelegramUsernameSearch"));
 const YouTubeUsernameSearch = lazy(() => import("./pages/YouTubeUsernameSearch"));
+const FacebookSearchWithoutLoginPage = lazy(() => import("./pages/FacebookSearchWithoutLogin"));
 const EthicalOsintFramework = lazy(() => import("./pages/resources/EthicalOsintFramework"));
 const DoxxingDefenseGuide = lazy(() => import("./pages/resources/DoxxingDefenseGuide"));
 const DigitalFootprintMapping = lazy(() => import("./pages/resources/DigitalFootprintMapping"));
@@ -781,6 +782,7 @@ function RouterContent() {
                  <Route path="/linkedin-username-search" element={<LinkedInUsernameSearch />} />
                  <Route path="/telegram-username-search" element={<TelegramUsernameSearch2 />} />
                  <Route path="/youtube-username-search" element={<YouTubeUsernameSearch />} />
+                 <Route path="/facebook-search-without-login" element={<FacebookSearchWithoutLoginPage />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
