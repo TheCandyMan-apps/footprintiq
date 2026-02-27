@@ -103,7 +103,7 @@ export default function InstagramSearchWithoutAccount() {
               ))}
             </ul>
             <p className="text-muted-foreground leading-relaxed">
-              Without logging in, Instagram blocks most internal navigation. However, some publicly available profiles may still appear in Google search results.
+              Without logging in, Instagram blocks most internal navigation. However, some publicly available profiles may still appear in Google search results. For a more structured approach, consider running an <Link to="/instagram-username-search" className="text-accent hover:underline">Instagram username search</Link> to understand your public exposure.
             </p>
 
             {/* Section: How to View Public Instagram Profiles */}
@@ -160,7 +160,7 @@ export default function InstagramSearchWithoutAccount() {
 
             {/* Section: Username Reuse Risk */}
             <h2 className="text-2xl font-bold text-foreground mt-12 mb-4">Understanding Username Reuse Risk</h2>
-            <p className="text-muted-foreground leading-relaxed">Many users reuse the same Instagram handle on:</p>
+            <p className="text-muted-foreground leading-relaxed">Many users reuse the same Instagram handle on platforms like <Link to="/tiktok-username-search" className="text-accent hover:underline">TikTok</Link>, Twitter/X, Discord, Reddit, forums, and gaming platforms:</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-4">
               {["TikTok", "Twitter/X", "Discord", "Reddit", "Forums", "Gaming platforms"].map((platform) => (
                 <div key={platform} className="bg-muted/20 border border-border/30 rounded-lg px-3 py-2 text-sm text-muted-foreground text-center">
@@ -170,7 +170,7 @@ export default function InstagramSearchWithoutAccount() {
             </div>
             <p className="text-muted-foreground leading-relaxed">
               This creates a searchable identity trail. Even if Instagram is private, cross-platform reuse may still expose connections.
-              You can learn more about <Link to="/how-username-reuse-exposes-you-online" className="text-accent hover:underline">username reuse risk here</Link>.
+              You can learn more about <Link to="/username-reuse-risk" className="text-accent hover:underline">username reuse risk</Link> and why it matters.
             </p>
 
             {/* Section: How to Check Your Instagram Exposure */}
