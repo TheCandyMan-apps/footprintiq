@@ -56,6 +56,8 @@ interface AccountRowProps {
   /** Exposure status tracking */
   exposureStatus?: ExposureStatus;
   onExposureStatusChange?: (findingId: string, platformName: string, status: ExposureStatus) => void;
+  /** Whether detail panel is locked (free users) */
+  isDetailLocked?: boolean;
 }
 
 const getMatchConfidence = (score: number) => {
