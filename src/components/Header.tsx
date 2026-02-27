@@ -408,7 +408,7 @@ export const Header = () => {
             ) : (
               <Link
                 to="/auth"
-                className="text-sm text-muted-foreground hover:text-primary transition-[var(--transition-smooth)]"
+                className="text-sm text-muted-foreground hover:text-primary transition-[var(--transition-smooth)] whitespace-nowrap"
               >
                 Sign In
               </Link>
