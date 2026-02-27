@@ -85,7 +85,7 @@ export default function InstagramSearchWithoutAccount() {
         </section>
 
         <div className="max-w-3xl mx-auto px-6 pb-20">
-          <article className="prose prose-lg prose-invert max-w-none">
+          <article className="prose prose-lg dark:prose-invert max-w-none">
 
             <p className="text-muted-foreground leading-relaxed">
               This guide explains what is accessible, what is restricted, and how to check public exposure legally and ethically.
