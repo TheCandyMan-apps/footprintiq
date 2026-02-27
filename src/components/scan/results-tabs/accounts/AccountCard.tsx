@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, Info } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, Info, ChevronDown } from 'lucide-react';
+import { PlatformExpandedDetail } from './PlatformExpandedDetail';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,7 @@ interface AccountCardProps {
   onSelect: () => void;
   onVerificationComplete: (result: LensVerificationResult) => void;
   onClaimChange: (claim: ClaimType | null) => void;
+  isDetailLocked?: boolean;
 }
 
 const getMatchConfidence = (score: number) => {
@@ -57,6 +59,7 @@ export function AccountCard({
   claimStatus,
   onFocus,
   onSelect,
+  isDetailLocked = false,
 }: AccountCardProps) {
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
@@ -197,6 +200,13 @@ export function AccountCard({
           </a>
         )}
         <button
+          onClick={(e) => { e.stopPropagation(); onSelect(); }}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
+        >
+          <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', isSelected && 'rotate-180')} />
+          {isSelected ? 'Collapse' : 'Details'}
+        </button>
+        <button
           onClick={(e) => { e.stopPropagation(); onFocus(); }}
           className={cn(
             'flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] transition-colors',
@@ -206,6 +216,24 @@ export function AccountCard({
           <Crosshair className="w-3 h-3" />
           Focus
         </button>
+      </div>
+
+      {/* Expandable Detail Panel */}
+      <div
+        className={cn(
+          'grid transition-all duration-200 ease-in-out',
+          isSelected ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-border/10 bg-muted/5">
+            <PlatformExpandedDetail
+              result={result}
+              lensScore={lensScore}
+              isLocked={isDetailLocked}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

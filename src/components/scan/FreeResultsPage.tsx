@@ -831,6 +831,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                               onClaimChange={(claim) => handleClaimChange(profile.id, claim)}
                               exposureStatus={getStatus(profile.id)}
                               onExposureStatusChange={handleExposureStatusChange}
+                              isDetailLocked={true}
                             />
                             {/* Inline LENS verification for eligible profiles */}
                             <div className="px-4 pb-2">
