@@ -103,7 +103,7 @@ export default function InstagramSearchWithoutAccount() {
               ))}
             </ul>
             <p className="text-muted-foreground leading-relaxed">
-              Without logging in, Instagram blocks most internal navigation. However, some publicly available profiles may still appear in Google search results. For a more structured approach, consider running an <Link to="/instagram-username-search" className="text-accent hover:underline">Instagram username search</Link> to understand your public exposure.
+              Without logging in, Instagram blocks most internal navigation. However, some publicly available profiles may still appear in Google search results. For a more structured approach, consider running an <Link to="/instagram-username-search" className="text-primary hover:underline">Instagram username search</Link> to understand your public exposure.
             </p>
 
             {/* Section: How to View Public Instagram Profiles */}
@@ -154,13 +154,13 @@ export default function InstagramSearchWithoutAccount() {
               ))}
             </ul>
             <p className="text-muted-foreground leading-relaxed">
-              This is where <Link to="/digital-footprint-scan" className="text-accent hover:underline">digital footprint analysis</Link> becomes important.
+              This is where <Link to="/digital-footprint-scan" className="text-primary hover:underline">digital footprint analysis</Link> becomes important.
               Even if Instagram restricts access, usernames reused elsewhere may create exposure.
             </p>
 
             {/* Section: Username Reuse Risk */}
             <h2 className="text-2xl font-bold text-foreground mt-12 mb-4">Understanding Username Reuse Risk</h2>
-            <p className="text-muted-foreground leading-relaxed">Many users reuse the same Instagram handle on platforms like <Link to="/tiktok-username-search" className="text-accent hover:underline">TikTok</Link>, Twitter/X, Discord, Reddit, forums, and gaming platforms:</p>
+            <p className="text-muted-foreground leading-relaxed">Many users reuse the same Instagram handle on platforms like <Link to="/tiktok-username-search" className="text-primary hover:underline">TikTok</Link>, Twitter/X, Discord, Reddit, forums, and gaming platforms:</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-4">
               {["TikTok", "Twitter/X", "Discord", "Reddit", "Forums", "Gaming platforms"].map((platform) => (
                 <div key={platform} className="bg-muted/20 border border-border/30 rounded-lg px-3 py-2 text-sm text-muted-foreground text-center">
@@ -170,7 +170,7 @@ export default function InstagramSearchWithoutAccount() {
             </div>
             <p className="text-muted-foreground leading-relaxed">
               This creates a searchable identity trail. Even if Instagram is private, cross-platform reuse may still expose connections.
-              You can learn more about <Link to="/username-reuse-risk" className="text-accent hover:underline">username reuse risk</Link> and why it matters.
+              You can learn more about <Link to="/username-reuse-risk" className="text-primary hover:underline">username reuse risk</Link> and why it matters.
             </p>
 
             {/* Section: How to Check Your Instagram Exposure */}
@@ -190,7 +190,7 @@ export default function InstagramSearchWithoutAccount() {
               ))}
             </ul>
             <p className="text-muted-foreground leading-relaxed">
-              A <Link to="/digital-footprint-scan" className="text-accent hover:underline">digital footprint scan</Link> analyses publicly indexed data without accessing private content.
+              A <Link to="/digital-footprint-scan" className="text-primary hover:underline">digital footprint scan</Link> analyses publicly indexed data without accessing private content.
               This approach is legal, ethical, and privacy-focused.
             </p>
 
@@ -260,10 +260,10 @@ export default function InstagramSearchWithoutAccount() {
             <div className="mt-10 pt-6 border-t border-border/30 not-prose">
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Related Guides</h3>
               <ul className="space-y-1.5">
-                <li><Link to="/instagram-username-search" className="text-sm text-accent hover:underline">Instagram Username Search</Link></li>
-                <li><Link to="/usernames" className="text-sm text-accent hover:underline">Username Search — 500+ Platforms</Link></li>
-                <li><Link to="/facebook-search-without-login" className="text-sm text-accent hover:underline">Facebook Search Without Login</Link></li>
-                <li><Link to="/how-to-delete-instagram-account" className="text-sm text-accent hover:underline">How to Delete Your Instagram Account</Link></li>
+                <li><Link to="/instagram-username-search" className="text-sm text-primary hover:underline">Instagram Username Search</Link></li>
+                <li><Link to="/usernames" className="text-sm text-primary hover:underline">Username Search — 500+ Platforms</Link></li>
+                <li><Link to="/facebook-search-without-login" className="text-sm text-primary hover:underline">Facebook Search Without Login</Link></li>
+                <li><Link to="/how-to-delete-instagram-account" className="text-sm text-primary hover:underline">How to Delete Your Instagram Account</Link></li>
               </ul>
             </div>
 
