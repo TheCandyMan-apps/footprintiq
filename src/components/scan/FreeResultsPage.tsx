@@ -1194,7 +1194,6 @@ function ProfilePreviewRow({ profile }: { profile: AggregatedProfile }) {
           </div>
         )}
       </div>
-      </div>
     </div>
   );
 }
