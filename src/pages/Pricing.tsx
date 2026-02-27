@@ -574,54 +574,61 @@ const PricingPage = () => {
               </motion.div>
             </div>
             
-            {/* Free vs Pro Comparison */}
+            {/* Free vs Pro Comparison Table */}
             <div className="mt-16 max-w-4xl mx-auto">
-              <h3 className="text-xl font-bold text-center mb-6">Free vs Pro — At a Glance</h3>
-              <div className="grid grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-muted-foreground">Free</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {['Snapshot exposure', 'Limited remediation insight', 'Basic scoring'].map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-muted-foreground/60" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-                <Card className="border-primary/30">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-primary">Pro</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {[
-                        'Full remediation roadmap',
-                        'Priority intelligence engine',
-                        'Removal pathway mapping',
-                        'Historical tracking',
-                        'Advanced correlation',
-                      ].map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
+              <h3 className="text-2xl font-bold text-center mb-2">Free vs Pro — What You Get</h3>
+              <p className="text-sm text-muted-foreground text-center mb-8">See the difference outcome-by-outcome.</p>
+              
+              <div className="overflow-hidden rounded-xl border border-border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left p-4 font-medium text-muted-foreground">Capability</th>
+                      <th className="text-center p-4 font-medium text-muted-foreground w-28">Free</th>
+                      <th className="text-center p-4 font-medium text-primary w-28">Pro</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {[
+                      { capability: 'Basic exposure detection', free: true, pro: true },
+                      { capability: 'Full platform-level breakdown', free: false, pro: true },
+                      { capability: 'Risk scoring per exposure', free: false, pro: true },
+                      { capability: 'Identity correlation mapping', free: false, pro: true },
+                      { capability: 'Exposure reduction guidance', free: false, pro: true },
+                      { capability: 'Prioritised remediation plan', free: false, pro: true },
+                      { capability: 'False positive filtering', free: false, pro: true },
+                      { capability: 'Continuous monitoring & alerts', free: false, pro: true },
+                      { capability: 'Exportable reports (PDF/CSV)', free: false, pro: true },
+                      { capability: 'Priority support', free: false, pro: true },
+                    ].map((row, i) => (
+                      <tr key={i} className="hover:bg-muted/20 transition-colors">
+                        <td className="p-4 text-foreground">{row.capability}</td>
+                        <td className="p-4 text-center">
+                          {row.free ? <Check className="w-4 h-4 text-muted-foreground mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                        </td>
+                        <td className="p-4 text-center">
+                          {row.pro ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/40 mx-auto" />}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* Trust Line */}
-            <div className="text-center mt-12">
-              <p className="text-sm text-muted-foreground font-medium">
-                {trustLine}
-              </p>
+            {/* Trust Badge Strip */}
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
+              {[
+                { icon: ShieldCheck, label: 'Ethical OSINT' },
+                { icon: Lock, label: 'No data resale' },
+                { icon: FileSearch, label: 'Transparent methodology' },
+                { icon: Globe, label: 'Public sources only' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/40 border border-border/50">
+                  <Icon className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground">{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </section>
