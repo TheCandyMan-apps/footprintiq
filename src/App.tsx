@@ -316,6 +316,7 @@ const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsername
 const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
 const DiscordUsernameSearchPage = lazy(() => import("./pages/DiscordUsernameSearch"));
 const OnlyFansUsernameSearchPage = lazy(() => import("./pages/OnlyFansUsernameSearch"));
+const DigitalFootprintScanPage = lazy(() => import("./pages/DigitalFootprintScan"));
 const PlaybooksHub = lazy(() => import("./pages/playbooks/PlaybooksHub"));
 const ExecutiveTravelCheck = lazy(() => import("./pages/playbooks/ExecutiveTravelCheck"));
 const JournalistRiskAudit = lazy(() => import("./pages/playbooks/JournalistRiskAudit"));
@@ -839,8 +840,9 @@ function RouterContent() {
           <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
           <Route path="/discord-username-search" element={<DiscordUsernameSearchPage />} />
           <Route path="/onlyfans-username-search" element={<OnlyFansUsernameSearchPage />} />
+          <Route path="/digital-footprint-scan" element={<DigitalFootprintScanPage />} />
           
-          {/* Embeddable Widget */}
+           {/* Embeddable Widget */}
            <Route path="/embed/widget" element={<EmbedWidget />} />
            <Route path="/resources/ethical-osint-framework" element={<EthicalOsintFramework />} />
            <Route path="/resources/doxxing-defense" element={<DoxxingDefenseGuide />} />
