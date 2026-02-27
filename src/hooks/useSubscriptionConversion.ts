@@ -24,18 +24,27 @@ export function useSubscriptionConversion(dateRange: { start: Date; end: Date } 
   return useQuery<SubscriptionConversionData>({
     queryKey: ['subscription-conversion', dateRange?.start?.toISOString(), dateRange?.end?.toISOString()],
     queryFn: async () => {
-      // --- Current snapshot from user_roles ---
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('subscription_tier');
-
-      if (rolesError) {
-        console.warn('Subscription conversion: user_roles query failed:', rolesError);
+      // --- Current snapshot from user_roles (paginated to avoid 1000-row limit) ---
+      let allRoles: { subscription_tier: string | null }[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: batch, error: batchError } = await supabase
+          .from('user_roles')
+          .select('subscription_tier')
+          .range(from, from + pageSize - 1);
+        if (batchError) {
+          console.warn('Subscription conversion: user_roles query failed:', batchError);
+          break;
+        }
+        if (!batch || batch.length === 0) break;
+        allRoles = allRoles.concat(batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
       }
 
-      const allRoles = roles || [];
       const totalFree = allRoles.filter(r => !r.subscription_tier || r.subscription_tier === 'free').length;
-      const totalPro = allRoles.filter(r => r.subscription_tier === 'pro').length;
+      const totalPro = allRoles.filter(r => r.subscription_tier === 'pro' || r.subscription_tier === 'basic').length;
       const totalEnterprise = allRoles.filter(r => r.subscription_tier === 'enterprise').length;
       const totalPaid = totalPro + totalEnterprise;
       const totalAll = totalFree + totalPaid;
