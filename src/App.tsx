@@ -314,6 +314,7 @@ const SearchUsernamePage = lazy(() => import("./pages/SearchUsername"));
 const TikTokUsernameSearchPage = lazy(() => import("./pages/TikTokUsernameSearch"));
 const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsernameSearch"));
 const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
+const DiscordUsernameSearchPage = lazy(() => import("./pages/DiscordUsernameSearch"));
 const PlaybooksHub = lazy(() => import("./pages/playbooks/PlaybooksHub"));
 const ExecutiveTravelCheck = lazy(() => import("./pages/playbooks/ExecutiveTravelCheck"));
 const JournalistRiskAudit = lazy(() => import("./pages/playbooks/JournalistRiskAudit"));
@@ -835,6 +836,7 @@ function RouterContent() {
           <Route path="/ai-answers/instagram-username-osint" element={<AIAnswersInstagramUsernameOsint />} />
           <Route path="/how-username-reuse-exposes-you-online" element={<HowUsernameReuseExposesYouOnline />} />
           <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
+          <Route path="/discord-username-search" element={<DiscordUsernameSearchPage />} />
           
           {/* Embeddable Widget */}
            <Route path="/embed/widget" element={<EmbedWidget />} />
