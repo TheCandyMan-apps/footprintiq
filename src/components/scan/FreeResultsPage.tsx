@@ -548,6 +548,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   }
 
   return (
+    <>
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
