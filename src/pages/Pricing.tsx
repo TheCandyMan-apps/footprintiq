@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Check, X, Star, Building2, Search, Shield, Eye, Database, Lock, UserCheck } from "lucide-react";
+import { Check, X, Star, Building2, Search, Shield, Eye, Database, Lock, UserCheck, Quote, ShieldCheck, FileSearch, Globe, HeartHandshake } from "lucide-react";
 import { PLANS, PlanId } from "@/lib/billing/tiers";
 import { startCheckout } from "@/lib/billing/checkout";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -129,22 +129,20 @@ const PricingPage = () => {
   // Combine structured data into an array for the SEO component
   const combinedStructuredData = [pricingStructuredData, faqStructuredData];
 
+  // Outcome-driven feature copy
   const freeIncludes = [
-    "Single digital footprint scan",
-    "Username and alias discovery",
-    "Public profile detection",
-    "Breach exposure indicators",
-    "High-level risk summary",
-    "Clear, readable report"
+    "See what's publicly visible under your username",
+    "Discover which platforms expose your identity",
+    "Get a high-level risk summary of your digital presence",
+    "Understand basic breach exposure indicators",
   ];
 
   const freeLimitations = [
-    "One-time scan",
-    "Limited historical context",
+    "One-time scan only",
+    "No action plan or removal guidance",
     "No monitoring or alerts"
   ];
 
-  // High-Risk Intelligence feature copy per tier
   const freeHighRisk = {
     excluded: "High-Risk Intelligence not included",
     upgrade: "Upgrade to see advanced risk context"
@@ -167,34 +165,30 @@ const PricingPage = () => {
   ];
 
   const proIncludes: Array<string | { text: string; isLens: boolean }> = [
-    "Exposure prioritization scoring",
-    "Removal pathway mapping",
-    "Curated opt-out database",
-    "Exportable remediation plan (PDF)",
-    { text: "LENS identity verification", isLens: true },
-    "Confidence scoring & false-positive filtering",
-    "Labeled connections graph",
-    "Historical tracking & risk trend analysis",
-    "Continuous monitoring & alerts",
-    "Exportable reports (PDF & CSV)"
+    "Understand which exposures increase impersonation risk",
+    "Get a prioritised remediation roadmap with opt-out links",
+    "See how your identities connect across platforms",
+    { text: "Verify profile ownership with LENS identity checks", isLens: true },
+    "Filter false positives with AI confidence scoring",
+    "Track how your exposure changes over time",
+    "Receive alerts when new exposures surface",
+    "Export compliance-ready reports (PDF & CSV)"
   ];
 
   const proBestFor = [
-    "Professionals",
-    "Journalists",
+    "Professionals managing a public presence",
+    "Journalists & public figures",
     "Security-aware individuals",
-    "Anyone managing a public online presence"
+    "Anyone who wants a clear action plan"
   ];
 
   const businessIncludes = [
-    "Team workspaces",
-    "Shared investigations",
-    "Case management",
-    "API access",
-    "Higher scan limits",
-    "Audit logs",
-    "Priority support",
-    "Custom data retention"
+    "Manage team exposure from one workspace",
+    "Collaborate on shared investigations",
+    "Structured case management with audit trail",
+    "API access for custom integrations",
+    "Higher scan limits & priority support",
+    "Custom data retention policies"
   ];
 
   const businessBestFor = [
