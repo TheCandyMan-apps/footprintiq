@@ -99,6 +99,7 @@ export function AccountRow({
   onClaimChange,
   exposureStatus,
   onExposureStatusChange,
+  isDetailLocked = false,
 }: AccountRowProps) {
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
