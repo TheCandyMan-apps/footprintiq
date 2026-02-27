@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { IntentAlignmentBanner } from "@/components/seo/IntentAlignmentBanner";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
