@@ -302,6 +302,10 @@ const GoodOsintScanResult = lazy(() => import("./pages/guides/GoodOsintScanResul
 const GuidesIndex = lazy(() => import("./pages/guides/GuidesIndex"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
+const DatingProfileLookup = lazy(() => import("./pages/DatingProfileLookup"));
+const LinkedInUsernameSearch = lazy(() => import("./pages/LinkedInUsernameSearch"));
+const TelegramUsernameSearch2 = lazy(() => import("./pages/TelegramUsernameSearch"));
+const YouTubeUsernameSearch = lazy(() => import("./pages/YouTubeUsernameSearch"));
 const EthicalOsintFramework = lazy(() => import("./pages/resources/EthicalOsintFramework"));
 const DoxxingDefenseGuide = lazy(() => import("./pages/resources/DoxxingDefenseGuide"));
 const DigitalFootprintMapping = lazy(() => import("./pages/resources/DigitalFootprintMapping"));
@@ -773,6 +777,10 @@ function RouterContent() {
                  <Route path="/how-to-check-someones-username-history" element={<HowToCheckSomeonesUsernameHistory />} />
                  <Route path="/how-to-protect-your-digital-identity" element={<HowToProtectYourDigitalIdentity />} />
                  <Route path="/remove-yourself-from-data-broker-sites" element={<RemoveYourselfFromDataBrokerSites />} />
+                 <Route path="/dating-profile-lookup" element={<DatingProfileLookup />} />
+                 <Route path="/linkedin-username-search" element={<LinkedInUsernameSearch />} />
+                 <Route path="/telegram-username-search" element={<TelegramUsernameSearch2 />} />
+                 <Route path="/youtube-username-search" element={<YouTubeUsernameSearch />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}

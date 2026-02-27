@@ -1200,6 +1200,32 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- Platform Username Search Pages -->
+  <url>
+    <loc>https://footprintiq.app/dating-profile-lookup</loc>
+    <lastmod>2026-02-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/linkedin-username-search</loc>
+    <lastmod>2026-02-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/telegram-username-search</loc>
+    <lastmod>2026-02-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/youtube-username-search</loc>
+    <lastmod>2026-02-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Keyword Gap Pages (Batch 1) -->
   <url>
     <loc>https://footprintiq.app/best-osint-tools</loc>
