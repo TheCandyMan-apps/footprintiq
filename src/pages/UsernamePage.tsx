@@ -129,6 +129,8 @@ export default function UsernamePage() {
       />
       <Header />
       <main className="min-h-screen bg-background">
+        {/* Intent Alignment */}
+        <IntentAlignmentBanner />
         {/* Hero Section */}
         <section className="py-16 md:py-24 px-6 bg-gradient-to-b from-primary/5 to-background">
           <div className="max-w-4xl mx-auto text-center">

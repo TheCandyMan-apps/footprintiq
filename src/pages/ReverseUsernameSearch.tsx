@@ -158,6 +158,8 @@ const ReverseUsernameSearch = () => {
         <Header />
 
         <main className="flex-grow">
+          {/* Intent Alignment */}
+          <IntentAlignmentBanner />
           {/* Breadcrumb */}
           <div className="bg-muted/30 border-b border-border/50">
             <div className="container mx-auto px-4 py-3">
