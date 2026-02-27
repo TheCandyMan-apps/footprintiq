@@ -1,5 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
+import { PlatformExpandedDetail } from './PlatformExpandedDetail';
 import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
