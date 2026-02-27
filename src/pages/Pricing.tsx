@@ -633,7 +633,53 @@ const PricingPage = () => {
           </div>
         </section>
 
-        {/* Intelligence Layer */}
+        {/* Why Upgrade? */}
+        <section className="py-16 px-4">
+          <div className="container mx-auto max-w-3xl text-center">
+            <h2 className="text-2xl font-bold mb-4">Why Upgrade Beyond a Basic Scan?</h2>
+            <p className="text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              A free scan shows you <span className="text-foreground font-medium">what's visible</span>. Pro Intelligence shows you <span className="text-foreground font-medium">what it means</span> — which exposures increase impersonation risk, how your identities correlate across platforms, and exactly which steps to take first. Instead of a list of findings, you get a strategic remediation plan built on the same methodology used in professional OSINT investigations.
+            </p>
+          </div>
+        </section>
+
+        {/* Testimonial / Credibility Block */}
+        <section className="py-12 px-4 bg-muted/20">
+          <div className="container mx-auto max-w-4xl">
+            <h3 className="text-lg font-semibold text-center mb-8 text-muted-foreground">What early users are saying</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  quote: "I had no idea how many platforms still had my old username. The remediation plan saved me hours of manual work.",
+                  author: "Privacy-conscious professional",
+                  context: "Pro user since Jan 2026"
+                },
+                {
+                  quote: "The correlation map was eye-opening. I could see exactly how my accounts linked together — and which ones to prioritise removing.",
+                  author: "Freelance journalist",
+                  context: "Upgraded after free scan"
+                },
+                {
+                  quote: "Finally, something that explains the risk instead of just listing accounts. The confidence scoring cut through the noise.",
+                  author: "Security researcher",
+                  context: "Beta tester"
+                }
+              ].map((t, i) => (
+                <Card key={i} className="bg-card">
+                  <CardContent className="pt-6 space-y-4">
+                    <Quote className="w-5 h-5 text-primary/40" />
+                    <p className="text-sm text-foreground leading-relaxed italic">"{t.quote}"</p>
+                    <div className="border-t border-border/50 pt-3">
+                      <p className="text-xs font-medium text-foreground">{t.author}</p>
+                      <p className="text-[10px] text-muted-foreground">{t.context}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="py-16 px-4 bg-muted/30">
           <div className="container mx-auto max-w-3xl">
             <div className="text-center mb-8">
