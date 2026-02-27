@@ -12,16 +12,25 @@ export function useAdminAnalytics() {
 
       if (usersError) throw usersError;
 
-      // Get users by role
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role, subscription_tier');
+      // Get users by role — fetch ALL rows (default limit is 1000)
+      let allRoles: { role: string; subscription_tier: string }[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: batch, error: batchError } = await supabase
+          .from('user_roles')
+          .select('role, subscription_tier')
+          .range(from, from + pageSize - 1);
+        if (batchError) throw batchError;
+        if (!batch || batch.length === 0) break;
+        allRoles = allRoles.concat(batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
 
-      if (rolesError) throw rolesError;
-
-      const adminCount = roles?.filter(r => r.role === 'admin').length || 0;
-      const freeUsers = roles?.filter(r => r.subscription_tier === 'free').length || 0;
-      const premiumUsers = roles?.filter(r => r.subscription_tier === 'pro').length || 0;
+      const adminCount = allRoles.filter(r => r.role === 'admin').length;
+      const freeUsers = allRoles.filter(r => r.subscription_tier === 'free').length;
+      const premiumUsers = allRoles.filter(r => r.subscription_tier === 'pro' || r.subscription_tier === 'basic').length;
 
       // Get recent signups (last 30 days)
       const thirtyDaysAgo = new Date();
