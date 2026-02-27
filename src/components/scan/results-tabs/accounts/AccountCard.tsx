@@ -41,6 +41,7 @@ interface AccountCardProps {
   onSelect: () => void;
   onVerificationComplete: (result: LensVerificationResult) => void;
   onClaimChange: (claim: ClaimType | null) => void;
+  isDetailLocked?: boolean;
 }
 
 const getMatchConfidence = (score: number) => {
@@ -58,6 +59,7 @@ export function AccountCard({
   claimStatus,
   onFocus,
   onSelect,
+  isDetailLocked = false,
 }: AccountCardProps) {
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
