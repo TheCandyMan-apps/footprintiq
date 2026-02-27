@@ -51,6 +51,7 @@ export const qaGuideLinks: RelatedGuideLink[] = [
   { label: "Best Way To Monitor Your Online Exposure", to: "/guides/monitor-online-exposure" },
   { label: "How To See What Google Knows About You", to: "/guides/what-google-knows-about-you" },
   { label: "Telegram Profile Search & Messenger OSINT Guide", to: "/guides/telegram-osint-search" },
+  { label: "Search Twitter (X) Without an Account", to: "/guides/search-twitter-without-account" },
 ];
 
 export function QAGuideLayout({ data }: { data: QAGuideData }) {
