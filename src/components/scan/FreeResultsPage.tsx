@@ -98,6 +98,7 @@ import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
 import { PostScanInlineUpgrade } from '@/components/conversion/PostScanInlineUpgrade';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
+import { AttentionSection } from './AttentionSection';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
 
