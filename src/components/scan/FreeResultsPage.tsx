@@ -96,6 +96,7 @@ import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsP
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
 import { PostScanInlineUpgrade } from '@/components/conversion/PostScanInlineUpgrade';
+import { InlineUpgradeModal } from '@/components/results/InlineUpgradeModal';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { AttentionSection } from './AttentionSection';
@@ -498,8 +499,10 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     }
   };
 
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   const handleUpgradeClick = () => {
-    navigate('/pricing');
+    setShowUpgradeModal(true);
   };
 
   if (jobLoading) {
@@ -545,6 +548,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   }
 
   return (
+    <>
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -1094,6 +1098,8 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
         )}
       </CardContent>
     </Card>
+    <InlineUpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+    </>
   );
 }
 

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, ArrowRight, TrendingUp, Eye, Network, FileText } from 'lucide-react';
-import { ProUpgradeModal } from '@/components/results/ProUpgradeModal';
+import { InlineUpgradeModal } from '@/components/results/InlineUpgradeModal';
 
 interface PostScanInlineUpgradeProps {
   exposureCount: number;
@@ -72,7 +72,7 @@ export function PostScanInlineUpgrade({ exposureCount, hiddenCount, highConfiden
           </div>
         </CardContent>
       </Card>
-      <ProUpgradeModal open={showModal} onOpenChange={setShowModal} />
+      <InlineUpgradeModal open={showModal} onOpenChange={setShowModal} />
     </>
   );
 }
