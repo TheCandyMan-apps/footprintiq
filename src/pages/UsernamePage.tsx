@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { IntentAlignmentBanner } from "@/components/seo/IntentAlignmentBanner";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -129,6 +130,8 @@ export default function UsernamePage() {
       />
       <Header />
       <main className="min-h-screen bg-background">
+        {/* Intent Alignment */}
+        <IntentAlignmentBanner />
         {/* Hero Section */}
         <section className="py-16 md:py-24 px-6 bg-gradient-to-b from-primary/5 to-background">
           <div className="max-w-4xl mx-auto text-center">

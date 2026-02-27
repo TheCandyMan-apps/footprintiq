@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { IntentAlignmentBanner } from "@/components/seo/IntentAlignmentBanner";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -158,6 +159,8 @@ const ReverseUsernameSearch = () => {
         <Header />
 
         <main className="flex-grow">
+          {/* Intent Alignment */}
+          <IntentAlignmentBanner />
           {/* Breadcrumb */}
           <div className="bg-muted/30 border-b border-border/50">
             <div className="container mx-auto px-4 py-3">
