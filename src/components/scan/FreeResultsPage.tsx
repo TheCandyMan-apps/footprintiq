@@ -1098,6 +1098,8 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
         )}
       </CardContent>
     </Card>
+    <InlineUpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+    </>
   );
 }
 
