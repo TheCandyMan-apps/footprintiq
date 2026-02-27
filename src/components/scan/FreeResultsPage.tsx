@@ -98,6 +98,7 @@ import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
 import { PostScanInlineUpgrade } from '@/components/conversion/PostScanInlineUpgrade';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
+import { AttentionSection } from './AttentionSection';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
 
@@ -922,6 +923,15 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </p>
               </CardContent>
             </Card>
+
+            {/* ===== WHAT REQUIRES ATTENTION + BLURRED ACTION PLAN ===== */}
+            {foundProfiles.length > 0 && (
+              <AttentionSection
+                profiles={foundProfiles}
+                totalExposures={signalsFound}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
 
             {/* ===== NOTABLE PATTERN INSIGHT ===== */}
             {foundProfiles.length > 0 && (
