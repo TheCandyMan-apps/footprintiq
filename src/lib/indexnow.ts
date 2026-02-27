@@ -174,6 +174,7 @@ export const INDEXNOW_URLS = [
   "/linkedin-username-search",
   "/telegram-username-search",
   "/youtube-username-search",
+  "/facebook-search-without-login",
   // Blog (key posts)
   "/blog/digital-exposure-report-2026",
   "/blog/what-is-osint",
