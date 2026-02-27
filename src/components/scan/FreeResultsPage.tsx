@@ -923,6 +923,15 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
+            {/* ===== WHAT REQUIRES ATTENTION + BLURRED ACTION PLAN ===== */}
+            {foundProfiles.length > 0 && (
+              <AttentionSection
+                profiles={foundProfiles}
+                totalExposures={signalsFound}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
             {/* ===== NOTABLE PATTERN INSIGHT ===== */}
             {foundProfiles.length > 0 && (
               <Card className="overflow-hidden border-border/50 bg-muted/5">
