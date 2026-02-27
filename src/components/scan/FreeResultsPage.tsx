@@ -96,6 +96,7 @@ import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsP
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
 import { PostScanInlineUpgrade } from '@/components/conversion/PostScanInlineUpgrade';
+import { InlineUpgradeModal } from '@/components/results/InlineUpgradeModal';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { AttentionSection } from './AttentionSection';
@@ -498,8 +499,10 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     }
   };
 
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   const handleUpgradeClick = () => {
-    navigate('/pricing');
+    setShowUpgradeModal(true);
   };
 
   if (jobLoading) {
@@ -1189,7 +1192,8 @@ function ProfilePreviewRow({ profile }: { profile: AggregatedProfile }) {
         )}
       </div>
     </div>
+    </div>
+    <InlineUpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
   );
-}
 
 export default FreeResultsPage;
