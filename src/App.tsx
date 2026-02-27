@@ -393,6 +393,7 @@ const RomanceScamWarningSigns = lazy(() => import("./pages/RomanceScamWarningSig
 const HowToCheckSomeonesUsernameHistory = lazy(() => import("./pages/HowToCheckSomeonesUsernameHistory"));
 const HowToProtectYourDigitalIdentity = lazy(() => import("./pages/HowToProtectYourDigitalIdentity"));
 const RemoveYourselfFromDataBrokerSites = lazy(() => import("./pages/RemoveYourselfFromDataBrokerSites"));
+const InstagramSearchWithoutAccount = lazy(() => import("./pages/InstagramSearchWithoutAccount"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -778,6 +779,7 @@ function RouterContent() {
                  <Route path="/how-to-check-someones-username-history" element={<HowToCheckSomeonesUsernameHistory />} />
                  <Route path="/how-to-protect-your-digital-identity" element={<HowToProtectYourDigitalIdentity />} />
                  <Route path="/remove-yourself-from-data-broker-sites" element={<RemoveYourselfFromDataBrokerSites />} />
+                 <Route path="/instagram-search-without-account" element={<InstagramSearchWithoutAccount />} />
                  <Route path="/dating-profile-lookup" element={<DatingProfileLookup />} />
                  <Route path="/linkedin-username-search" element={<LinkedInUsernameSearch />} />
                  <Route path="/telegram-username-search" element={<TelegramUsernameSearch2 />} />

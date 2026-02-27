@@ -221,6 +221,7 @@ export const INDEXNOW_URLS = [
   "/how-to-check-someones-username-history",
   "/how-to-protect-your-digital-identity",
   "/remove-yourself-from-data-broker-sites",
+  "/instagram-search-without-account",
   // Reference-Grade Resources (AI Citation)
   "/resources/ethical-osint-framework",
   "/resources/doxxing-defense",
