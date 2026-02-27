@@ -21,6 +21,7 @@ import {
   UserCheck,
   Lock,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
 import {
   Accordion,
@@ -31,24 +32,24 @@ import {
 
 const faqItems = [
   {
-    question: "Is searching an OnlyFans username legal?",
+    question: "Is searching a Kik username legal?",
     answer:
-      "Yes, reviewing publicly available information is legal. FootprintIQ does not access private data, paywalled content, or restricted accounts.",
+      "Yes. Searching publicly available information is legal. FootprintIQ does not access private Kik messages, contacts, or account data.",
   },
   {
-    question: "Can someone link my OnlyFans to other accounts?",
+    question: "Can someone link my Kik username to other accounts?",
     answer:
-      "If usernames are reused across platforms, it may be possible to connect public profiles together. FootprintIQ helps you understand and reduce that risk.",
+      "If you reuse the same username across platforms, it may be possible to connect public profiles together. FootprintIQ helps you understand and reduce that risk.",
   },
   {
-    question: "How do I reduce my digital footprint?",
+    question: "Does FootprintIQ access private Kik messages?",
     answer:
-      "By identifying exposed accounts and removing or anonymising them where possible. FootprintIQ highlights what needs attention and provides guidance.",
+      "No. FootprintIQ does not access private messages, contact lists, or restricted account data. It only analyses publicly available information.",
   },
   {
-    question: "Does FootprintIQ access private OnlyFans content?",
+    question: "How do I reduce my Kik exposure?",
     answer:
-      "No. FootprintIQ does not access private OnlyFans content, bypass paywalls, or circumvent account protections. It only analyses publicly available information.",
+      "By identifying where your username appears publicly and removing or changing exposed accounts. FootprintIQ highlights what needs attention.",
   },
   {
     question: "Is this tool anonymous?",
@@ -61,7 +62,7 @@ const differentiators = [
   {
     icon: Target,
     title: "Exposure Awareness",
-    description: "Understand what your username reveals across the web",
+    description: "Understand what your Kik username reveals across the web",
   },
   {
     icon: Shield,
@@ -81,14 +82,14 @@ const differentiators = [
 ];
 
 const whoShouldUse = [
-  { icon: UserCheck, label: "Individuals concerned about digital exposure" },
-  { icon: Globe, label: "Content creators" },
-  { icon: Shield, label: "Privacy-conscious professionals" },
-  { icon: AlertTriangle, label: "People wanting to check impersonation risks" },
-  { icon: Search, label: "Anyone reusing usernames across platforms" },
+  { icon: UserCheck, label: "Individuals concerned about messaging app exposure" },
+  { icon: Globe, label: "Users who reuse usernames across platforms" },
+  { icon: Shield, label: "Privacy-conscious individuals" },
+  { icon: AlertTriangle, label: "People checking for impersonation" },
+  { icon: Search, label: "Anyone wanting to audit their digital footprint" },
 ];
 
-export default function OnlyFansUsernameSearch() {
+export default function KikUsernameSearch() {
   const faqSchema = {
     "@context": "https://schema.org" as const,
     "@type": "FAQPage" as const,
@@ -105,31 +106,27 @@ export default function OnlyFansUsernameSearch() {
   const webAppSchema = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "FootprintIQ OnlyFans Username Search",
+    name: "FootprintIQ Kik Username Search",
     applicationCategory: "SecurityApplication",
     operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     description:
-      "Free OnlyFans username search tool to check public profiles and assess digital footprint exposure across publicly indexed sources.",
+      "Free Kik username search tool to check public profiles and assess digital footprint exposure across publicly indexed sources.",
   };
 
   return (
     <>
       <SEO
-        title="OnlyFans Username Search – Check Public Profiles & Digital Exposure | FootprintIQ"
-        description="Search an OnlyFans username across hundreds of public platforms. Understand your digital exposure, find matching profiles, and reduce your footprint risk. Free, ethical, privacy-first."
-        canonical="https://footprintiq.app/onlyfans-username-search"
+        title="Kik Username Search – Check Public Profiles & Digital Exposure | FootprintIQ"
+        description="Search a Kik username across hundreds of public platforms. Understand your digital exposure, find matching profiles, and reduce your footprint risk. Free, ethical, privacy-first."
+        canonical="https://footprintiq.app/kik-username-search"
         schema={{
           breadcrumbs: {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
-              { "@type": "ListItem", position: 2, name: "OnlyFans Username Search", item: "https://footprintiq.app/onlyfans-username-search" },
+              { "@type": "ListItem", position: 2, name: "Kik Username Search", item: "https://footprintiq.app/kik-username-search" },
             ],
           },
           faq: faqSchema,
@@ -149,13 +146,13 @@ export default function OnlyFansUsernameSearch() {
             </Badge>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              OnlyFans Username Search – Check Public Profiles &amp; Digital Exposure
+              Kik Username Search – Check Public Profiles &amp; Digital Exposure
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              OnlyFans usernames are often reused across other platforms. A single username can
-              connect multiple public accounts together — sometimes unintentionally. FootprintIQ
-              helps you understand that exposure.
+              Kik usernames are frequently reused across other platforms. A single handle can
+              connect messaging accounts to social media profiles, forums, and more — often
+              without the user realising. FootprintIQ helps you understand that exposure.
             </p>
 
             <Button size="lg" asChild className="text-lg px-8 py-6 mb-8">
@@ -167,39 +164,39 @@ export default function OnlyFansUsernameSearch() {
           </div>
         </section>
 
-        {/* What Is an OnlyFans Username Search? */}
+        {/* What Is a Kik Username Search? */}
         <section className="py-12 px-6">
           <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-            <h2>What Is an OnlyFans Username Search?</h2>
+            <h2>What Is a Kik Username Search?</h2>
             <p>
-              An OnlyFans username search checks whether a specific handle appears elsewhere across
-              publicly indexed platforms. Usernames are commonly reused across:
+              A Kik username search checks whether a specific messaging handle appears across
+              other publicly indexed platforms. Many users choose a Kik username and reuse it on:
             </p>
             <ul>
               <li>Instagram</li>
               <li>Twitter/X</li>
               <li>Reddit</li>
-              <li>TikTok</li>
-              <li>Forums</li>
+              <li>Snapchat</li>
+              <li>Forums and communities</li>
               <li>Older archived accounts</li>
             </ul>
             <p>
               This creates potential exposure patterns. FootprintIQ analyses publicly available data
-              sources to identify possible cross-platform matches — without accessing private content.
-              Running a{" "}
+              sources to identify possible cross-platform matches — without accessing private messages
+              or contacts. Running a{" "}
               <Link to="/digital-footprint-scan" className="text-primary underline underline-offset-4 hover:text-primary/80">
                 digital footprint scan
               </Link>{" "}
               can help you understand the full scope of your exposure beyond a single platform.
             </p>
 
-            <h2>Why Username Reuse Can Increase Exposure</h2>
+            <h2>Why Kik Username Reuse Increases Exposure</h2>
             <p>Reused usernames can:</p>
             <ul>
-              <li>Link personal and professional identities</li>
-              <li>Reveal old accounts</li>
+              <li>Link messaging identities to social media profiles</li>
+              <li>Reveal old or forgotten accounts</li>
               <li>Increase impersonation risk</li>
-              <li>Expose forgotten digital history</li>
+              <li>Expose private communication patterns</li>
             </ul>
             <p>
               Understanding your digital footprint is the first step toward controlling it.
@@ -211,20 +208,27 @@ export default function OnlyFansUsernameSearch() {
             </p>
 
             <h2>What You Can Discover</h2>
-            <p>Depending on public exposure, an OnlyFans username search may reveal matching
-              social profiles, forum posts, gaming accounts, and data breach references. The same
-              methodology applies across platforms — for example, you can also run a{" "}
-              <Link to="/reddit-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                Reddit username search
+            <p>Depending on public exposure, a Kik username search may reveal:</p>
+            <ul>
+              <li>Matching social media profiles</li>
+              <li>Forum posts and community activity</li>
+              <li>Gaming and messaging accounts</li>
+              <li>Publicly indexed usernames</li>
+              <li>Data breach references</li>
+            </ul>
+            <p>
+              The same methodology applies across platforms. For example, you can also run a{" "}
+              <Link to="/snapchat-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                Snapchat username search
               </Link>{" "}
-              to check exposure on community-driven platforms.
+              to check exposure on other messaging services.
             </p>
 
             <h2>Why Check Your Digital Footprint?</h2>
             <p>
               Many people underestimate how searchable they are. Checking your digital footprint
-              helps you identify exposed accounts, remove old profiles, and reduce impersonation risk.
-              If you're unsure where to start, our guide on{" "}
+              helps you identify exposed accounts, remove old profiles, reduce impersonation risk,
+              and strengthen online security. If you're unsure where to start, our guide on{" "}
               <Link to="/blog/how-to-check-whats-online-about-you" className="text-primary underline underline-offset-4 hover:text-primary/80">
                 how to check what's online about you
               </Link>{" "}
@@ -239,14 +243,14 @@ export default function OnlyFansUsernameSearch() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">How FootprintIQ Works</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                The platform does not bypass paywalls or access private account data.
+                The platform does not access private messages or bypass platform protections.
                 It analyses only publicly available information.
               </p>
             </div>
 
             <div className="grid gap-6">
               {[
-                { step: 1, icon: Search, title: "Enter a Username", desc: "Type the handle you want to check. No account or login required." },
+                { step: 1, icon: MessageSquare, title: "Enter a Kik Username", desc: "Type the handle you want to check. No account or login required." },
                 { step: 2, icon: Globe, title: "Scan Public OSINT Sources", desc: "Our system queries publicly accessible profile pages across hundreds of platforms." },
                 { step: 3, icon: Filter, title: "Identify Potential Matches", desc: "Confidence scoring reduces false positives from common or coincidental username matches." },
                 { step: 4, icon: FileText, title: "Highlight Exposure Signals", desc: "Each result includes the platform, profile URL, and confidence level." },
@@ -303,7 +307,7 @@ export default function OnlyFansUsernameSearch() {
                   <ul className="space-y-2 text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <XCircle className="w-4 h-4 text-destructive shrink-0" />
-                      Access private OnlyFans content
+                      Access private Kik messages or contacts
                     </li>
                     <li className="flex items-center gap-2">
                       <XCircle className="w-4 h-4 text-destructive shrink-0" />
@@ -351,7 +355,7 @@ export default function OnlyFansUsernameSearch() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">OnlyFans Username Search vs Generic Tools</h2>
+              <h2 className="text-3xl font-bold mb-4">Kik Username Search vs Generic Tools</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                 Most free username tools focus on availability — not exposure.
               </p>
@@ -417,7 +421,7 @@ export default function OnlyFansUsernameSearch() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
               <p className="text-muted-foreground">
-                Common questions about OnlyFans username search and digital exposure
+                Common questions about Kik username search and digital exposure
               </p>
             </div>
 
@@ -437,7 +441,7 @@ export default function OnlyFansUsernameSearch() {
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold mb-4 text-center">Explore More OSINT Tools</h2>
             <p className="text-center text-muted-foreground mb-8">
-              OnlyFans username search is just one piece of the puzzle.
+              Kik username search is just one piece of the puzzle.
             </p>
             <div className="grid md:grid-cols-2 gap-6">
               <Link to="/usernames" className="group">
@@ -445,29 +449,15 @@ export default function OnlyFansUsernameSearch() {
                   <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
                     Username Search <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Search any username across 500+ platforms
-                  </p>
+                  <p className="text-sm text-muted-foreground">Search any username across 500+ platforms</p>
                 </Card>
               </Link>
-              <Link to="/email-breach-check" className="group">
+              <Link to="/onlyfans-username-search" className="group">
                 <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
                   <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                    Email Breach Check <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    OnlyFans Username Search <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Check if your email appears in public data breaches
-                  </p>
-                </Card>
-              </Link>
-              <Link to="/digital-footprint-scanner" className="group">
-                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                    Digital Footprint Scanner <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Run a complete scan across all identifiers
-                  </p>
+                  <p className="text-sm text-muted-foreground">Check OnlyFans username exposure across public sources</p>
                 </Card>
               </Link>
               <Link to="/discord-username-search" className="group">
@@ -475,9 +465,15 @@ export default function OnlyFansUsernameSearch() {
                   <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
                     Discord Username Search <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Find accounts linked to a Discord handle
-                  </p>
+                  <p className="text-sm text-muted-foreground">Find accounts linked to a Discord handle</p>
+                </Card>
+              </Link>
+              <Link to="/digital-footprint-scan" className="group">
+                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
+                    Digital Footprint Scan <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">Run a complete scan across all identifiers</p>
                 </Card>
               </Link>
             </div>

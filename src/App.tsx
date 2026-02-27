@@ -316,6 +316,9 @@ const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsername
 const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
 const DiscordUsernameSearchPage = lazy(() => import("./pages/DiscordUsernameSearch"));
 const OnlyFansUsernameSearchPage = lazy(() => import("./pages/OnlyFansUsernameSearch"));
+const KikUsernameSearchPage = lazy(() => import("./pages/KikUsernameSearch"));
+const SnapchatUsernameSearchPage = lazy(() => import("./pages/SnapchatUsernameSearch"));
+const RedditUsernameSearchPage = lazy(() => import("./pages/RedditUsernameSearch"));
 const DigitalFootprintScanPage = lazy(() => import("./pages/DigitalFootprintScan"));
 const PlaybooksHub = lazy(() => import("./pages/playbooks/PlaybooksHub"));
 const ExecutiveTravelCheck = lazy(() => import("./pages/playbooks/ExecutiveTravelCheck"));
@@ -840,6 +843,9 @@ function RouterContent() {
           <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
           <Route path="/discord-username-search" element={<DiscordUsernameSearchPage />} />
           <Route path="/onlyfans-username-search" element={<OnlyFansUsernameSearchPage />} />
+          <Route path="/kik-username-search" element={<KikUsernameSearchPage />} />
+          <Route path="/snapchat-username-search" element={<SnapchatUsernameSearchPage />} />
+          <Route path="/reddit-username-search" element={<RedditUsernameSearchPage />} />
           <Route path="/digital-footprint-scan" element={<DigitalFootprintScanPage />} />
           
            {/* Embeddable Widget */}
