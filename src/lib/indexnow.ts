@@ -169,6 +169,11 @@ export const INDEXNOW_URLS = [
   "/guides/monitor-online-exposure",
   "/guides/what-google-knows-about-you",
   "/guides/telegram-osint-search",
+  // Platform username search pages
+  "/dating-profile-lookup",
+  "/linkedin-username-search",
+  "/telegram-username-search",
+  "/youtube-username-search",
   // Blog (key posts)
   "/blog/digital-exposure-report-2026",
   "/blog/what-is-osint",
