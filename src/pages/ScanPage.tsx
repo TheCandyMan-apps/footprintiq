@@ -29,7 +29,8 @@ const ScanPage = () => {
     const initializeUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/auth?redirect=/scan");
+        const params = new URLSearchParams(window.location.search);
+        navigate(`/free-scan${params.toString() ? '?' + params.toString() : ''}`);
         return;
       }
       
@@ -69,7 +70,7 @@ const ScanPage = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
-        navigate("/auth?redirect=/scan");
+        navigate("/free-scan");
       } else {
         setUser(session.user);
       }

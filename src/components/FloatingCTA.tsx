@@ -19,7 +19,7 @@ export const FloatingCTA = () => {
     >
       <Button
         size="lg"
-        onClick={() => navigate('/auth')}
+        onClick={() => navigate('/free-scan')}
         className="group relative px-6 py-4 h-auto shadow-elevated hover:shadow-soft transition-all duration-200"
       >
         <div className="relative flex items-center gap-3">
