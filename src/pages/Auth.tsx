@@ -384,6 +384,10 @@ const Auth = () => {
                   <Mail className="w-4 h-4 mr-2" />
                   Continue with Google
                 </Button>
+                <Button type="button" variant="outline" className="w-full" onClick={handleAppleSignIn} disabled={loading}>
+                  <Apple className="w-4 h-4 mr-2" />
+                  Continue with Apple
+                </Button>
               </div>
 
               <div className="relative">
@@ -417,6 +421,10 @@ const Auth = () => {
                 <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
                   <Mail className="w-4 h-4 mr-2" />
                   Continue with Google
+                </Button>
+                <Button type="button" variant="outline" className="w-full" onClick={handleAppleSignIn} disabled={loading}>
+                  <Apple className="w-4 h-4 mr-2" />
+                  Continue with Apple
                 </Button>
               </div>
 
