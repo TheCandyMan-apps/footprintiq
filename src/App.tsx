@@ -395,6 +395,11 @@ const HowToCheckSomeonesUsernameHistory = lazy(() => import("./pages/HowToCheckS
 const HowToProtectYourDigitalIdentity = lazy(() => import("./pages/HowToProtectYourDigitalIdentity"));
 const RemoveYourselfFromDataBrokerSites = lazy(() => import("./pages/RemoveYourselfFromDataBrokerSites"));
 const InstagramSearchWithoutAccount = lazy(() => import("./pages/InstagramSearchWithoutAccount"));
+const DiscordLookupPage = lazy(() => import("./pages/DiscordLookup"));
+const InstagramUserSearchPage = lazy(() => import("./pages/InstagramUserSearch"));
+const InstagramUsernameCheckerPage = lazy(() => import("./pages/InstagramUsernameChecker"));
+const HowToSearchForPeopleOnInstagram = lazy(() => import("./pages/guides/HowToSearchForPeopleOnInstagram"));
+const SearchTikTokWithoutAccount = lazy(() => import("./pages/guides/SearchTikTokWithoutAccount"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -748,7 +753,9 @@ function RouterContent() {
              <Route path="/guides/remove-from-data-brokers" element={<RemoveFromDataBrokersGuideNew />} />
              <Route path="/guides/monitor-online-exposure" element={<MonitorOnlineExposure />} />
              <Route path="/guides/what-google-knows-about-you" element={<WhatGoogleKnowsAboutYou />} />
-             <Route path="/guides/telegram-osint-search" element={<TelegramOsintSearch />} />
+              <Route path="/guides/telegram-osint-search" element={<TelegramOsintSearch />} />
+              <Route path="/guides/how-to-search-for-people-on-instagram" element={<HowToSearchForPeopleOnInstagram />} />
+              <Route path="/guides/search-tiktok-without-account" element={<SearchTikTokWithoutAccount />} />
              <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
              <Route path="/best-osint-tools" element={<BestOsintTools />} />
@@ -855,7 +862,10 @@ function RouterContent() {
           <Route path="/ai-answers/instagram-username-osint" element={<AIAnswersInstagramUsernameOsint />} />
           <Route path="/how-username-reuse-exposes-you-online" element={<HowUsernameReuseExposesYouOnline />} />
           <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
-          <Route path="/discord-username-search" element={<DiscordUsernameSearchPage />} />
+           <Route path="/discord-username-search" element={<DiscordUsernameSearchPage />} />
+           <Route path="/discord-lookup" element={<DiscordLookupPage />} />
+           <Route path="/instagram-user-search" element={<InstagramUserSearchPage />} />
+           <Route path="/instagram-username-checker" element={<InstagramUsernameCheckerPage />} />
           <Route path="/onlyfans-username-search" element={<OnlyFansUsernameSearchPage />} />
           <Route path="/kik-username-search" element={<KikUsernameSearchPage />} />
           <Route path="/snapchat-username-search" element={<SnapchatUsernameSearchPage />} />
