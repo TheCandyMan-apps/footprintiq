@@ -400,6 +400,7 @@ const InstagramUserSearchPage = lazy(() => import("./pages/InstagramUserSearch")
 const InstagramUsernameCheckerPage = lazy(() => import("./pages/InstagramUsernameChecker"));
 const HowToSearchForPeopleOnInstagram = lazy(() => import("./pages/guides/HowToSearchForPeopleOnInstagram"));
 const SearchTikTokWithoutAccount = lazy(() => import("./pages/guides/SearchTikTokWithoutAccount"));
+const AIUsernameSearchPage = lazy(() => import("./pages/AIUsernameSearch"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -870,7 +871,8 @@ function RouterContent() {
           <Route path="/kik-username-search" element={<KikUsernameSearchPage />} />
           <Route path="/snapchat-username-search" element={<SnapchatUsernameSearchPage />} />
           <Route path="/reddit-username-search" element={<RedditUsernameSearchPage />} />
-          <Route path="/digital-footprint-scan" element={<DigitalFootprintScanPage />} />
+           <Route path="/digital-footprint-scan" element={<DigitalFootprintScanPage />} />
+           <Route path="/ai-username-search" element={<AIUsernameSearchPage />} />
           
            {/* Embeddable Widget */}
            <Route path="/embed/widget" element={<EmbedWidget />} />
