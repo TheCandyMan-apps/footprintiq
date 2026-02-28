@@ -15,6 +15,7 @@ import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
 import { SEO } from "@/components/SEO";
 import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
 import { logActivity } from "@/lib/activityLogger";
+import { lovable } from "@/integrations/lovable/index";
 
 const authSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
@@ -323,18 +324,28 @@ const Auth = () => {
   };
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    const {
-      error
-    } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}${getRedirectTarget()}`
-      }
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
     setLoading(false);
     if (error) {
       toast({
         title: "Google sign in failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setLoading(true);
+    const { error } = await lovable.auth.signInWithOAuth("apple", {
+      redirect_uri: window.location.origin,
+    });
+    setLoading(false);
+    if (error) {
+      toast({
+        title: "Apple sign in failed",
         description: error.message,
         variant: "destructive"
       });
