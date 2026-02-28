@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Mail, AlertCircle } from "lucide-react";
+import { Shield, Mail, AlertCircle, Apple } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 
@@ -15,6 +15,7 @@ import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
 import { SEO } from "@/components/SEO";
 import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
 import { logActivity } from "@/lib/activityLogger";
+import { lovable } from "@/integrations/lovable/index";
 
 const authSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
@@ -323,18 +324,28 @@ const Auth = () => {
   };
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    const {
-      error
-    } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}${getRedirectTarget()}`
-      }
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
     setLoading(false);
     if (error) {
       toast({
         title: "Google sign in failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setLoading(true);
+    const { error } = await lovable.auth.signInWithOAuth("apple", {
+      redirect_uri: window.location.origin,
+    });
+    setLoading(false);
+    if (error) {
+      toast({
+        title: "Apple sign in failed",
         description: error.message,
         variant: "destructive"
       });
@@ -373,6 +384,10 @@ const Auth = () => {
                   <Mail className="w-4 h-4 mr-2" />
                   Continue with Google
                 </Button>
+                <Button type="button" variant="outline" className="w-full" onClick={handleAppleSignIn} disabled={loading}>
+                  <Apple className="w-4 h-4 mr-2" />
+                  Continue with Apple
+                </Button>
               </div>
 
               <div className="relative">
@@ -406,6 +421,10 @@ const Auth = () => {
                 <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
                   <Mail className="w-4 h-4 mr-2" />
                   Continue with Google
+                </Button>
+                <Button type="button" variant="outline" className="w-full" onClick={handleAppleSignIn} disabled={loading}>
+                  <Apple className="w-4 h-4 mr-2" />
+                  Continue with Apple
                 </Button>
               </div>
 
