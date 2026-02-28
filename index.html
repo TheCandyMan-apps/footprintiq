@@ -384,15 +384,16 @@
           el.setAttribute('href',href);
         }
         var p = (window.location.pathname || '/').replace(/\/+$/,'') || '/';
+        var url=B+p;
+        // Always set canonical + og:url to the current page URL
+        setLink('canonical',url);
+        setMeta('og:url',url,true);
         var m=R[p];
         if(m){
-          var url=B+p;
           document.title=m.t;
           setMeta('description',m.d,false);
-          setLink('canonical',url);
           setMeta('og:title',m.t,true);
           setMeta('og:description',m.d,true);
-          setMeta('og:url',url,true);
           setMeta('og:type',m.og||'website',true);
           setMeta('og:site_name','FootprintIQ',true);
           setMeta('twitter:title',m.t,false);
