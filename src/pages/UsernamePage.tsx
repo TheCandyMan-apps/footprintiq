@@ -193,7 +193,8 @@ export default function UsernamePage() {
               Free social media username search tools like FootprintIQ check over 500 platforms 
               simultaneously. We search major social networks like Twitter, Instagram, and TikTok. 
               We also check gaming platforms like Steam and Discord, developer sites like GitHub and 
-              Stack Overflow, and hundreds of forums and niche communities.
+              Stack Overflow, and hundreds of forums and niche communities. For platform-specific analysis, try our{" "}
+              <Link to="/instagram-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Instagram username search</Link> to check exposure on one of the most widely indexed social networks.
             </p>
 
             <h3>Why Find People by Username?</h3>

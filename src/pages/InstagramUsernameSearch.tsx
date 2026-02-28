@@ -25,6 +25,10 @@ const FAQS = [
     answer: "If you reuse the same username across platforms, it may be possible to identify linked accounts through publicly indexed data. A cross-platform username search reveals these connections, helping you understand and reduce your exposure.",
   },
   {
+    question: "What is an Instagram user lookup and how does it work?",
+    answer: "An Instagram user lookup searches publicly indexed data to determine whether a specific username exists on Instagram and where else it appears online. FootprintIQ cross-references the handle against 500+ platforms, breach databases, and data broker listings to map your full exposure — without accessing private content or bypassing authentication.",
+  },
+  {
     question: "Is Instagram username searching legal?",
     answer: "Yes. Analysing publicly available information — such as whether a username exists on a platform — is legal. FootprintIQ only accesses public data and does not bypass privacy settings or access protected content.",
   },
