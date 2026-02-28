@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Mail, AlertCircle } from "lucide-react";
+import { Shield, Mail, AlertCircle, Apple } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 
