@@ -213,7 +213,9 @@ export default function DiscordUsernameSearch() {
               This helps answer the question: <em>"What can someone find about me using just my
               username?"</em> The same methodology applies to other platforms — for example, you can also run a{" "}
               <Link to="/kik-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Kik username search</Link>{" "}
-              to check exposure on messaging apps.
+              to check exposure on messaging apps, or an{" "}
+              <Link to="/instagram-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Instagram username search</Link>{" "}
+              to assess visibility on one of the most widely indexed social platforms.
             </p>
 
             <h2>Why Check Your Digital Footprint?</h2>
