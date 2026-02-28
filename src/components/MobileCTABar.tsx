@@ -48,7 +48,7 @@ export const MobileCTABar = () => {
           <Button
             size="lg"
             className="rounded-full px-8 touch-target min-h-[44px] shadow-glow"
-            onClick={() => navigate('/scan')}
+            onClick={() => navigate('/free-scan')}
           >
             <Plus className="w-5 h-5 mr-2" />
             New Scan
