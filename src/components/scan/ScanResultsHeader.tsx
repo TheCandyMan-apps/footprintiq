@@ -1,12 +1,13 @@
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Clock, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { Clock, CheckCircle2, Loader2, XCircle, Timer } from 'lucide-react';
+import { formatDistanceStrict } from 'date-fns';
 
 interface ScanResultsHeaderProps {
   displayLabel: string;
   targetTypeLabel: string;
   status: 'running' | 'completed' | 'failed';
   startedAt?: string | null;
+  completedAt?: string | null;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
@@ -15,22 +16,33 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ComponentType<{
   failed: { label: 'Failed', icon: XCircle, className: 'bg-destructive/15 text-destructive border-destructive/30' },
 };
 
-export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, startedAt }: ScanResultsHeaderProps) {
+export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, startedAt, completedAt }: ScanResultsHeaderProps) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.completed;
   const StatusIcon = cfg.icon;
 
+  const duration = startedAt
+    ? formatDistanceStrict(
+        new Date(completedAt || Date.now()),
+        new Date(startedAt)
+      )
+    : null;
+
   return (
-    <Card disableHover className="border-border/40 bg-card/80">
-      <CardContent className="py-3 px-4 sm:px-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Scan Results for:</span>
-          <Badge variant="secondary" className="text-sm font-semibold px-2.5 py-0.5 truncate max-w-[260px]">
-            {displayLabel}
-          </Badge>
-          <span className="text-xs text-muted-foreground">({targetTypeLabel})</span>
+    <div className="rounded-xl border border-border/50 bg-muted/30 px-4 sm:px-6 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        {/* Left column */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="space-y-0.5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Scan Results</p>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-bold text-foreground truncate max-w-[280px]">{displayLabel}</span>
+              <span className="text-[11px] text-muted-foreground">({targetTypeLabel})</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 ml-auto">
+        {/* Right column */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           <Badge variant="outline" className={`gap-1 text-[11px] h-5 px-2 font-medium ${cfg.className}`}>
             <StatusIcon className={`h-3 w-3 ${status === 'running' ? 'animate-spin' : ''}`} />
             {cfg.label}
@@ -38,11 +50,17 @@ export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, start
           {startedAt && (
             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Clock className="h-3 w-3" />
-              Started: {new Date(startedAt).toLocaleString()}
+              {new Date(startedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          )}
+          {duration && (
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Timer className="h-3 w-3" />
+              {duration}
             </span>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
