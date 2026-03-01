@@ -269,5 +269,6 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
         </Tabs>
       </Card>
     </div>
+    </InvestigationProvider>
   );
 }
