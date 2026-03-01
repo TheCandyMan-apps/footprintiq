@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Calendar, Clock, User, Shield, 
   Activity, Eye, Lock, Info, ChevronDown, ChevronUp,
-  Download, Filter
+  Download, Filter, MessageCircle
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
 import { ScanResult } from '@/hooks/useScanResultsData';
@@ -13,7 +13,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { 
+import { useTelegramFindings } from '@/hooks/useTelegramFindings';
+import { processWhatsAppSignals, type WhatsAppAdapterInput } from '@/lib/messaging/whatsapp_signal_adapter';
+import { flags } from '@/lib/featureFlags';
+import {
   RESULTS_SPACING, 
   RESULTS_TYPOGRAPHY, 
   RESULTS_BORDERS,
@@ -28,7 +31,7 @@ interface TimelineTabProps {
   isPremium?: boolean;
 }
 
-type TimelineEventType = 'account_created' | 'last_activity' | 'breach_detected' | 'profile_updated' | 'provider_event';
+type TimelineEventType = 'account_created' | 'last_activity' | 'breach_detected' | 'profile_updated' | 'provider_event' | 'messaging';
 
 interface TimelineEvent {
   id: string;
@@ -67,6 +70,11 @@ const EVENT_CONFIG: Record<TimelineEventType, { icon: typeof Calendar; colors: {
     icon: Clock,
     colors: { bg: 'bg-slate-500/10', text: 'text-slate-600', border: 'border-slate-500/20' },
     label: 'Provider Event'
+  },
+  messaging: {
+    icon: MessageCircle,
+    colors: { bg: 'bg-indigo-500/10', text: 'text-indigo-600', border: 'border-indigo-500/20' },
+    label: 'Messaging Signal'
   }
 };
 
@@ -347,7 +355,8 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
       last_activity: 0,
       breach_detected: 0,
       profile_updated: 0,
-      provider_event: 0
+      provider_event: 0,
+      messaging: 0
     };
     allEvents.forEach(e => counts[e.type]++);
     return counts;
