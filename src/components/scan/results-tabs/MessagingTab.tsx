@@ -49,6 +49,43 @@ export default function MessagingTab({
 
   const showWhatsApp = isPhoneTarget && flags.whatsappBasic;
 
+  // ── Score data for combined summary ──
+  const { findings: telegramFindings } = useTelegramFindings(scanId);
+
+  const telegramScore = useMemo<MessagingScoreInput | null>(() => {
+    if (!telegramFindings.length) return null;
+    // Extract risk score from activity_intelligence finding
+    let maxRisk = 0;
+    let totalSignals = 0;
+    const confidences: number[] = [];
+    for (const f of telegramFindings) {
+      totalSignals++;
+      const risk = Number(f.meta?.risk_score ?? f.meta?.risk ?? 0);
+      if (risk > maxRisk) maxRisk = risk;
+      const conf = Number(f.meta?.confidence ?? 0.5);
+      confidences.push(conf);
+    }
+    const avgConf = confidences.length ? confidences.reduce((a, b) => a + b, 0) / confidences.length : 0;
+    return { label: "Telegram", riskScore: maxRisk, confidence: avgConf, signalCount: totalSignals };
+  }, [telegramFindings]);
+
+  const whatsAppScore = useMemo<MessagingScoreInput | null>(() => {
+    if (!showWhatsApp || !phoneNumber) return null;
+    const input: WhatsAppAdapterInput = { phoneNumber };
+    const bundle = processWhatsAppSignals(input);
+    if (!bundle.signals.length && bundle.riskContribution === 0) return null;
+    return {
+      label: "WhatsApp",
+      riskScore: bundle.riskContribution,
+      confidence: bundle.overallConfidence,
+      signalCount: bundle.signals.length,
+    };
+  }, [showWhatsApp, phoneNumber]);
+
+  const combinedScores = useMemo<MessagingScoreInput[]>(() => {
+    return [telegramScore, whatsAppScore].filter(Boolean) as MessagingScoreInput[];
+  }, [telegramScore, whatsAppScore]);
+
   // Read initial messenger from URL query param
   const messengerParam = searchParams.get("messenger") as MessengerTab | null;
   const resolveInitial = (): MessengerTab => {
