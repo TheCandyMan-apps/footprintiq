@@ -3,7 +3,7 @@
  * for Telegram, WhatsApp, and planned messengers (Discord, Threads).
  */
 
-import { lazy, Suspense, useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -58,16 +58,24 @@ export default function MessagingTab({
   const [activeMessenger, setActiveMessenger] = useState<MessengerTab>(resolveInitial);
 
   // Sync messenger param to URL
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [transitioning, setTransitioning] = useState(false);
+
   const handleMessengerChange = (value: string) => {
     const m = value as MessengerTab;
-    setActiveMessenger(m);
-    const next = new URLSearchParams(searchParams);
-    if (m === "telegram") {
-      next.delete("messenger");
-    } else {
-      next.set("messenger", m);
-    }
-    setSearchParams(next, { replace: true });
+    setTransitioning(true);
+    setTimeout(() => {
+      setActiveMessenger(m);
+      const next = new URLSearchParams(searchParams);
+      if (m === "telegram") {
+        next.delete("messenger");
+      } else {
+        next.set("messenger", m);
+      }
+      setSearchParams(next, { replace: true });
+      contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTransitioning(false);
+    }, 150);
   };
 
   // If whatsapp tab is active but scan isn't phone, fall back
@@ -151,22 +159,28 @@ export default function MessagingTab({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="telegram" className="mt-4">
-          <Suspense fallback={<TabSkeleton />}>
-            <TelegramTab scanId={scanId} isPro={isPro} />
-          </Suspense>
-        </TabsContent>
-
-        {showWhatsApp && (
-          <TabsContent value="whatsapp" className="mt-4">
-            <WhatsAppTab
-              scanId={scanId}
-              isPro={isPro}
-              phoneNumber={phoneNumber}
-              results={results}
-            />
+        <div
+          ref={contentRef}
+          className="transition-opacity duration-150 ease-in-out"
+          style={{ opacity: transitioning ? 0 : 1 }}
+        >
+          <TabsContent value="telegram" className="mt-4">
+            <Suspense fallback={<TabSkeleton />}>
+              <TelegramTab scanId={scanId} isPro={isPro} />
+            </Suspense>
           </TabsContent>
-        )}
+
+          {showWhatsApp && (
+            <TabsContent value="whatsapp" className="mt-4">
+              <WhatsAppTab
+                scanId={scanId}
+                isPro={isPro}
+                phoneNumber={phoneNumber}
+                results={results}
+              />
+            </TabsContent>
+          )}
+        </div>
       </Tabs>
     </div>
   );
