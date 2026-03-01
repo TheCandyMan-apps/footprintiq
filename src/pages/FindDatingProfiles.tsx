@@ -79,7 +79,7 @@ const FindDatingProfiles = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
-        <title>Find Dating Profiles by Username or Email | Free Search Tool</title>
+        <title>Find Dating Profiles by Username or Email – Free Search Tool | FootprintIQ</title>
         <meta name="description" content="Search for dating profiles by username or email using ethical OSINT methods. Discover dating platform exposure with FootprintIQ's privacy-first scanner." />
         <link rel="canonical" href={`${BASE}/find-dating-profiles`} />
         <meta property="og:title" content="Find Dating Profiles by Username or Email | Free Search Tool" />

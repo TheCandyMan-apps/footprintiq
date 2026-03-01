@@ -157,7 +157,7 @@ const CanSomeoneTrackMeOnline = () => {
   return (
     <>
       <Helmet>
-        <title>Can Someone Track Me Online? What's Actually Possible in 2026</title>
+        <title>Can Someone Track Me Online? What's Actually Possible in 2026 | FootprintIQ</title>
         <meta name="description" content="Understand what's actually possible when it comes to online tracking in 2026. Separate myth from reality and learn practical steps to reduce your digital exposure." />
         <link rel="canonical" href={PAGE_URL} />
         <meta property="og:type" content="article" />
@@ -193,7 +193,7 @@ const CanSomeoneTrackMeOnline = () => {
               <span className="text-sm font-medium text-accent">Privacy Education Guide</span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-              Can Someone Track Me Online? What's Actually Possible
+              Can Someone Track Me Online?
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
               The internet is full of alarming claims about online tracking — some accurate, many exaggerated. This guide separates fact from fiction, explaining exactly what public data can reveal about you, what requires illegal access, and what practical steps you can take to reduce your exposure. No fear-mongering. Just clear, evidence-based privacy education.

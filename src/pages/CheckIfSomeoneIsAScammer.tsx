@@ -139,7 +139,7 @@ const CheckIfSomeoneIsAScammer = () => {
   return (
     <>
       <Helmet>
-        <title>How to Check If Someone Is a Scammer (Username & Profile Analysis)</title>
+        <title>How to Check If Someone Is a Scammer – Username & Profile Analysis | FootprintIQ</title>
         <meta
           name="description"
           content="Learn how to check if someone is a scammer using ethical OSINT techniques. Identify red flags in usernames, profiles, and online behaviour to protect yourself from fraud."

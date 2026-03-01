@@ -123,7 +123,7 @@ const UsernameReuseRisk = () => {
   return (
     <>
       <Helmet>
-        <title>Username Reuse Risk – Why Using the Same Username Is Dangerous</title>
+        <title>Username Reuse Risk – Why Using the Same Username Is Dangerous | FootprintIQ</title>
         <meta
           name="description"
           content="Reusing the same username across platforms can expose your digital footprint. Learn the security risks and how to check your online exposure."
@@ -177,7 +177,7 @@ const UsernameReuseRisk = () => {
                 Security Awareness
               </div>
               <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
-                Username Reuse Risk: Why Using the Same Username Is Dangerous
+                Username Reuse Risk
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
                 Using the same username across multiple platforms may seem convenient, but it

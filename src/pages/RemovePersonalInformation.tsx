@@ -128,7 +128,7 @@ const RemovePersonalInformation = () => {
   return (
     <>
       <Helmet>
-        <title>How to Remove Personal Information from the Internet (2026 Guide)</title>
+        <title>How to Remove Personal Information from the Internet – 2026 Guide | FootprintIQ</title>
         <meta
           name="description"
           content="Learn how to remove personal information from Google, social media, and data brokers. Step-by-step privacy protection guide."

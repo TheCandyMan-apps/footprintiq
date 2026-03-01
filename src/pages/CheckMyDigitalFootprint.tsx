@@ -171,7 +171,7 @@ const CheckMyDigitalFootprint = () => {
   return (
     <>
       <Helmet>
-        <title>Check My Digital Footprint (Free Exposure Scan 2026 Guide)</title>
+        <title>Check My Digital Footprint – Free Exposure Scan 2026 Guide | FootprintIQ</title>
         <meta
           name="description"
           content="Check your digital footprint with a free exposure scan. See what personal data is publicly visible, understand how identity correlation works, and learn how to reduce your online risk."
