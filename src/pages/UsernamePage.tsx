@@ -4,6 +4,7 @@ import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
+import { DiscoveryToProofSection } from "@/components/DiscoveryToProofSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -795,6 +796,9 @@ export default function UsernamePage() {
             </div>
           </div>
         </section>
+
+        {/* Discovery to Proof */}
+        <DiscoveryToProofSection />
 
         {/* Related Tools Section */}
         <section className="py-12 px-6">

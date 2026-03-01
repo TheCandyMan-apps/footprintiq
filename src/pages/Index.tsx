@@ -29,6 +29,7 @@ import { ForProfessionals } from "@/components/ForProfessionals";
 import { ExposureIntelligenceSection } from "@/components/ExposureIntelligenceSection";
 import { EverydayUseCases } from "@/components/EverydayUseCases";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
+import { DiscoveryToProofSection } from "@/components/DiscoveryToProofSection";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -225,6 +226,10 @@ export default function Home() {
       
       <div className="below-fold">
         <FinalCTA />
+      </div>
+
+      <div className="below-fold">
+        <DiscoveryToProofSection />
       </div>
       
       <div className="below-fold">
