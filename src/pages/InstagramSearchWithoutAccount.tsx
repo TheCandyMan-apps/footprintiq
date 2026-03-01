@@ -73,7 +73,7 @@ export default function InstagramSearchWithoutAccount() {
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-sm font-medium text-primary mb-3 tracking-wide uppercase">2026 Guide</p>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
-              Search Instagram Without an Account – What You Can and Can't See
+              Search Instagram Without an Account
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-4">
               Many users ask: <em>"Can I search Instagram without an account?"</em>
