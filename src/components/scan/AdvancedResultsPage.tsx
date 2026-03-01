@@ -697,7 +697,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
 
                 <TabsContent value="whatsapp" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
-                    <WhatsAppTab scanId={jobId} isPro={true} phoneNumber={job?.phone || undefined} />
+                    <WhatsAppTab scanId={jobId} isPro={true} phoneNumber={job?.target || undefined} />
                   </Suspense>
                 </TabsContent>
 
