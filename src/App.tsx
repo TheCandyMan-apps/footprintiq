@@ -401,6 +401,7 @@ const InstagramUsernameCheckerPage = lazy(() => import("./pages/InstagramUsernam
 const HowToSearchForPeopleOnInstagram = lazy(() => import("./pages/guides/HowToSearchForPeopleOnInstagram"));
 const SearchTikTokWithoutAccount = lazy(() => import("./pages/guides/SearchTikTokWithoutAccount"));
 const AIUsernameSearchPage = lazy(() => import("./pages/AIUsernameSearch"));
+const TrustSafety = lazy(() => import("./pages/TrustSafety"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -660,7 +661,8 @@ function RouterContent() {
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/workspaces" element={<Workspaces />} />
           <Route path="/workspace-management" element={<WorkspaceManagement />} />
-          <Route path="/trust" element={<Trust />} />
+           <Route path="/trust" element={<Trust />} />
+           <Route path="/trust-safety" element={<TrustSafety />} />
           <Route path="/how-we-source-data" element={<HowWeSourceData />} />
           <Route path="/graph" element={<Graph />} />
           <Route path="/search" element={<Search />} />
