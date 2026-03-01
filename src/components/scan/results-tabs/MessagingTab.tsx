@@ -154,6 +154,11 @@ export default function MessagingTab({
         </Badge>
       </div>
 
+      {/* Combined exposure summary */}
+      {combinedScores.length > 0 && (
+        <MessagingExposureSummary scores={combinedScores} />
+      )}
+
       <Tabs value={activeMessenger} onValueChange={handleMessengerChange}>
         <TabsList className="h-auto flex-wrap justify-start gap-1 bg-muted/50 p-1">
           <TabsTrigger
