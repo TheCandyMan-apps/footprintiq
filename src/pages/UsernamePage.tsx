@@ -900,6 +900,7 @@ export default function UsernamePage() {
           </div>
         </section>
       </main>
+      <ResponsibleUsePledge />
       <Footer />
     </>
   );

@@ -405,6 +405,7 @@ export default function DigitalFootprintScan() {
           </div>
         </section>
       </main>
+      <ResponsibleUsePledge />
       <Footer />
     </>
   );

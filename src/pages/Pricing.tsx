@@ -796,6 +796,7 @@ const PricingPage = () => {
           </div>
         </section>
 
+        <ResponsibleUsePledge />
         <Footer />
       </div>
     </>

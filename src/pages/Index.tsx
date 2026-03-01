@@ -242,6 +242,7 @@ export default function Home() {
         </div>
       </div>
       
+      <ResponsibleUsePledge />
       <FloatingCTA />
       <ScrollToTop />
       <Footer />
