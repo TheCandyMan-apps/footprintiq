@@ -9,10 +9,9 @@ import {
   MapPin,
   Shield,
   ClipboardList,
-  Send,
   MessageCircle,
 } from 'lucide-react';
-import { flags } from '@/lib/featureFlags';
+
 import { TabCounts } from '@/hooks/useScanResultsData';
 import { ResultsToolbar } from './ResultsToolbar';
 
@@ -114,24 +113,14 @@ export function ResultsTabBar({
           )}
 
           <TabsTrigger 
-            value="telegram" 
+            value="messaging" 
             className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
           >
-            <Send className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Telegram</span>
+            <MessageCircle className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Messaging</span>
           </TabsTrigger>
 
-          {flags.whatsappBasic && (
-            <TabsTrigger 
-              value="whatsapp" 
-              className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">WhatsApp</span>
-            </TabsTrigger>
-          )}
-
-          <TabsTrigger 
+          <TabsTrigger
             value="remediation" 
             className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
           >

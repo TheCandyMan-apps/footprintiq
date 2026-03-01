@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useScanResultsData, ScanJob, ScanResult } from "@/hooks/useScanResultsData";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ResultsTabBar } from "./ResultsTabBar";
-import { WhatsAppTab } from "./results-tabs/WhatsAppTab";
+
 import { InvestigationProvider } from "@/contexts/InvestigationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { flags } from "@/lib/featureFlags";
@@ -25,7 +25,7 @@ const ConnectionsTab = lazy(() => import("./results-tabs/ConnectionsTab"));
 const TimelineTab = lazy(() => import("./results-tabs/TimelineTab"));
 const BreachesTab = lazy(() => import("./results-tabs/BreachesTab"));
 const MapTab = lazy(() => import("./results-tabs/MapTab"));
-const TelegramTab = lazy(() => import("./results-tabs/TelegramTab"));
+const MessagingTab = lazy(() => import("./results-tabs/MessagingTab"));
 const RemediationPlanTab = lazy(() => import("./results-tabs/RemediationPlanTab"));
 const PrivacyCenterTab = lazy(() => import("./results-tabs/PrivacyCenterTab"));
 
@@ -47,8 +47,7 @@ const VALID_TABS = [
   "timeline",
   "breaches",
   "map",
-  "telegram",
-  "whatsapp",
+  "messaging",
   "remediation",
   "privacy",
 ] as const;
@@ -66,10 +65,24 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
   const [jobLoading, setJobLoading] = useState(true);
   const { toast } = useToast();
 
-  // Get initial tab from URL or default to 'summary'
-  const tabFromUrl = searchParams.get("tab") as TabValue | null;
-  const initialTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : "summary";
+  // Deep-link compat: redirect telegram/whatsapp → messaging
+  const tabFromUrl = searchParams.get("tab");
+  const initialTab = useMemo(() => {
+    if (tabFromUrl === "telegram" || tabFromUrl === "whatsapp") return "messaging" as TabValue;
+    if (tabFromUrl && (VALID_TABS as readonly string[]).includes(tabFromUrl)) return tabFromUrl as TabValue;
+    return "summary" as TabValue;
+  }, []);
   const [activeTab, setActiveTab] = useState<TabValue>(initialTab);
+
+  // On mount, rewrite legacy deep-links
+  useEffect(() => {
+    if (tabFromUrl === "telegram" || tabFromUrl === "whatsapp") {
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", "messaging");
+      next.set("messenger", tabFromUrl);
+      setSearchParams(next, { replace: true });
+    }
+  }, []);
 
   // Phone-only support: WhatsApp Intelligence should only appear for phone targets
   const normalizedTarget = typeof job?.target === "string" ? job.target.replace(/\s+/g, "") : "";
@@ -91,14 +104,6 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
     [searchParams, setSearchParams],
   );
 
-  // If user navigates directly to WhatsApp tab but this scan isn't a phone scan, bounce to Summary.
-  useEffect(() => {
-    if (activeTab === "whatsapp" && !isPhoneTarget) {
-      setActiveTab("summary");
-      searchParams.delete("tab");
-      setSearchParams(searchParams, { replace: true });
-    }
-  }, [activeTab, isPhoneTarget, searchParams, setSearchParams]);
 
   // Fetch scan job from database
   useEffect(() => {
@@ -240,19 +245,17 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
               </TabsContent>
             )}
 
-            <TabsContent value="telegram" className="mt-0">
+            <TabsContent value="messaging" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <TelegramTab scanId={jobId} isPro={true} />
+                <MessagingTab
+                  scanId={jobId}
+                  isPro={true}
+                  phoneNumber={phoneNumber}
+                  isPhoneTarget={isPhoneTarget}
+                  results={results}
+                />
               </Suspense>
             </TabsContent>
-
-            {isPhoneTarget && (
-              <TabsContent value="whatsapp" className="mt-0">
-                <Suspense fallback={<TabSkeleton />}>
-                  <WhatsAppTab scanId={jobId} isPro={true} phoneNumber={phoneNumber} results={results} />
-                </Suspense>
-              </TabsContent>
-            )}
 
             <TabsContent value="remediation" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
