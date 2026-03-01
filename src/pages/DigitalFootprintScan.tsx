@@ -3,6 +3,7 @@ import { IntentAlignmentBanner } from "@/components/seo/IntentAlignmentBanner";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -405,6 +406,7 @@ export default function DigitalFootprintScan() {
           </div>
         </section>
       </main>
+      <ResponsibleUsePledge />
       <Footer />
     </>
   );
