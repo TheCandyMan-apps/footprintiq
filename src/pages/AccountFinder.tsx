@@ -159,7 +159,7 @@ const AccountFinder = () => {
                 </div>
 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-                  Account Finder: Discover Public Online Accounts by Username
+                  Account Finder
                 </h1>
 
                 <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto">
