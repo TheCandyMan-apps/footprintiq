@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useScanResultsData, ScanJob, ScanResult } from "@/hooks/useScanResultsData";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ResultsTabBar } from "./ResultsTabBar";
+import { ScanResultsHeader } from "./ScanResultsHeader";
 
 import { InvestigationProvider } from "@/contexts/InvestigationContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -176,15 +177,28 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
     );
   }
 
+  const displayLabel = job?.target || job?.username || '';
+  const targetTypeLabel = isPhoneTarget ? 'Phone' : job?.scan_type === 'email' ? 'Email' : job?.scan_type === 'domain' ? 'Domain' : 'Username';
+  const scanStatus = job?.status === 'running' ? 'running' as const : job?.status === 'failed' ? 'failed' as const : 'completed' as const;
+  const messagingCount = 1 + (isPhoneTarget && flags.whatsappBasic ? 1 : 0);
+
   return (
     <InvestigationProvider scanId={jobId}>
     <div className="space-y-4">
+      <ScanResultsHeader
+        displayLabel={displayLabel}
+        targetTypeLabel={targetTypeLabel}
+        status={scanStatus}
+        startedAt={job?.created_at}
+      />
+
       <Card className="p-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <ResultsTabBar
             tabCounts={tabCounts}
             hasGeoData={hasGeoData}
             showTimeline={showTimeline}
+            messagingCount={messagingCount}
             onNewScan={handleNewScan}
             actionsDisabled={results.length === 0}
           />
