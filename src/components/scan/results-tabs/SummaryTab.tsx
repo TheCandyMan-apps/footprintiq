@@ -2,7 +2,7 @@ import { useMemo, lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock } from 'lucide-react';
+import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
@@ -29,6 +29,8 @@ import { IdentityStrengthScore } from '@/components/intelligence/IdentityStrengt
 import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniquenessScore';
 import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterMap';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useMessagingScores } from '@/hooks/useMessagingScores';
+import { cn } from '@/lib/utils';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
@@ -236,6 +238,15 @@ export function SummaryTab({
   // Check if any buckets have data
   const hasBucketData = Object.values(buckets).some(b => b.totalCount > 0);
 
+  // Messaging exposure scores
+  const isPhoneTarget = scanType === 'phone';
+  const phoneNumber = isPhoneTarget ? (job?.target || job?.username) : undefined;
+  const { combined: messagingCombined, hasData: hasMessagingData } = useMessagingScores({
+    scanId: jobId,
+    phoneNumber,
+    isPhoneTarget,
+  });
+
   // Render narrative-first layout for Free users
   if (!isFullAccess) {
     return (
@@ -372,6 +383,37 @@ export function SummaryTab({
             <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
               <FootprintClusterMap scanId={jobId} />
             </ErrorBoundary>
+          </div>
+        )}
+
+        {/* Messaging Exposure Summary */}
+        {hasMessagingData && messagingCombined && (
+          <div className="rounded-lg border border-border/30 bg-card p-3 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-foreground">Messaging Exposure</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className={cn(
+                "text-sm font-bold tabular-nums",
+                messagingCombined.risk >= 60 ? "text-destructive" :
+                messagingCombined.risk >= 30 ? "text-amber-500 dark:text-amber-400" :
+                "text-green-600 dark:text-green-400"
+              )}>
+                {messagingCombined.risk}/100
+              </span>
+              <Badge variant="outline" className={cn(
+                "text-[10px] h-4 px-1.5",
+                messagingCombined.risk >= 60 ? "border-destructive/30 text-destructive" :
+                messagingCombined.risk >= 30 ? "border-amber-500/30 text-amber-500" :
+                "border-green-500/30 text-green-600 dark:text-green-400"
+              )}>
+                {messagingCombined.risk >= 60 ? "Elevated" : messagingCombined.risk >= 30 ? "Moderate" : "Low"}
+              </Badge>
+              <span className="text-[11px] text-muted-foreground">
+                {messagingCombined.platformCount} platform{messagingCombined.platformCount !== 1 ? "s" : ""} detected
+              </span>
+            </div>
           </div>
         )}
 
