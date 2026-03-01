@@ -94,6 +94,9 @@ const TrustSafety = () => {
           </div>
         </section>
 
+        {/* Category comparison */}
+        <CategoryComparisonStrip />
+
         {/* 1. Privacy-first by design */}
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
