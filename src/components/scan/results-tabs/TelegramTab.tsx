@@ -939,51 +939,6 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
   return (
     <div className="space-y-6">
-      {/* ── Introduction ───────────────────────────────────────── */}
-      <div className="space-y-1.5">
-        <h2 className="text-base font-semibold text-foreground tracking-tight">Messaging Intelligence</h2>
-        <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
-          Understand how your identity appears across public messaging platforms. Analyse visible associations, channel participation, and interaction patterns using publicly accessible data.
-        </p>
-      </div>
-
-      {/* ── Provider Selector ──────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-1 flex-wrap">
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-background shadow-sm border border-border/50 text-foreground transition-colors"
-            disabled
-          >
-            <Send className="h-3 w-3" />
-            Telegram
-            <Badge variant="outline" className="ml-1 text-[9px] px-1.5 py-0 h-4 border-primary/30 text-primary font-medium">Active</Badge>
-          </button>
-          <TooltipProvider delayDuration={200}>
-            {[
-              { icon: MessageSquare, label: 'Discord', status: 'Planned', tooltip: 'Public server and channel analysis — on the roadmap.' },
-              { icon: Hash, label: 'X Threads', status: 'Planned', tooltip: 'Public thread and reply-chain analysis — on the roadmap.' },
-              { icon: Phone, label: 'WhatsApp', status: 'Coming Soon', tooltip: 'Public group discovery and metadata analysis — coming soon.' },
-            ].map(({ icon: Icon, label, status, tooltip }) => (
-              <Tooltip key={label}>
-                <TooltipTrigger asChild>
-                  <button
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/60 cursor-default transition-colors"
-                    disabled
-                  >
-                    <Icon className="h-3 w-3" />
-                    {label}
-                    <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground/50 font-medium leading-none">{status}</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs max-w-[220px]">
-                  {tooltip}
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </TooltipProvider>
-        </div>
-      </div>
-
       {/* ── Provider Header ────────────────────────────────────── */}
       <div className="flex items-center gap-2.5">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">

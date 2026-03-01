@@ -19,6 +19,7 @@ interface ResultsTabBarProps {
   tabCounts: TabCounts;
   hasGeoData: boolean;
   showTimeline?: boolean;
+  messagingCount?: number;
   onExportJSON?: () => void;
   onExportCSV?: () => void;
   onExportPDF?: () => void;
