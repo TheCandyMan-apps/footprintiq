@@ -102,18 +102,15 @@ const breadcrumbSchema = {
 export default function DataLifecycle() {
   return (
     <>
-      <Helmet>
-        <title>Data Lifecycle — How FootprintIQ Handles Your Data</title>
-        <meta
-          name="description"
-          content="See exactly how FootprintIQ collects, processes, retains, and deletes your data. Plain-English summary, visual lifecycle diagram, and FAQ."
-        />
-        <link rel="canonical" href="https://footprintiq.lovable.app/data-lifecycle" />
-      </Helmet>
+      <SEO
+        title="Data Lifecycle — How FootprintIQ Handles Your Data"
+        description="See exactly how FootprintIQ collects, processes, retains, and deletes your data. Plain-English summary, visual lifecycle diagram, and FAQ."
+        canonical="https://footprintiq.lovable.app/data-lifecycle"
+      />
       <JsonLd data={faqSchema} />
       <JsonLd data={breadcrumbSchema} />
 
-      <Navbar />
+      <Header />
 
       <main className="min-h-screen bg-background text-foreground">
         {/* Hero */}
