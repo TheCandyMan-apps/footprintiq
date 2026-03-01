@@ -3,27 +3,20 @@
  *
  * Full-featured results page for Pro/Business/Admin users.
  * This component is NEVER mounted for Free users.
- *
- * Features:
- * - Full tabbed interface (Summary, Accounts, Connections, Timeline, Breaches, Map)
- * - All forensic analysis tools
- * - Export capabilities
- * - Investigation context
  */
 
-import { useEffect, useState, useRef, lazy, Suspense, useCallback, useMemo } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useScanJob } from "@/hooks/useScanJob";
-import { useScanResultsData } from "@/hooks/useScanResultsData";
-import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useScanResultsData, ScanJob, ScanResult } from "@/hooks/useScanResultsData";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { ResultsTabBar } from "./ResultsTabBar";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import type { Finding } from "@/types/findings";
-import type { ScanJob } from "@/types/scan";
 import { WhatsAppTab } from "./results-tabs/WhatsAppTab";
+import { supabase } from "@/integrations/supabase/client";
+import { flags } from "@/lib/featureFlags";
 
 const SummaryTab = lazy(() => import("./results-tabs/SummaryTab"));
 const AccountsTab = lazy(() => import("./results-tabs/AccountsTab"));
@@ -32,7 +25,7 @@ const TimelineTab = lazy(() => import("./results-tabs/TimelineTab"));
 const BreachesTab = lazy(() => import("./results-tabs/BreachesTab"));
 const MapTab = lazy(() => import("./results-tabs/MapTab"));
 const TelegramTab = lazy(() => import("./results-tabs/TelegramTab"));
-const RemediationTab = lazy(() => import("./results-tabs/RemediationTab"));
+const RemediationPlanTab = lazy(() => import("./results-tabs/RemediationPlanTab"));
 const PrivacyCenterTab = lazy(() => import("./results-tabs/PrivacyCenterTab"));
 
 const TabSkeleton = () => (
@@ -60,36 +53,16 @@ const VALID_TABS = [
 ] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
-/** Helper: convert results to Finding[] for score calculators */
-function resultsToFindings(results: any[]): Finding[] {
-  return results.map((r) => ({
-    id: r.id || "",
-    type:
-      r.kind === "profile_presence"
-        ? "account"
-        : r.kind === "breach"
-          ? "breach"
-          : r.kind === "relationship"
-            ? "connection"
-            : "other",
-    title: r.title || r.platform || r.breach_name || "Finding",
-    severity: r.severity || "low",
-    confidence: r.confidence || 0.5,
-    source: r.source || r.provider || "unknown",
-    url: r.url,
-    observedAt: r.observed_at || r.created_at || new Date().toISOString(),
-    metadata: r.metadata || {},
-  }));
+interface AdvancedResultsPageProps {
+  jobId: string;
 }
 
-export default function AdvancedResultsPage() {
-  const { jobId } = useParams();
+export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [job, setJob] = useState<ScanJob | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
-  const [broadcastResultCount, setBroadcastResultCount] = useState(0);
   const { toast } = useToast();
 
   // Get initial tab from URL or default to 'summary'
@@ -107,7 +80,6 @@ export default function AdvancedResultsPage() {
     (value: string) => {
       const newTab = value as TabValue;
       setActiveTab(newTab);
-
       if (newTab === "summary") {
         searchParams.delete("tab");
       } else {
@@ -127,53 +99,73 @@ export default function AdvancedResultsPage() {
     }
   }, [activeTab, isPhoneTarget, searchParams, setSearchParams]);
 
-  // Fetch scan job
-  const { workspace } = useWorkspace();
-  const { data: jobData, isLoading: jobIsLoading } = useScanJob(jobId || "");
-
+  // Fetch scan job from database
   useEffect(() => {
     if (!jobId) return;
-    if (jobIsLoading) return;
+    let cancelled = false;
 
-    if (!jobData) {
-      toast({
-        title: "Scan not found",
-        description: "We couldn't find that scan. It may have been deleted.",
-        variant: "destructive",
+    async function fetchJob() {
+      const { data, error } = await supabase
+        .from("scans")
+        .select("*")
+        .eq("id", jobId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error || !data) {
+        toast({
+          title: "Scan not found",
+          description: "We couldn't find that scan. It may have been deleted.",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+        return;
+      }
+
+      // Derive target from available fields
+      const target = data.username || data.email || data.phone || "";
+      setJob({
+        id: data.id,
+        username: data.username || "",
+        target,
+        scan_type: data.scan_type,
+        status: data.status || "unknown",
+        created_at: data.created_at,
+        started_at: null,
+        finished_at: data.completed_at || null,
+        error: null,
+        all_sites: false,
+        requested_by: data.user_id || null,
+        telegram_triggered_at: data.telegram_triggered_at || null,
       });
-      navigate("/dashboard");
-      return;
+      setJobLoading(false);
     }
 
-    setJob(jobData);
-    setJobLoading(false);
-  }, [jobData, jobIsLoading, jobId, navigate, toast]);
+    fetchJob();
+    return () => { cancelled = true; };
+  }, [jobId, navigate, toast]);
 
   // Fetch scan results
   const {
     results,
+    loading: resultsLoading,
+    grouped,
     tabCounts,
     hasGeoData,
-    showTimeline,
-    isLoading: resultsLoading,
-    exportJSON,
-    exportCSV,
-    exportPDF,
-  } = useScanResultsData(jobId || "");
+    geoLocations,
+    breachResults,
+    refetch,
+  } = useScanResultsData(jobId);
 
-  // Convert to findings for derived metrics
-  const findings = useMemo(() => resultsToFindings(results || []), [results]);
-
-  const handleExportJSON = () => exportJSON?.();
-  const handleExportCSV = () => exportCSV?.();
-  const handleExportPDF = () => exportPDF?.();
+  const showTimeline = true; // Always show timeline tab for advanced users
 
   const handleNewScan = () => navigate("/scan");
 
   if (jobLoading || resultsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -186,78 +178,89 @@ export default function AdvancedResultsPage() {
             tabCounts={tabCounts}
             hasGeoData={hasGeoData}
             showTimeline={showTimeline}
-            onExportJSON={handleExportJSON}
-            onExportCSV={handleExportCSV}
-            onExportPDF={handleExportPDF}
             onNewScan={handleNewScan}
             actionsDisabled={results.length === 0}
-            isPhoneTarget={isPhoneTarget}
           />
 
           <div className="border-t">
             <TabsContent value="summary" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <SummaryTab job={job} results={results} findings={findings} />
+                <SummaryTab
+                  jobId={jobId}
+                  job={job!}
+                  grouped={grouped}
+                  resultsCount={results.length}
+                  results={results}
+                />
               </Suspense>
             </TabsContent>
 
             <TabsContent value="accounts" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <AccountsTab job={job} results={results} />
+                <AccountsTab results={results} jobId={jobId} />
               </Suspense>
             </TabsContent>
 
             <TabsContent value="connections" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <ConnectionsTab job={job} results={results} />
+                <ConnectionsTab
+                  results={results}
+                  username={job?.username || ""}
+                  jobId={jobId}
+                />
               </Suspense>
             </TabsContent>
 
             {showTimeline && (
               <TabsContent value="timeline" className="mt-0">
                 <Suspense fallback={<TabSkeleton />}>
-                  <TimelineTab job={job} results={results} />
+                  <TimelineTab
+                    scanId={jobId}
+                    results={results}
+                    username={job?.username || ""}
+                    isPremium={true}
+                  />
                 </Suspense>
               </TabsContent>
             )}
 
             <TabsContent value="breaches" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <BreachesTab job={job} results={results} />
+                <BreachesTab results={results} breachResults={breachResults} />
               </Suspense>
             </TabsContent>
 
             {hasGeoData && (
               <TabsContent value="map" className="mt-0">
                 <Suspense fallback={<TabSkeleton />}>
-                  <MapTab job={job} results={results} />
+                  <MapTab locations={geoLocations} isPremium={true} />
                 </Suspense>
               </TabsContent>
             )}
 
             <TabsContent value="telegram" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <TelegramTab scanId={jobId || ""} isPro={true} />
+                <TelegramTab scanId={jobId} isPro={true} />
               </Suspense>
             </TabsContent>
 
             {isPhoneTarget && (
               <TabsContent value="whatsapp" className="mt-0">
                 <Suspense fallback={<TabSkeleton />}>
-                  <WhatsAppTab scanId={jobId || ""} isPro={true} phoneNumber={phoneNumber} />
+                  <WhatsAppTab scanId={jobId} isPro={true} phoneNumber={phoneNumber} />
                 </Suspense>
               </TabsContent>
             )}
 
             <TabsContent value="remediation" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <RemediationTab job={job} results={results} />
+                <RemediationPlanTab results={results} />
               </Suspense>
             </TabsContent>
 
             <TabsContent value="privacy" className="mt-0">
               <Suspense fallback={<TabSkeleton />}>
-                <PrivacyCenterTab job={job} results={results} />
+                <PrivacyCenterTab scanId={jobId} />
               </Suspense>
             </TabsContent>
           </div>
