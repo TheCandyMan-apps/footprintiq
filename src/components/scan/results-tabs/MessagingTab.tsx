@@ -12,7 +12,7 @@ import { flags } from "@/lib/featureFlags";
 import { WhatsAppTab } from "./WhatsAppTab";
 import { MessagingExposureSummary, type MessagingScoreInput } from "./MessagingExposureSummary";
 import { useTelegramFindings } from "@/hooks/useTelegramFindings";
-import { processWhatsAppSignals, buildWhatsAppAdapterInput } from "@/lib/messaging/whatsapp_signal_adapter";
+import { processWhatsAppSignals, type WhatsAppAdapterInput } from "@/lib/messaging/whatsapp_signal_adapter";
 
 const TelegramTab = lazy(() => import("./TelegramTab"));
 
