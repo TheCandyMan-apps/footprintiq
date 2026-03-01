@@ -1,12 +1,13 @@
 /**
  * useMessagingScores – Shared hook for combined Telegram + WhatsApp risk scoring.
- * Used by MessagingTab (summary bar) and SummaryTab (compact card).
+ * Uses combineMessagingScores from messaging_score.ts as the single source of truth.
  */
 
 import { useMemo } from "react";
 import { useTelegramFindings } from "@/hooks/useTelegramFindings";
 import { processWhatsAppSignals, type WhatsAppAdapterInput } from "@/lib/messaging/whatsapp_signal_adapter";
 import { flags } from "@/lib/featureFlags";
+import { combineMessagingScores, type CombinedMessagingScore, type PlatformScore } from "@/lib/messaging/messaging_score";
 import type { MessagingScoreInput } from "@/components/scan/results-tabs/MessagingExposureSummary";
 
 interface UseMessagingScoresOptions {
@@ -48,30 +49,37 @@ export function useMessagingScores({ scanId, phoneNumber, isPhoneTarget }: UseMe
     };
   }, [showWhatsApp, phoneNumber]);
 
+  // Legacy scores array (for MessagingExposureSummary component)
   const scores = useMemo<MessagingScoreInput[]>(() => {
     return [telegramScore, whatsAppScore].filter(Boolean) as MessagingScoreInput[];
   }, [telegramScore, whatsAppScore]);
 
-  // Combined summary values
-  const combined = useMemo(() => {
-    const active = scores.filter((s) => s.signalCount > 0 || s.riskScore > 0);
-    if (active.length === 0) return null;
-    const totalWeight = active.reduce((sum, s) => sum + (s.weight ?? 1), 0);
-    const weightedRisk = active.reduce((sum, s) => sum + s.riskScore * (s.weight ?? 1), 0) / totalWeight;
-    const avgConfidence = active.reduce((sum, s) => sum + s.confidence, 0) / active.length;
-    const totalSignals = active.reduce((sum, s) => sum + s.signalCount, 0);
-    return {
-      risk: Math.round(weightedRisk),
-      confidence: Math.round(avgConfidence * 100),
-      signalCount: totalSignals,
-      platformCount: active.length,
-      sources: active.map((s) => s.label),
-    };
-  }, [scores]);
+  // Build PlatformScore inputs for the shared utility
+  const telegramPlatform = useMemo<PlatformScore | undefined>(() => {
+    if (!telegramScore) return undefined;
+    return { score: telegramScore.riskScore, confidence: telegramScore.confidence, signals: telegramScore.signalCount };
+  }, [telegramScore]);
+
+  const whatsAppPlatform = useMemo<PlatformScore | undefined>(() => {
+    if (!whatsAppScore) return undefined;
+    return { score: whatsAppScore.riskScore, confidence: whatsAppScore.confidence, signals: whatsAppScore.signalCount };
+  }, [whatsAppScore]);
+
+  // Combined score via the shared utility
+  const combined = useMemo<CombinedMessagingScore>(() => {
+    return combineMessagingScores({ telegram: telegramPlatform, whatsapp: whatsAppPlatform });
+  }, [telegramPlatform, whatsAppPlatform]);
 
   return {
     scores,
-    combined,
+    combined: combined.platforms > 0 ? {
+      risk: combined.score,
+      confidence: Math.round(combined.confidence * 100),
+      signalCount: combined.signals,
+      platformCount: combined.platforms,
+      sources: [telegramScore && "Telegram", whatsAppScore && "WhatsApp"].filter(Boolean) as string[],
+      level: combined.level,
+    } : null,
     loading: telegramLoading,
     hasData: scores.length > 0,
     showWhatsApp,
