@@ -15,6 +15,7 @@ import { useScanResultsData, ScanJob, ScanResult } from "@/hooks/useScanResultsD
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ResultsTabBar } from "./ResultsTabBar";
 import { WhatsAppTab } from "./results-tabs/WhatsAppTab";
+import { InvestigationProvider } from "@/contexts/InvestigationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { flags } from "@/lib/featureFlags";
 
@@ -171,6 +172,7 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
   }
 
   return (
+    <InvestigationProvider scanId={jobId}>
     <div className="space-y-4">
       <Card className="p-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -267,5 +269,6 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
         </Tabs>
       </Card>
     </div>
+    </InvestigationProvider>
   );
 }
