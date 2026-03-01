@@ -4,7 +4,7 @@
  * Routes through the free n8n quick-scan workflow.
  */
 import { useState, useMemo, useRef, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
