@@ -28,7 +28,7 @@ export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, start
     : null;
 
   return (
-    <div className="rounded-xl border border-border/50 bg-muted/30 px-4 sm:px-6 py-3">
+    <div className="sticky top-0 z-20 rounded-xl border border-border/50 bg-muted/30 backdrop-blur-sm px-4 sm:px-6 py-3 shadow-[0_1px_3px_0_hsl(var(--foreground)/0.04)]">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         {/* Left column */}
         <div className="flex items-center gap-3 min-w-0">
