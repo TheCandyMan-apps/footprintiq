@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Calendar, Clock, User, Shield, 
   Activity, Eye, Lock, Info, ChevronDown, ChevronUp,
-  Download, Filter
+  Download, Filter, MessageCircle
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
 import { ScanResult } from '@/hooks/useScanResultsData';
@@ -13,7 +13,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { 
+import { useTelegramFindings } from '@/hooks/useTelegramFindings';
+import { processWhatsAppSignals, type WhatsAppAdapterInput } from '@/lib/messaging/whatsapp_signal_adapter';
+import { flags } from '@/lib/featureFlags';
+import {
   RESULTS_SPACING, 
   RESULTS_TYPOGRAPHY, 
   RESULTS_BORDERS,
@@ -28,7 +31,7 @@ interface TimelineTabProps {
   isPremium?: boolean;
 }
 
-type TimelineEventType = 'account_created' | 'last_activity' | 'breach_detected' | 'profile_updated' | 'provider_event';
+type TimelineEventType = 'account_created' | 'last_activity' | 'breach_detected' | 'profile_updated' | 'provider_event' | 'messaging';
 
 interface TimelineEvent {
   id: string;
@@ -67,6 +70,11 @@ const EVENT_CONFIG: Record<TimelineEventType, { icon: typeof Calendar; colors: {
     icon: Clock,
     colors: { bg: 'bg-slate-500/10', text: 'text-slate-600', border: 'border-slate-500/20' },
     label: 'Provider Event'
+  },
+  messaging: {
+    icon: MessageCircle,
+    colors: { bg: 'bg-indigo-500/10', text: 'text-indigo-600', border: 'border-indigo-500/20' },
+    label: 'Messaging Signal'
   }
 };
 
@@ -238,6 +246,59 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
   // Extract timeline events from results
   const resultDerivedEvents = useMemo(() => extractTimelineEvents(results, username), [results, username]);
 
+  // ── Messaging signals ──
+  const { findings: telegramFindings } = useTelegramFindings(scanId);
+
+  const messagingEvents = useMemo<TimelineEvent[]>(() => {
+    const events: TimelineEvent[] = [];
+
+    // Telegram findings → timeline events
+    telegramFindings.forEach((f) => {
+      const date = parseDate(f.created_at);
+      if (!date) return;
+      const risk = Number(f.meta?.risk_score ?? f.meta?.risk ?? 0);
+      const confidence: 'high' | 'medium' | 'low' =
+        risk >= 60 ? 'high' : risk >= 30 ? 'medium' : 'low';
+      events.push({
+        id: `tg-${f.id}`,
+        date,
+        type: 'messaging',
+        platform: 'Telegram',
+        title: `Telegram: ${f.kind || 'signal detected'}`,
+        description: f.meta?.message || f.meta?.description || `Risk score ${risk}/100`,
+        confidence,
+        metadata: { source: 'telegram', risk_score: risk, kind: f.kind },
+      });
+    });
+
+    // WhatsApp signals (if phone scan)
+    const scanType = (results[0] as any)?.scan_type;
+    const phoneNumber = scanType === 'phone' ? username : undefined;
+    if (phoneNumber && flags.whatsappBasic) {
+      const input: WhatsAppAdapterInput = { phoneNumber };
+      const bundle = processWhatsAppSignals(input);
+      bundle.signals.forEach((sig, idx) => {
+        const date = parseDate(sig.observedAt);
+        if (!date) return;
+        const risk = bundle.riskContribution;
+        const confidence: 'high' | 'medium' | 'low' =
+          sig.confidenceScore >= 0.7 ? 'high' : sig.confidenceScore >= 0.4 ? 'medium' : 'low';
+        events.push({
+          id: `wa-${idx}-${sig.category}`,
+          date,
+          type: 'messaging',
+          platform: 'WhatsApp',
+          title: `WhatsApp: ${sig.label}`,
+          description: String(sig.value),
+          confidence,
+          metadata: { source: 'whatsapp', risk_score: risk, category: sig.category },
+        });
+      });
+    }
+
+    return events;
+  }, [telegramFindings, results, username]);
+
   // Load provider execution events (always available for most scans)
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
@@ -325,11 +386,9 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
   }, [providerEvents]);
 
   const allEvents = useMemo(() => {
-    // Prefer OSINT-relevant chronological signals from result metadata, but
-    // fall back to provider execution events so the tab isn't perpetually empty.
-    const merged = [...resultDerivedEvents, ...providerDerivedEvents];
+    const merged = [...resultDerivedEvents, ...providerDerivedEvents, ...messagingEvents];
     return merged.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [resultDerivedEvents, providerDerivedEvents]);
+  }, [resultDerivedEvents, providerDerivedEvents, messagingEvents]);
 
   // Filter events
   const filteredEvents = useMemo(() => {
@@ -347,7 +406,8 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
       last_activity: 0,
       breach_detected: 0,
       profile_updated: 0,
-      provider_event: 0
+      provider_event: 0,
+      messaging: 0
     };
     allEvents.forEach(e => counts[e.type]++);
     return counts;
