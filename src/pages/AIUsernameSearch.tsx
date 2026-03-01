@@ -241,7 +241,7 @@ export default function AIUsernameSearch() {
             <h2 className="text-3xl font-bold mb-4">Search Smarter, Not Harder</h2>
             <p className="text-muted-foreground mb-8">Enter a username above to run an AI-powered scan across 500+ platforms. Free, instant, and ethical.</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" asChild><Link to="/free-scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button size="lg" asChild><Link to="/scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
               <Button size="lg" variant="outline" asChild><Link to="/digital-footprint-scan">Check Your Exposure</Link></Button>
             </div>
           </div>

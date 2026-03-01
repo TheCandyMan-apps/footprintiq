@@ -194,7 +194,7 @@ export default function InstagramUsernameChecker() {
             <h2 className="text-3xl font-bold mb-4">Check Your Username Now</h2>
             <p className="text-muted-foreground mb-8">Enter any Instagram username to check availability and cross-platform exposure.</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" asChild><Link to="/free-scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button size="lg" asChild><Link to="/scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
               <Button size="lg" variant="outline" asChild><Link to="/digital-footprint-scan">Check Your Exposure</Link></Button>
             </div>
           </div>
