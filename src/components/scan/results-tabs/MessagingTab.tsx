@@ -181,6 +181,7 @@ export default function MessagingTab({
             </TabsContent>
           )}
         </div>
+      </Tabs>
     </div>
   );
 }
