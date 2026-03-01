@@ -249,7 +249,7 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
             {isPhoneTarget && (
               <TabsContent value="whatsapp" className="mt-0">
                 <Suspense fallback={<TabSkeleton />}>
-                  <WhatsAppTab scanId={jobId} isPro={true} phoneNumber={phoneNumber} />
+                  <WhatsAppTab scanId={jobId} isPro={true} phoneNumber={phoneNumber} results={results} />
                 </Suspense>
               </TabsContent>
             )}

@@ -47,6 +47,7 @@ interface WhatsAppTabProps {
   scanId: string;
   isPro: boolean;
   phoneNumber?: string;
+  results: any[];
 }
 
 // ── Category config ─────────────────────────────────────────────
@@ -377,9 +378,69 @@ function CategorySection({
   );
 }
 
+// ── Adapter Input Builder ────────────────────────────────────────
+
+function buildWhatsAppAdapterInput(phoneNumber: string | undefined, results: any[]) {
+  if (!phoneNumber) return { phoneNumber: phoneNumber || '' };
+
+  const breachLinkages = results
+    .filter(r => r.kind === 'breach' || r.type === 'breach')
+    .map(r => ({
+      breachName: r.breach_name || r.title || 'Unknown Breach',
+      breachDate: r.observed_at || r.date || null,
+      dataTypes: r.metadata?.data_types || [],
+      severity: r.severity || 'medium',
+    }));
+
+  const scamDBMatches = results
+    .filter(r =>
+      r.provider?.toLowerCase().includes('ipquality') ||
+      r.provider?.toLowerCase().includes('spam') ||
+      r.kind === 'fraud'
+    )
+    .map(r => ({
+      database: r.provider || 'Unknown',
+      reportCount: r.metadata?.risk_score > 80 ? 3 : r.metadata?.risk_score > 50 ? 1 : 0,
+      lastReported: r.observed_at || null,
+      categories: r.metadata?.categories || [],
+    }));
+
+  const webMentions = results
+    .filter(r =>
+      r.kind?.includes('web') ||
+      r.kind?.includes('search') ||
+      r.kind?.includes('serp')
+    )
+    .map(r => ({
+      source: r.source || r.provider || 'Web',
+      url: r.url,
+      context: r.title || r.snippet || '',
+      severity: r.severity || 'low',
+    }));
+
+  const crossPlatformHits = results
+    .filter(r =>
+      r.platform === 'telegram' ||
+      r.platform === 'social'
+    )
+    .map(r => ({
+      platform: r.platform,
+      matchType: 'phone' as const,
+      confidence: r.confidence || 0.5,
+    }));
+
+  return {
+    phoneNumber,
+    breachLinkages,
+    scamDBMatches,
+    webMentions,
+    crossPlatformHits,
+  };
+}
+
 // ── Main Component ──────────────────────────────────────────────
 
-export function WhatsAppTab({ scanId, isPro, phoneNumber }: WhatsAppTabProps) {
+export function WhatsAppTab({ scanId, isPro, phoneNumber, results = [] }: WhatsAppTabProps) {
   const [showModal, setShowModal] = useState(false);
 
   // Process signals from adapter.
@@ -412,10 +473,9 @@ export function WhatsAppTab({ scanId, isPro, phoneNumber }: WhatsAppTabProps) {
       };
     }
 
-    // Process through the adapter with available upstream data.
-    // NOTE: Until WhatsApp sources are wired, this may return an empty bundle (no signals).
-    return processWhatsAppSignals({ phoneNumber });
-  }, [phoneNumber]);
+    // Process through the adapter with real scan results.
+    return processWhatsAppSignals(buildWhatsAppAdapterInput(phoneNumber, results));
+  }, [phoneNumber, results]);
 
   const grouped = useMemo(() => groupSignalsByCategory(bundle.signals), [bundle.signals]);
 
