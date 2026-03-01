@@ -10,7 +10,9 @@ import {
   Shield,
   ClipboardList,
   Send,
+  MessageCircle,
 } from 'lucide-react';
+import { flags } from '@/lib/featureFlags';
 import { TabCounts } from '@/hooks/useScanResultsData';
 import { ResultsToolbar } from './ResultsToolbar';
 

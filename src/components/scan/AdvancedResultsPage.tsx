@@ -59,12 +59,13 @@ const MapTab = lazy(() => import('./results-tabs/MapTab'));
 const PrivacyCenterTab = lazy(() => import('./results-tabs/PrivacyCenterTab'));
 const RemediationPlanTab = lazy(() => import('./results-tabs/RemediationPlanTab'));
 const TelegramTab = lazy(() => import('./results-tabs/TelegramTab'));
+const WhatsAppTab = lazy(() => import('./results-tabs/WhatsAppTab'));
 
 interface AdvancedResultsPageProps {
   jobId: string;
 }
 
-const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches', 'map', 'telegram', 'remediation', 'privacy'] as const;
+const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches', 'map', 'telegram', 'whatsapp', 'remediation', 'privacy'] as const;
 type TabValue = typeof VALID_TABS[number];
 
 /** Helper: convert results to Finding[] for score calculators */
@@ -691,6 +692,12 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
                 <TabsContent value="telegram" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
                     <TelegramTab scanId={jobId} isPro={true} scanType={job?.scan_type} telegramTriggeredAt={job?.telegram_triggered_at} />
+                  </Suspense>
+                </TabsContent>
+
+                <TabsContent value="whatsapp" className="mt-0">
+                  <Suspense fallback={<TabSkeleton />}>
+                    <WhatsAppTab scanId={jobId} isPro={true} phoneNumber={job?.phone || undefined} />
                   </Suspense>
                 </TabsContent>
 
