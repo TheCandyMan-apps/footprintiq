@@ -3,13 +3,16 @@
  * for Telegram, WhatsApp, and planned messengers (Discord, Threads).
  */
 
-import { lazy, Suspense, useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Send, MessageCircle, Hash, AtSign, Shield } from "lucide-react";
 import { flags } from "@/lib/featureFlags";
 import { WhatsAppTab } from "./WhatsAppTab";
+import { MessagingExposureSummary, type MessagingScoreInput } from "./MessagingExposureSummary";
+import { useTelegramFindings } from "@/hooks/useTelegramFindings";
+import { processWhatsAppSignals, buildWhatsAppAdapterInput } from "@/lib/messaging/whatsapp_signal_adapter";
 
 const TelegramTab = lazy(() => import("./TelegramTab"));
 
