@@ -38,6 +38,12 @@ export const flags = {
   
   /** Spamhaus reputation & abuse enrichment (Pro-only) */
   spamhausEnrichment: import.meta.env.VITE_FLAG_SPAMHAUS_ENRICHMENT === "true",
+  
+  /** WhatsApp basic intelligence signals */
+  whatsappBasic: import.meta.env.VITE_FLAG_WHATSAPP_BASIC === "true",
+  
+  /** WhatsApp experimental signals (best-effort / beta) */
+  whatsappExperimental: import.meta.env.VITE_FLAG_WHATSAPP_EXPERIMENTAL === "true",
 } as const;
 
 /**
