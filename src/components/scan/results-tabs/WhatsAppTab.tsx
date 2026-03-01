@@ -47,6 +47,7 @@ interface WhatsAppTabProps {
   scanId: string;
   isPro: boolean;
   phoneNumber?: string;
+  results: any[];
 }
 
 // ── Category config ─────────────────────────────────────────────
@@ -379,7 +380,7 @@ function CategorySection({
 
 // ── Main Component ──────────────────────────────────────────────
 
-export function WhatsAppTab({ scanId, isPro, phoneNumber }: WhatsAppTabProps) {
+export function WhatsAppTab({ scanId, isPro, phoneNumber, results = [] }: WhatsAppTabProps) {
   const [showModal, setShowModal] = useState(false);
 
   // Process signals from adapter.
@@ -412,10 +413,9 @@ export function WhatsAppTab({ scanId, isPro, phoneNumber }: WhatsAppTabProps) {
       };
     }
 
-    // Process through the adapter with available upstream data.
-    // NOTE: Until WhatsApp sources are wired, this may return an empty bundle (no signals).
-    return processWhatsAppSignals({ phoneNumber });
-  }, [phoneNumber]);
+    // Process through the adapter with real scan results.
+    return processWhatsAppSignals(buildWhatsAppAdapterInput(phoneNumber, results));
+  }, [phoneNumber, results]);
 
   const grouped = useMemo(() => groupSignalsByCategory(bundle.signals), [bundle.signals]);
 
