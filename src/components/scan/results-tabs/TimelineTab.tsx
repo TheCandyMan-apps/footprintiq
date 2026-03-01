@@ -246,6 +246,59 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
   // Extract timeline events from results
   const resultDerivedEvents = useMemo(() => extractTimelineEvents(results, username), [results, username]);
 
+  // ── Messaging signals ──
+  const { findings: telegramFindings } = useTelegramFindings(scanId);
+
+  const messagingEvents = useMemo<TimelineEvent[]>(() => {
+    const events: TimelineEvent[] = [];
+
+    // Telegram findings → timeline events
+    telegramFindings.forEach((f) => {
+      const date = parseDate(f.created_at);
+      if (!date) return;
+      const risk = Number(f.meta?.risk_score ?? f.meta?.risk ?? 0);
+      const confidence: 'high' | 'medium' | 'low' =
+        risk >= 60 ? 'high' : risk >= 30 ? 'medium' : 'low';
+      events.push({
+        id: `tg-${f.id}`,
+        date,
+        type: 'messaging',
+        platform: 'Telegram',
+        title: `Telegram: ${f.kind || 'signal detected'}`,
+        description: f.meta?.message || f.meta?.description || `Risk score ${risk}/100`,
+        confidence,
+        metadata: { source: 'telegram', risk_score: risk, kind: f.kind },
+      });
+    });
+
+    // WhatsApp signals (if phone scan)
+    const scanType = (results[0] as any)?.scan_type;
+    const phoneNumber = scanType === 'phone' ? username : undefined;
+    if (phoneNumber && flags.whatsappBasic) {
+      const input: WhatsAppAdapterInput = { phoneNumber };
+      const bundle = processWhatsAppSignals(input);
+      bundle.signals.forEach((sig, idx) => {
+        const date = parseDate(sig.observedAt);
+        if (!date) return;
+        const risk = bundle.riskContribution;
+        const confidence: 'high' | 'medium' | 'low' =
+          sig.confidenceScore >= 0.7 ? 'high' : sig.confidenceScore >= 0.4 ? 'medium' : 'low';
+        events.push({
+          id: `wa-${idx}-${sig.category}`,
+          date,
+          type: 'messaging',
+          platform: 'WhatsApp',
+          title: `WhatsApp: ${sig.title}`,
+          description: sig.summary,
+          confidence,
+          metadata: { source: 'whatsapp', risk_score: risk, category: sig.category },
+        });
+      });
+    }
+
+    return events;
+  }, [telegramFindings, results, username]);
+
   // Load provider execution events (always available for most scans)
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
@@ -333,11 +386,9 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
   }, [providerEvents]);
 
   const allEvents = useMemo(() => {
-    // Prefer OSINT-relevant chronological signals from result metadata, but
-    // fall back to provider execution events so the tab isn't perpetually empty.
-    const merged = [...resultDerivedEvents, ...providerDerivedEvents];
+    const merged = [...resultDerivedEvents, ...providerDerivedEvents, ...messagingEvents];
     return merged.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [resultDerivedEvents, providerDerivedEvents]);
+  }, [resultDerivedEvents, providerDerivedEvents, messagingEvents]);
 
   // Filter events
   const filteredEvents = useMemo(() => {
