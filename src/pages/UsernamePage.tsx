@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
 import { DiscoveryToProofSection } from "@/components/DiscoveryToProofSection";
+import { CategoryComparisonStrip } from "@/components/CategoryComparisonStrip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -161,6 +162,9 @@ export default function UsernamePage() {
             </Button>
           </div>
         </section>
+
+        {/* Category comparison */}
+        <CategoryComparisonStrip />
 
         {/* Long-form Content Section for SEO */}
         <section className="py-12 px-6">

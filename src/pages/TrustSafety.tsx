@@ -3,6 +3,7 @@ import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
+import { CategoryComparisonStrip } from "@/components/CategoryComparisonStrip";
 import {
   ShieldCheck,
   Lock,

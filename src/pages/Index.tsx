@@ -194,6 +194,10 @@ export default function Home() {
       </div>
       
       <div className="below-fold">
+        <CategoryComparisonStrip />
+      </div>
+
+      <div className="below-fold">
         <WhatWeAre />
       </div>
       
