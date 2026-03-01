@@ -159,23 +159,28 @@ export default function MessagingTab({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="telegram" className="mt-4">
-          <Suspense fallback={<TabSkeleton />}>
-            <TelegramTab scanId={scanId} isPro={isPro} />
-          </Suspense>
-        </TabsContent>
-
-        {showWhatsApp && (
-          <TabsContent value="whatsapp" className="mt-4">
-            <WhatsAppTab
-              scanId={scanId}
-              isPro={isPro}
-              phoneNumber={phoneNumber}
-              results={results}
-            />
+        <div
+          ref={contentRef}
+          className="transition-opacity duration-150 ease-in-out"
+          style={{ opacity: transitioning ? 0 : 1 }}
+        >
+          <TabsContent value="telegram" className="mt-4">
+            <Suspense fallback={<TabSkeleton />}>
+              <TelegramTab scanId={scanId} isPro={isPro} />
+            </Suspense>
           </TabsContent>
-        )}
-      </Tabs>
+
+          {showWhatsApp && (
+            <TabsContent value="whatsapp" className="mt-4">
+              <WhatsAppTab
+                scanId={scanId}
+                isPro={isPro}
+                phoneNumber={phoneNumber}
+                results={results}
+              />
+            </TabsContent>
+          )}
+        </div>
     </div>
   );
 }
