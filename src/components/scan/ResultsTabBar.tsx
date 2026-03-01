@@ -32,6 +32,7 @@ export function ResultsTabBar({
   tabCounts, 
   hasGeoData, 
   showTimeline = true,
+  messagingCount = 1,
   onExportJSON,
   onExportCSV,
   onExportPDF,
@@ -119,6 +120,11 @@ export function ResultsTabBar({
           >
             <MessageCircle className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Messaging</span>
+            {messagingCount > 0 && (
+              <Badge variant="secondary" className="ml-0.5 h-4 px-1 text-[10px]">
+                {messagingCount}
+              </Badge>
+            )}
           </TabsTrigger>
 
           <TabsTrigger

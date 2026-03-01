@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useScanResultsData, ScanJob, ScanResult } from "@/hooks/useScanResultsData";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ResultsTabBar } from "./ResultsTabBar";
+import { ScanResultsHeader } from "./ScanResultsHeader";
 
 import { InvestigationProvider } from "@/contexts/InvestigationContext";
 import { supabase } from "@/integrations/supabase/client";
