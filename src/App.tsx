@@ -401,6 +401,7 @@ const InstagramUsernameCheckerPage = lazy(() => import("./pages/InstagramUsernam
 const HowToSearchForPeopleOnInstagram = lazy(() => import("./pages/guides/HowToSearchForPeopleOnInstagram"));
 const SearchTikTokWithoutAccount = lazy(() => import("./pages/guides/SearchTikTokWithoutAccount"));
 const AIUsernameSearchPage = lazy(() => import("./pages/AIUsernameSearch"));
+const TrustSafety = lazy(() => import("./pages/TrustSafety"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
