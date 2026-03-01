@@ -35,9 +35,9 @@ export default function ReduceDigitalFootprint() {
     "@context": "https://schema.org" as const,
     "@type": "BreadcrumbList" as const,
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
-      { "@type": "ListItem", position: 2, name: "Guides", item: "https://footprintiq.app/guides" },
-      { "@type": "ListItem", position: 3, name: "Reduce Your Digital Footprint", item: "https://footprintiq.app/guides/reduce-digital-footprint" },
+      { "@type": "ListItem" as const, position: 1, name: "Home", item: "https://footprintiq.app/" },
+      { "@type": "ListItem" as const, position: 2, name: "Guides", item: "https://footprintiq.app/guides" },
+      { "@type": "ListItem" as const, position: 3, name: "Reduce Your Digital Footprint", item: "https://footprintiq.app/guides/reduce-digital-footprint" },
     ],
   };
 
