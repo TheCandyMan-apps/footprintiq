@@ -121,7 +121,16 @@ export function ResultsTabBar({
             <MessageCircle className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Messaging</span>
             {messagingCount > 0 && (
-              <Badge variant="secondary" className="ml-0.5 h-4 px-1 text-[10px]">
+              <Badge
+                variant="secondary"
+                className={`ml-0.5 h-4 px-1 text-[10px] ${
+                  messagingCount >= 3
+                    ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30'
+                    : messagingCount === 2
+                      ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                      : 'bg-muted text-muted-foreground'
+                }`}
+              >
                 {messagingCount}
               </Badge>
             )}
