@@ -7,7 +7,7 @@ import { lazy, Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageCircle, Hash, AtSign } from "lucide-react";
+import { Send, MessageCircle, Hash, AtSign, Shield } from "lucide-react";
 import { flags } from "@/lib/featureFlags";
 import { WhatsAppTab } from "./WhatsAppTab";
 
@@ -77,8 +77,35 @@ export default function MessagingTab({
     }
   }, [activeMessenger, showWhatsApp]);
 
+  const activeLabel = activeMessenger === 'whatsapp' ? 'WhatsApp' : 'Telegram';
+
   return (
     <div className="p-4 sm:p-6 space-y-4">
+      {/* Unified header */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
+          <MessageCircle className="h-5 w-5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Messaging Intelligence</h2>
+            <Badge variant="secondary" className="text-[10px] h-5 px-2 font-medium">
+              {activeLabel}
+            </Badge>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Public OSINT signals and exposure indicators from messaging platforms.
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className="text-[9px] h-4 px-1.5 border-green-500/30 text-green-600 dark:text-green-400 gap-0.5 shrink-0"
+        >
+          <Shield className="h-2.5 w-2.5" />
+          Public data only
+        </Badge>
+      </div>
+
       <Tabs value={activeMessenger} onValueChange={handleMessengerChange}>
         <TabsList className="h-auto flex-wrap justify-start gap-1 bg-muted/50 p-1">
           <TabsTrigger
