@@ -48,6 +48,11 @@ export interface TabCounts {
   map: number;
 }
 
+function safeStringify(obj: unknown): string {
+  try { return JSON.stringify(obj || {}); }
+  catch { return '{}'; }
+}
+
 export function useScanResultsData(jobId: string) {
   const { results, loading, refetch } = useRealtimeResults(jobId);
 
@@ -79,7 +84,7 @@ export function useScanResultsData(jobId: string) {
       const kind = (r.kind || '').toLowerCase();
       const provider = (r.provider || '').toLowerCase();
       const metaTitle = (r.meta?.title || '').toLowerCase();
-      const metaStr = JSON.stringify(r.meta || {}).toLowerCase();
+      const metaStr = safeStringify(r.meta).toLowerCase();
       
       // Exclude "no breach" findings
       if (noBreachPatterns.some(p => kind.includes(p) || metaTitle.includes(p))) {
@@ -165,7 +170,7 @@ export function useScanResultsData(jobId: string) {
       const provider = (r.provider || '').toLowerCase();
       const site = (r.site || '').toLowerCase();
       const metaTitle = (r.meta?.title || '').toLowerCase();
-      const metaStr = JSON.stringify(r.meta || {}).toLowerCase();
+      const metaStr = safeStringify(r.meta).toLowerCase();
       
       // Exclude "no breach" findings (e.g., kind: 'breach.none', title: 'No Breaches Found')
       if (noBreachPatterns.some(p => kind.includes(p) || metaTitle.includes(p))) {

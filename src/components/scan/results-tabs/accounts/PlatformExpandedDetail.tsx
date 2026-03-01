@@ -6,7 +6,7 @@
 
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Lock, Shield, AlertTriangle, TrendingDown, Info, ChevronRight, Layers } from 'lucide-react';
+import { Lock, Shield, AlertTriangle, TrendingDown, Info, ChevronRight, Layers, ArrowRight } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { cn } from '@/lib/utils';
 import {
@@ -202,24 +202,26 @@ export function PlatformExpandedDetail({ result, lensScore, isLocked = false }: 
 
   if (isLocked) {
     return (
-      <div className="relative overflow-hidden">
-        <div className="blur-[4px] select-none pointer-events-none opacity-50">
+      <div className="relative overflow-hidden rounded-md">
+        <div className="blur-[6px] select-none pointer-events-none opacity-30">
           {content}
         </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/80 border border-border/40 cursor-default">
-                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-[11px] font-medium text-muted-foreground">Pro breakdown</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-[11px]">
-                Unlock full breakdown in Pro
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-[2px]">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-semibold text-foreground">Pro Breakdown Locked</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground text-center max-w-[260px] leading-snug">
+            Unlock match confidence, risk analysis, exposure categories, and removal priority.
+          </p>
+          <a
+            href="/pricing"
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors mt-0.5"
+          >
+            Upgrade to Pro
+            <ArrowRight className="w-3 h-3" />
+          </a>
         </div>
       </div>
     );
