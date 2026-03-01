@@ -172,6 +172,7 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
   }
 
   return (
+    <InvestigationProvider scanId={jobId}>
     <div className="space-y-4">
       <Card className="p-0 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
