@@ -913,6 +913,25 @@ serve(async (req) => {
 
     console.log(`[phone-intel] Completed: ${findings.length} findings from ${Object.keys(providerResults).length} providers`);
 
+    // ── Auto-complete scan ──
+    // Phone scans are self-contained (no n8n callback needed to finalize).
+    // Mark as completed here to prevent scans getting stuck in 'running'.
+    try {
+      const { error: updateError } = await supabase
+        .from('scans')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', scanId)
+        .eq('status', 'running');
+
+      if (updateError) {
+        console.error('[phone-intel] Failed to mark scan completed:', updateError);
+      } else {
+        console.log(`[phone-intel] Scan ${scanId} marked as completed`);
+      }
+    } catch (compErr) {
+      console.error('[phone-intel] Error marking scan completed:', compErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
