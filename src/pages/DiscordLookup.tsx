@@ -207,7 +207,7 @@ export default function DiscordLookup() {
             <p className="text-muted-foreground mb-8">Enter a Discord username above to check exposure across 500+ platforms. Free and instant.</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" asChild>
-                <Link to="/free-scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Link to="/scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/digital-footprint-scan">Check Your Exposure</Link>
