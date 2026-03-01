@@ -46,7 +46,7 @@ export function DiscoveryToProofSection() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button size="lg" asChild className="text-lg px-8 py-6 h-auto">
-            <Link to="/free-scan">
+            <Link to="/usernames">
               <Scan className="w-5 h-5 mr-2" />
               Start a Scan
             </Link>
