@@ -501,26 +501,6 @@ export function WhatsAppTab({ scanId, isPro, phoneNumber, results = [] }: WhatsA
   return (
     <>
       <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-green-500/10">
-            <MessageCircle className="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">WhatsApp Intelligence</h2>
-            <p className="text-[11px] text-muted-foreground">
-              Public OSINT signals from WhatsApp presence and web exposure
-            </p>
-          </div>
-          <Badge
-            variant="outline"
-            className="ml-auto text-[9px] h-4 px-1.5 border-green-500/30 text-green-600 dark:text-green-400"
-          >
-            <Shield className="h-2.5 w-2.5 mr-0.5" />
-            Public data only
-          </Badge>
-        </div>
-
         {/* Compliance notice */}
         <div className="p-3 rounded-lg bg-muted/20 border border-border/30 text-[11px] text-muted-foreground leading-relaxed">
           <span className="font-medium text-foreground/70">
