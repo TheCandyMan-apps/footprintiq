@@ -238,6 +238,15 @@ export function SummaryTab({
   // Check if any buckets have data
   const hasBucketData = Object.values(buckets).some(b => b.totalCount > 0);
 
+  // Messaging exposure scores
+  const isPhoneTarget = scanType === 'phone';
+  const phoneNumber = isPhoneTarget ? (job?.target || job?.username) : undefined;
+  const { combined: messagingCombined, hasData: hasMessagingData } = useMessagingScores({
+    scanId: jobId,
+    phoneNumber,
+    isPhoneTarget,
+  });
+
   // Render narrative-first layout for Free users
   if (!isFullAccess) {
     return (
