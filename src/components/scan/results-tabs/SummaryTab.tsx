@@ -2,7 +2,7 @@ import { useMemo, lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock } from 'lucide-react';
+import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
@@ -29,6 +29,8 @@ import { IdentityStrengthScore } from '@/components/intelligence/IdentityStrengt
 import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniquenessScore';
 import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterMap';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useMessagingScores } from '@/hooks/useMessagingScores';
+import { cn } from '@/lib/utils';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
