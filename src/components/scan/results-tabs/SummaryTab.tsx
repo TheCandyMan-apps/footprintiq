@@ -386,6 +386,37 @@ export function SummaryTab({
           </div>
         )}
 
+        {/* Messaging Exposure Summary */}
+        {hasMessagingData && messagingCombined && (
+          <div className="rounded-lg border border-border/30 bg-card p-3 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-foreground">Messaging Exposure</span>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className={cn(
+                "text-sm font-bold tabular-nums",
+                messagingCombined.risk >= 60 ? "text-destructive" :
+                messagingCombined.risk >= 30 ? "text-amber-500 dark:text-amber-400" :
+                "text-green-600 dark:text-green-400"
+              )}>
+                {messagingCombined.risk}/100
+              </span>
+              <Badge variant="outline" className={cn(
+                "text-[10px] h-4 px-1.5",
+                messagingCombined.risk >= 60 ? "border-destructive/30 text-destructive" :
+                messagingCombined.risk >= 30 ? "border-amber-500/30 text-amber-500" :
+                "border-green-500/30 text-green-600 dark:text-green-400"
+              )}>
+                {messagingCombined.risk >= 60 ? "Elevated" : messagingCombined.risk >= 30 ? "Moderate" : "Low"}
+              </Badge>
+              <span className="text-[11px] text-muted-foreground">
+                {messagingCombined.platformCount} platform{messagingCombined.platformCount !== 1 ? "s" : ""} detected
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Unified Profiles & Exposure Section */}
         <ProfilesExposureSection
           results={displayResults}
