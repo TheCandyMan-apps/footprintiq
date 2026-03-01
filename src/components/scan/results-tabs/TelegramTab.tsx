@@ -939,15 +939,13 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
 
   return (
     <div className="space-y-6">
-      {/* ── Provider Header ────────────────────────────────────── */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-          <Send className="h-4 w-4 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">Telegram Intelligence</h2>
-          <p className="text-[11px] text-muted-foreground">Public OSINT from Telegram users, channels, and groups</p>
-        </div>
+      {/* Compliance notice */}
+      <div className="p-2.5 rounded-lg bg-muted/20 border border-border/30 text-[11px] text-muted-foreground leading-relaxed">
+        <span className="font-medium text-foreground/70">
+          <Shield className="h-3 w-3 inline mr-1" />
+          Public data only:
+        </span>{" "}
+        Signals are derived from publicly accessible Telegram profiles, channels, and groups.
       </div>
 
       {/* ── Telegram Content ───────────────────────────────────── */}
@@ -1006,11 +1004,9 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
           {/* Exposure Snapshot */}
           <TelegramExposureSnapshot findings={realFindings} isPro={isPro} />
 
-          {/* Header */}
+          {/* Findings header – compact, no duplicate title */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-primary" />
-              <h3 className="text-sm font-semibold text-foreground">Telegram Intelligence</h3>
               <Badge variant="secondary" className="text-[10px] h-4 px-1">
                 {realFindings.length} finding{realFindings.length !== 1 ? 's' : ''}
               </Badge>
