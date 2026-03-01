@@ -92,7 +92,7 @@ export default function MessagingTab({
   const activeLabel = activeMessenger === 'whatsapp' ? 'WhatsApp' : 'Telegram';
 
   return (
-    <div className="p-4 sm:p-6 space-y-4">
+    <div className="px-4 sm:px-6 pt-2 pb-4 space-y-3">
       {/* Unified header */}
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
@@ -118,9 +118,11 @@ export default function MessagingTab({
         </Badge>
       </div>
 
-      {/* Combined exposure summary */}
+      {/* Combined exposure summary – elevated prominence */}
       {combinedScores.length > 0 && (
-        <MessagingExposureSummary scores={combinedScores} />
+        <div className="rounded-xl border-2 border-primary/20 shadow-sm bg-card">
+          <MessagingExposureSummary scores={combinedScores} />
+        </div>
       )}
 
       <Tabs value={activeMessenger} onValueChange={handleMessengerChange}>
