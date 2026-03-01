@@ -301,6 +301,7 @@ const FreeVsPaidOsintTools = lazy(() => import("./pages/guides/FreeVsPaidOsintTo
 const GoodOsintScanResult = lazy(() => import("./pages/guides/GoodOsintScanResult"));
 const GuidesIndex = lazy(() => import("./pages/guides/GuidesIndex"));
 const SearchTwitterWithoutAccount = lazy(() => import("./pages/guides/SearchTwitterWithoutAccount"));
+const ReduceDigitalFootprintGuide = lazy(() => import("./pages/guides/ReduceDigitalFootprint"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
 const DatingProfileLookup = lazy(() => import("./pages/DatingProfileLookup"));
