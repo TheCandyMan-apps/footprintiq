@@ -58,16 +58,24 @@ export default function MessagingTab({
   const [activeMessenger, setActiveMessenger] = useState<MessengerTab>(resolveInitial);
 
   // Sync messenger param to URL
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [transitioning, setTransitioning] = useState(false);
+
   const handleMessengerChange = (value: string) => {
     const m = value as MessengerTab;
-    setActiveMessenger(m);
-    const next = new URLSearchParams(searchParams);
-    if (m === "telegram") {
-      next.delete("messenger");
-    } else {
-      next.set("messenger", m);
-    }
-    setSearchParams(next, { replace: true });
+    setTransitioning(true);
+    setTimeout(() => {
+      setActiveMessenger(m);
+      const next = new URLSearchParams(searchParams);
+      if (m === "telegram") {
+        next.delete("messenger");
+      } else {
+        next.set("messenger", m);
+      }
+      setSearchParams(next, { replace: true });
+      contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTransitioning(false);
+    }, 150);
   };
 
   // If whatsapp tab is active but scan isn't phone, fall back
