@@ -664,6 +664,7 @@ function RouterContent() {
           <Route path="/workspace-management" element={<WorkspaceManagement />} />
            <Route path="/trust" element={<Trust />} />
            <Route path="/trust-safety" element={<TrustSafety />} />
+           <Route path="/data-lifecycle" element={<DataLifecycle />} />
           <Route path="/how-we-source-data" element={<HowWeSourceData />} />
           <Route path="/graph" element={<Graph />} />
           <Route path="/search" element={<Search />} />
