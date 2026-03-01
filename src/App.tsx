@@ -715,6 +715,7 @@ function RouterContent() {
             <Route path="/guides/free-vs-paid-osint-tools" element={<FreeVsPaidOsintTools />} />
             <Route path="/guides/good-osint-scan-result" element={<GoodOsintScanResult />} />
             <Route path="/guides/search-twitter-without-account" element={<SearchTwitterWithoutAccount />} />
+            <Route path="/guides/reduce-digital-footprint" element={<ReduceDigitalFootprintGuide />} />
            
            {/* SEO Pillar Pages */}
           <Route path="/digital-footprint-scanner" element={<DigitalFootprintScanner />} />
