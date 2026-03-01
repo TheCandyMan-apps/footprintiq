@@ -117,7 +117,7 @@ export default function InstagramUsernameOsintToolPage() {
       <Helmet>
         <title>Instagram Username OSINT Tool – Search & Analyse Instagram Usernames | FootprintIQ</title>
         <meta name="description" content="Use our Instagram username OSINT tool to search Instagram usernames across 500+ platforms. Map digital exposure, detect username reuse, and get removal guidance. Free and Pro scanning." />
-        <link rel="canonical" href={`${origin}/instagram-username-search-tool`} />
+        <link rel="canonical" href={`${origin}/instagram-username-search`} />
         <meta property="og:title" content="Instagram Username OSINT Tool – Search & Analyse Instagram Usernames | FootprintIQ" />
         <meta property="og:description" content="Search Instagram usernames across 500+ platforms. Map digital exposure, detect username reuse, and get actionable privacy intelligence." />
         <meta property="og:url" content={`${origin}/instagram-username-search-tool`} />
