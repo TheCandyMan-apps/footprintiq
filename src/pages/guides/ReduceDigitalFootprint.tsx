@@ -22,18 +22,18 @@ const faqs = [
 
 export default function ReduceDigitalFootprint() {
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
+    "@context": "https://schema.org" as const,
+    "@type": "FAQPage" as const,
     mainEntity: faqs.map((f) => ({
-      "@type": "Question",
+      "@type": "Question" as const,
       name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a },
+      acceptedAnswer: { "@type": "Answer" as const, text: f.a },
     })),
   };
 
   const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
+    "@context": "https://schema.org" as const,
+    "@type": "BreadcrumbList" as const,
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
       { "@type": "ListItem", position: 2, name: "Guides", item: "https://footprintiq.app/guides" },
