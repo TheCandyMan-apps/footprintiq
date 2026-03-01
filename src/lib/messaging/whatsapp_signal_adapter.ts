@@ -425,8 +425,28 @@ export function processWhatsAppSignals(input: WhatsAppAdapterInput): WhatsAppSig
   // Experimental signals (feature-flagged)
   signals.push(...buildExperimentalSignals(input.phoneNumber));
 
-  const riskContribution = calculateWhatsAppRiskScore(signals);
-  const overallConfidence = calculateOverallConfidence(signals);
+  // ── Scam DB baseline risk calibration ──
+  let risk = calculateWhatsAppRiskScore(signals);
+
+  if (input.scamDBMatches?.length) {
+    risk += 20; // baseline exposure for public scam DB appearance
+
+    input.scamDBMatches.forEach(match => {
+      if (match.reportCount >= 3) {
+        risk += 20;
+      } else if (match.reportCount >= 1) {
+        risk += 10;
+      }
+    });
+  }
+
+  const riskContribution = Math.min(risk, 100);
+
+  // Confidence scales with number of distinct signal categories present
+  const categoriesPresent = new Set(signals.filter(s => !s.experimental).map(s => s.category)).size;
+  const categoryBoost = Math.min(categoriesPresent / 5, 1); // 5 non-experimental categories = max
+  const baseConfidence = calculateOverallConfidence(signals);
+  const overallConfidence = Math.round(Math.min(baseConfidence * (0.6 + 0.4 * categoryBoost), 1) * 100) / 100;
 
   return {
     phoneNumber: input.phoneNumber,
