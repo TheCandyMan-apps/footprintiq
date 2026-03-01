@@ -146,7 +146,7 @@ export default function SnapchatUsernameSearch() {
             </Badge>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Snapchat Username Search – Check Public Profiles &amp; Digital Exposure
+              Snapchat Username Search
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">

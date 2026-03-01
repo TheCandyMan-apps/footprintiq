@@ -139,7 +139,7 @@ export default function DigitalFootprintScan() {
             </Badge>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Digital Footprint Scan – Check What's Online About You
+              Digital Footprint Scan
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
