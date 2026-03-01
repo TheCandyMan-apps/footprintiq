@@ -30,6 +30,7 @@ import { ExposureIntelligenceSection } from "@/components/ExposureIntelligenceSe
 import { EverydayUseCases } from "@/components/EverydayUseCases";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
 import { DiscoveryToProofSection } from "@/components/DiscoveryToProofSection";
+import { CategoryComparisonStrip } from "@/components/CategoryComparisonStrip";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -192,6 +193,10 @@ export default function Home() {
         <WhyChooseUs />
       </div>
       
+      <div className="below-fold">
+        <CategoryComparisonStrip />
+      </div>
+
       <div className="below-fold">
         <WhatWeAre />
       </div>
