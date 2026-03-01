@@ -1,8 +1,8 @@
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import { SEO } from "@/components/SEO";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
 import {
   Upload,
