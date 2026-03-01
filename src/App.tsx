@@ -865,7 +865,7 @@ function RouterContent() {
           <Route path="/search-username" element={<SearchUsernamePage />} />
           <Route path="/tiktok-username-search" element={<TikTokUsernameSearchPage />} />
           <Route path="/instagram-username-search" element={<InstagramUsernameSearchPage />} />
-          <Route path="/instagram-username-search-tool" element={<InstagramUsernameOsintTool />} />
+          <Route path="/instagram-username-search-tool" element={<Navigate to="/instagram-username-search" replace />} />
           <Route path="/ai-answers/instagram-username-osint" element={<AIAnswersInstagramUsernameOsint />} />
           <Route path="/how-username-reuse-exposes-you-online" element={<HowUsernameReuseExposesYouOnline />} />
           <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
