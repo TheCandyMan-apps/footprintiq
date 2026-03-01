@@ -40,13 +40,11 @@ export const flags = {
   spamhausEnrichment: import.meta.env.VITE_FLAG_SPAMHAUS_ENRICHMENT === "true",
 
   /** WhatsApp basic intelligence signals */
-  whatsappBasic: import.meta.env.VITE_FLAG_WHATSAPP_BASIC === "true",
+  whatsappBasic: true,
 
   /** WhatsApp experimental signals (best-effort / beta) */
-  whatsappExperimental: import.meta.env.VITE_FLAG_WHATSAPP_EXPERIMENTAL === "true",
+  whatsappExperimental: true,
 } as const;
-console.log("WA BASIC:", import.meta.env.VITE_FLAG_WHATSAPP_BASIC);
-console.log("WA EXP:", import.meta.env.VITE_FLAG_WHATSAPP_EXPERIMENTAL);
 /**
  * Check if a feature is enabled
  * @param flag Feature flag name
