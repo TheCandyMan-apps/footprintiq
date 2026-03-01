@@ -182,7 +182,7 @@ const ReverseUsernameSearch = () => {
                 </div>
 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-                  Reverse Username Search: Find Public Accounts by Username
+                  Reverse Username Search
                 </h1>
 
                 <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto">

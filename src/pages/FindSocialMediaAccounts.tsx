@@ -157,7 +157,7 @@ const FindSocialMediaAccounts = () => {
                 </div>
 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-                  Find Social Media Accounts by Username
+                  Find Social Media Accounts
                 </h1>
 
                 <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto">

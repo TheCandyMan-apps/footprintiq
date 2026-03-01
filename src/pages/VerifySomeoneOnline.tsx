@@ -136,7 +136,7 @@ const VerifySomeoneOnline = () => {
   return (
     <>
       <Helmet>
-        <title>How to Verify Someone's Identity Online (Ethical OSINT Guide 2026)</title>
+        <title>How to Verify Someone's Identity Online – Ethical OSINT Guide 2026 | FootprintIQ</title>
         <meta
           name="description"
           content="Learn how to ethically verify someone's identity online using OSINT. Understand what public data reveals, spot red flags, and protect yourself from catfishing and fraud."
