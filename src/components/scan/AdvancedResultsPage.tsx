@@ -123,19 +123,21 @@ export default function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps)
         return;
       }
 
+      // Derive target from available fields
+      const target = data.username || data.email || data.phone || "";
       setJob({
         id: data.id,
-        username: data.target || "",
-        target: data.target,
+        username: data.username || "",
+        target,
         scan_type: data.scan_type,
-        status: data.status,
+        status: data.status || "unknown",
         created_at: data.created_at,
-        started_at: data.started_at || null,
+        started_at: null,
         finished_at: data.completed_at || null,
-        error: data.error_message || null,
+        error: null,
         all_sites: false,
         requested_by: data.user_id || null,
-        telegram_triggered_at: null,
+        telegram_triggered_at: data.telegram_triggered_at || null,
       });
       setJobLoading(false);
     }
