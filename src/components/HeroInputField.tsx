@@ -78,9 +78,8 @@ export function HeroInputField({ className }: HeroInputFieldProps) {
     const type = detectType(trimmed);
     analytics.trackEvent('hero_scan_start', { type });
     
-    // Route to anonymous free scan page — no auth required
-    // Non-username types will prompt signup on that page
-    navigate(`/free-scan?q=${encodeURIComponent(trimmed)}`);
+    // Route to scan page
+    navigate(`/scan?q=${encodeURIComponent(trimmed)}`);
   }, [identifier, navigate]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

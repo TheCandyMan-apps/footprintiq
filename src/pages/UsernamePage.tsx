@@ -155,7 +155,7 @@ export default function UsernamePage() {
             </p>
             
             <Button size="lg" asChild className="text-lg px-8 py-6 mb-8">
-              <Link to="/free-scan">
+              <Link to="/scan">
                 Run a Free Username Scan
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
@@ -347,7 +347,7 @@ export default function UsernamePage() {
               Start a free scan to see where your username appears across 500+ platforms.
             </p>
             <Button size="lg" asChild className="text-lg px-8 py-6">
-              <Link to="/free-scan">
+              <Link to="/scan">
                 Run a Free Username Scan
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>

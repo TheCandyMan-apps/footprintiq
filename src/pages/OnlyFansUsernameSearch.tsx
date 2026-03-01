@@ -338,7 +338,7 @@ export default function OnlyFansUsernameSearch() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
-                <Link to="/free-scan">
+                <Link to="/scan">
                   Check Your Exposure Now
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>

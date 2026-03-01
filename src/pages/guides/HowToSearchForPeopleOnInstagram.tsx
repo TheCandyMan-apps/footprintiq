@@ -219,7 +219,7 @@ export default function HowToSearchForPeopleOnInstagram() {
             <h2 className="text-3xl font-bold mb-4">Run a Free Scan</h2>
             <p className="text-muted-foreground mb-8">Search any Instagram username across 500+ platforms. Free and instant.</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" asChild><Link to="/free-scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button size="lg" asChild><Link to="/scan">Run a Free Scan <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
               <Button size="lg" variant="outline" asChild><Link to="/digital-footprint-scan">Check Your Exposure</Link></Button>
             </div>
           </div>

@@ -73,7 +73,7 @@ export default function ReduceDigitalFootprint() {
             </p>
             <p>
               The problem is not that the information exists; it is that most people have no idea how much of it is out there. A{" "}
-              <Link to="/free-scan">free FootprintIQ scan</Link> typically surfaces 20–80 public data points that the user had forgotten about or never knew were indexed.
+              <Link to="/scan">free FootprintIQ scan</Link> typically surfaces 20–80 public data points that the user had forgotten about or never knew were indexed.
             </p>
 
             <h2>Step 1 — Discover What Is Exposed</h2>
