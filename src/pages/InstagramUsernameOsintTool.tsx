@@ -132,6 +132,10 @@ export default function InstagramUsernameOsintToolPage() {
       <Header />
 
       <main className="min-h-screen bg-background">
+        <p className="text-center text-[11px] text-muted-foreground pt-4">
+          For the main Instagram username page, use{" "}
+          <Link to="/instagram-username-search" className="text-primary hover:underline">/instagram-username-search</Link>.
+        </p>
         {/* Hero */}
         <section className="relative py-20 md:py-28 bg-gradient-to-b from-background via-muted/20 to-background">
           <div className="max-w-4xl mx-auto px-6 text-center">

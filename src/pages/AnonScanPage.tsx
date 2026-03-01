@@ -89,6 +89,10 @@ export default function AnonScanPage() {
       <Header />
       <main className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-16">
         <div className="w-full max-w-lg">
+          <p className="text-center text-[11px] text-muted-foreground mb-4">
+            This page is a shortcut. For the latest version, use{" "}
+            <Link to="/scan" className="text-primary hover:underline">/scan</Link>.
+          </p>
 
           {/* Hero text */}
           <div className="text-center mb-8">
