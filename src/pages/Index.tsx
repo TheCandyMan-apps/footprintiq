@@ -28,6 +28,7 @@ import { PlatformCapabilities } from "@/components/PlatformCapabilities";
 import { ForProfessionals } from "@/components/ForProfessionals";
 import { ExposureIntelligenceSection } from "@/components/ExposureIntelligenceSection";
 import { EverydayUseCases } from "@/components/EverydayUseCases";
+import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
 
 export default function Home() {
   const navigate = useNavigate();
