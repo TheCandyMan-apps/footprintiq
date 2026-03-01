@@ -84,7 +84,7 @@ export default function AnonScanPage() {
       <SEO
         title="Free Username Scanner — Check Your Digital Footprint | FootprintIQ"
         description="Instantly scan any username across 500+ platforms. No account required. See where your information appears online using ethical, public-source intelligence."
-        canonical="https://footprintiq.app/free-scan"
+        canonical="https://footprintiq.app/scan"
       />
       <Header />
       <main className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-16">
