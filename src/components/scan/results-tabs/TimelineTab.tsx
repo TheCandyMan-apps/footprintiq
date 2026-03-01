@@ -288,8 +288,8 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
           date,
           type: 'messaging',
           platform: 'WhatsApp',
-          title: `WhatsApp: ${sig.title}`,
-          description: sig.summary,
+          title: `WhatsApp: ${sig.label}`,
+          description: String(sig.value),
           confidence,
           metadata: { source: 'whatsapp', risk_score: risk, category: sig.category },
         });
