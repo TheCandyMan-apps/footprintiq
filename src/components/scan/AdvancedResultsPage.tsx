@@ -15,6 +15,7 @@ import { useScanResultsData, ScanJob, ScanResult } from "@/hooks/useScanResultsD
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ResultsTabBar } from "./ResultsTabBar";
 import { WhatsAppTab } from "./results-tabs/WhatsAppTab";
+import { InvestigationProvider } from "@/contexts/InvestigationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { flags } from "@/lib/featureFlags";
 
