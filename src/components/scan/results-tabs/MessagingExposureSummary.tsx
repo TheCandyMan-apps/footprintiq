@@ -51,7 +51,7 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
   const LevelIcon = level.icon;
 
   return (
-    <div className={cn("rounded-lg border px-5 py-5 space-y-3", level.border, level.bg)}>
+    <div className={cn("rounded-xl border px-5 py-5 space-y-3 shadow-card", level.border, level.bg)}>
       {/* Top row: score + risk badge + stats */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">

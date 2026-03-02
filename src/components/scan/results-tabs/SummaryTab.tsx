@@ -341,7 +341,7 @@ export function SummaryTab({
       </div>
 
       {/* Intelligence Brief - Compact card */}
-      <div className="border border-border/20 rounded-lg bg-card p-5 space-y-10">
+      <div className="border border-border/30 rounded-xl bg-card shadow-card p-5 space-y-10">
         {/* 0) Risk Snapshot - Using aggregated counts */}
         <RiskSnapshotCard
           snapshot={aggregatedRiskSnapshot}
@@ -374,7 +374,7 @@ export function SummaryTab({
 
         {/* Messaging Exposure Summary */}
         {hasMessagingData && messagingCombined && (
-          <div className="rounded-lg border-2 border-primary/20 shadow-sm bg-card p-5 space-y-4">
+          <div className="rounded-xl border border-border/30 shadow-card bg-card p-5 space-y-4">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold tracking-[0.01em] text-foreground">Messaging Exposure</span>
@@ -481,7 +481,7 @@ export function SummaryTab({
 
       {/* What to do next — shown after scan completes */}
       {scanComplete && (
-        <div className="p-5 rounded-lg bg-muted/15 border border-border/25">
+        <div className="p-5 rounded-xl bg-muted/15 border border-border/25 shadow-card">
           <h4 className="text-xs font-medium text-foreground/80 mb-2">What to do next</h4>
           <ul className="space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
             <li className="flex items-start gap-2">
