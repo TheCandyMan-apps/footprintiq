@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sanitizeScanId } from "../_shared/sanitizeIds.ts";
 import { verifyFpiqHmac } from "../_shared/hmacAuth.ts";
+import { writeScanEvent } from "../_shared/scanHealthWriter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -214,7 +215,7 @@ serve(async (req) => {
     // Get the scan record to verify it exists
     const { data: scan, error: fetchError } = await supabase
       .from('scans')
-      .select('id, user_id, workspace_id')
+      .select('id, user_id, workspace_id, created_at')
       .eq('id', scanId)
       .single();
 
@@ -578,6 +579,20 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Write scan_event + scan_health for completion
+    await writeScanEvent(supabase, {
+      scan_id: scanId,
+      workspace_id: scan.workspace_id,
+      user_id: scan.user_id,
+      provider: 'system',
+      stage: 'complete',
+      status: finalStatus,
+      message: `Scan finalized: ${findings?.length || 0} findings, status=${finalStatus}`,
+      findings_count: findings?.length || 0,
+      error_message: scanError ? String(scanError) : null,
+      metadata: { provider_count: Object.keys(computedProviderResults).length },
+    });
 
     // Update scan_progress table for real-time UI updates
     // Preserve the original total_providers from initial setup, only update completed

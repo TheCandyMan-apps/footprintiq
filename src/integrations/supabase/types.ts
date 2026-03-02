@@ -7343,11 +7343,14 @@ export type Database = {
           error_message: string | null
           findings_count: number | null
           id: string
+          message: string | null
           metadata: Json | null
           provider: string
           scan_id: string
           stage: string
           status: string | null
+          user_id: string | null
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -7355,11 +7358,14 @@ export type Database = {
           error_message?: string | null
           findings_count?: number | null
           id?: string
+          message?: string | null
           metadata?: Json | null
           provider: string
           scan_id: string
           stage?: string
           status?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -7367,11 +7373,14 @@ export type Database = {
           error_message?: string | null
           findings_count?: number | null
           id?: string
+          message?: string | null
           metadata?: Json | null
           provider?: string
           scan_id?: string
           stage?: string
           status?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -7409,6 +7418,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scan_health: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_code: string | null
+          error_detail: string | null
+          id: string
+          last_heartbeat_at: string | null
+          last_stage: string | null
+          latency_ms_total: number | null
+          scan_id: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_detail?: string | null
+          id?: string
+          last_heartbeat_at?: string | null
+          last_stage?: string | null
+          latency_ms_total?: number | null
+          scan_id: string
+          started_at?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_detail?: string | null
+          id?: string
+          last_heartbeat_at?: string | null
+          last_stage?: string | null
+          latency_ms_total?: number | null
+          scan_id?: string
+          started_at?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: []
       }
       scan_jobs: {
         Row: {
