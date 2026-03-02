@@ -310,7 +310,7 @@ export function SummaryTab({
 
   // Pro/Business: Full access layout (existing)
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Brief Header - Compact scan identifier */}
       <div className="flex items-center justify-between gap-2 px-0.5 py-1 border-b border-border/15">
         <div className="flex items-center gap-1.5 min-w-0">
@@ -341,7 +341,7 @@ export function SummaryTab({
       </div>
 
       {/* Intelligence Brief - Compact card */}
-      <div className="border border-border/30 rounded-xl bg-card shadow-card p-5 space-y-10">
+      <div className="border border-border/30 rounded-xl bg-card shadow-card p-5 space-y-8">
         {/* 0) Risk Snapshot - Using aggregated counts */}
         <RiskSnapshotCard
           snapshot={aggregatedRiskSnapshot}
