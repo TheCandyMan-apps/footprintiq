@@ -250,7 +250,7 @@ export function SummaryTab({
   // Render narrative-first layout for Free users
   if (!isFullAccess) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-8">
         {/* Narrative Header - "Here's what we found" */}
         <FreeResultsHeader
           username={job?.username || 'Unknown'}
@@ -309,7 +309,7 @@ export function SummaryTab({
 
   // Pro/Business: Full access layout (existing)
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-8">
       {/* Brief Header - Compact scan identifier */}
       <div className="flex items-center justify-between gap-2 px-0.5 py-1 border-b border-border/15">
         <div className="flex items-center gap-1.5 min-w-0">
@@ -340,7 +340,7 @@ export function SummaryTab({
       </div>
 
       {/* Intelligence Brief - Compact card */}
-      <div className="border border-border/20 rounded bg-card p-2.5 space-y-2.5">
+      <div className="border border-border/20 rounded-lg bg-card p-5 space-y-8">
         {/* 0) Risk Snapshot - Using aggregated counts */}
         <RiskSnapshotCard
           snapshot={aggregatedRiskSnapshot}
@@ -373,7 +373,7 @@ export function SummaryTab({
 
         {/* Messaging Exposure Summary */}
         {hasMessagingData && messagingCombined && (
-          <div className="rounded-lg border-2 border-primary/20 shadow-sm bg-card p-3 space-y-1.5">
+          <div className="rounded-lg border-2 border-primary/20 shadow-sm bg-card p-5 space-y-4">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-foreground">Messaging Exposure</span>
@@ -404,7 +404,7 @@ export function SummaryTab({
 
         {/* Intelligence Tiles - Identity Strength, Uniqueness, Clusters */}
         {scanComplete && aggregated.counts.totalProfiles > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
               <IdentityStrengthScore scanId={jobId} />
             </ErrorBoundary>
@@ -460,7 +460,7 @@ export function SummaryTab({
       </div>
 
       {/* Compact Footer Stats - Using aggregated counts */}
-      <div className="flex items-center justify-between px-0.5 text-[9px] text-muted-foreground/50">
+      <div className="flex items-center justify-between px-0.5 pt-4 text-[9px] text-muted-foreground/50">
         <div className="flex items-center gap-2">
           <span><strong className="text-foreground/60">{aggregated.counts.totalProfiles}</strong> profiles</span>
           <span><strong className="text-foreground/60">{platforms.length}</strong> platforms</span>
@@ -479,7 +479,7 @@ export function SummaryTab({
 
       {/* What to do next — shown after scan completes */}
       {scanComplete && (
-        <div className="mt-5 p-4 rounded-lg bg-muted/15 border border-border/25">
+        <div className="p-5 rounded-lg bg-muted/15 border border-border/25">
           <h4 className="text-xs font-medium text-foreground/80 mb-2">What to do next</h4>
           <ul className="space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
             <li className="flex items-start gap-2">
