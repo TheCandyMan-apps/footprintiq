@@ -75,7 +75,7 @@ export function AccountCard({
   return (
     <div
       className={cn(
-        'rounded-lg border-2 bg-card overflow-hidden transition-all duration-150 cursor-pointer shadow-sm',
+        'rounded-lg border-2 bg-card/80 overflow-hidden transition-all duration-150 cursor-pointer shadow-sm',
         'hover:shadow-md hover:border-foreground/25',
         isSelected && 'ring-2 ring-primary border-primary/60 shadow-md',
         isFocused && !isSelected && 'ring-1 ring-primary/50 border-primary/40',
@@ -88,16 +88,16 @@ export function AccountCard({
       aria-pressed={isSelected}
     >
       {/* Header: icon + platform + confidence */}
-      <div className="flex items-center gap-2 px-2.5 pt-2 pb-1">
+      <div className="flex items-center gap-2 px-2.5 pt-2.5 pb-1.5">
         <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="card" />
 
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[12px] text-foreground truncate leading-none">{platformName}</p>
-          {username ? <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">@{username}</p> : <p className="text-[10px] text-muted-foreground/40 truncate leading-tight italic">Username not publicly listed</p>}
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <p className="font-bold text-[12px] text-foreground truncate leading-none">{platformName}</p>
+          {username ? <p className="text-[10px] text-muted-foreground truncate leading-tight">@{username}</p> : <p className="text-[10px] text-muted-foreground/50 truncate leading-tight italic">Username not publicly listed</p>}
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60 font-medium leading-none cursor-help w-fit" onClick={e => e.stopPropagation()}>
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/70 font-medium leading-none cursor-help w-fit" onClick={e => e.stopPropagation()}>
                   {matchType.label}
                 </span>
               </TooltipTrigger>
@@ -125,12 +125,12 @@ export function AccountCard({
       </div>
 
       {/* Bio / risk context */}
-      <div className="px-2.5 pb-1">
+      <div className="px-2.5 pt-1 pb-1.5">
         {bio ? (
-          <p className="text-[10px] text-muted-foreground/70 leading-snug line-clamp-2">{bio}</p>
+          <p className="text-[10px] text-muted-foreground/80 leading-snug line-clamp-2">{bio}</p>
         ) : null}
-        <div className="flex items-center gap-1">
-          <p className="text-[9px] text-muted-foreground/50 leading-snug line-clamp-2 italic mt-0.5 flex-1">
+        <div className="flex items-center gap-1 mt-1">
+          <p className="text-[9px] text-muted-foreground/60 leading-snug line-clamp-2 italic flex-1">
             {generateRiskContext(result, lensScore).split('. ')[0]}.
           </p>
           <TooltipProvider delayDuration={200}>
