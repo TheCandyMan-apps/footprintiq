@@ -453,6 +453,29 @@ const ReverseUsernameSearch = () => {
             </div>
           </section>
 
+          {/* Comparison Guide CTA */}
+          <section className="py-10 md:py-12">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <Card className="p-6 border-primary/20 bg-primary/5">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                      <Eye className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-foreground font-medium">
+                        Looking for a comparison of the best reverse username tools?{" "}
+                        <Link to="/best-reverse-username-search-tools" className="text-primary hover:underline font-semibold">
+                          See our 2026 comparison guide →
+                        </Link>
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </section>
+
           {/* Security & Privacy Context */}
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4">
