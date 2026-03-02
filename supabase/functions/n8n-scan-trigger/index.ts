@@ -300,6 +300,17 @@ serve(async (req) => {
 
     console.log(`[n8n-scan-trigger] Created scan record: ${scan.id}`);
 
+    // Write scan_event + scan_health for init stage
+    await writeScanEvent(serviceClient, {
+      scan_id: scan.id,
+      workspace_id: workspaceId,
+      user_id: user.id,
+      provider: 'system',
+      stage: 'init',
+      status: 'pending',
+      message: `Scan initiated: ${scanType} for ${targetValue.substring(0, 3)}***`,
+    });
+
     // Define providers based on scan type and tier
     let providers: string[];
     let totalSteps = 0;
