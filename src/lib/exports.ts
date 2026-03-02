@@ -612,11 +612,16 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
 
   // Risk metrics grid
   doc.setFontSize(10);
+  // Compute risk counts from findings if scan doesn't have them
+  const highCount = scan.high_risk_count || findings.filter((f: any) => f.severity === 'critical' || f.severity === 'high').length;
+  const medCount = scan.medium_risk_count || findings.filter((f: any) => f.severity === 'medium').length;
+  const lowCount = scan.low_risk_count || findings.filter((f: any) => f.severity === 'low' || f.severity === 'info').length;
+
   const metrics = [
-    { label: 'Critical Risk Items', value: scan.high_risk_count || 0, color: [220, 38, 38] },
-    { label: 'Medium Risk Items', value: scan.medium_risk_count || 0, color: [250, 204, 21] },
-    { label: 'Low Risk Items', value: scan.low_risk_count || 0, color: [59, 130, 246] },
-    { label: 'Data Breaches', value: scan.breach_count || 0, color: [168, 85, 247] }
+    { label: 'Critical/High Risk', value: highCount, color: [220, 38, 38] },
+    { label: 'Medium Risk', value: medCount, color: [250, 204, 21] },
+    { label: 'Low/Info Risk', value: lowCount, color: [59, 130, 246] },
+    { label: 'Total Findings', value: findings.length, color: [168, 85, 247] }
   ];
 
   metrics.forEach((metric, index) => {
