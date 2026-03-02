@@ -92,17 +92,19 @@ export default function MessagingTab({
   const activeLabel = activeMessenger === 'whatsapp' ? 'WhatsApp' : 'Telegram';
 
   return (
-    <div className="px-4 sm:px-6 pt-4 pb-6 space-y-5">
-      {/* Unified header – single title row */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
-          <MessageCircle className="h-4 w-4 text-primary" />
+    <div className="px-4 sm:px-6 pt-4 pb-6 space-y-4">
+      {/* Unified header */}
+      <div className="space-y-0.5">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          Messaging Intelligence
+        </p>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground">Platform Overview</h2>
+          <span className="flex items-center gap-1 text-[9px] text-muted-foreground/50 shrink-0">
+            <Shield className="h-2.5 w-2.5" />
+            Public data only
+          </span>
         </div>
-        <h2 className="text-sm font-semibold text-foreground flex-1 min-w-0">Messaging Intelligence</h2>
-        <span className="flex items-center gap-1 text-[9px] text-muted-foreground/70 shrink-0">
-          <Shield className="h-2.5 w-2.5" />
-          Public data only
-        </span>
       </div>
 
       {/* Combined exposure summary */}
@@ -111,21 +113,22 @@ export default function MessagingTab({
       )}
 
       <Tabs value={activeMessenger} onValueChange={handleMessengerChange}>
-        <TabsList className="h-auto flex-wrap justify-start gap-1 bg-muted/50 p-1">
+        {/* Secondary ghost-style sub-tabs */}
+        <TabsList className="h-auto flex-wrap justify-start gap-1 bg-transparent p-0 border-b border-border/30 pb-2">
           <TabsTrigger
             value="telegram"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none"
           >
-            <Send className="h-3.5 w-3.5" />
+            <Send className="h-3 w-3" />
             Telegram
           </TabsTrigger>
 
           {showWhatsApp && (
             <TabsTrigger
               value="whatsapp"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
-              <MessageCircle className="h-3.5 w-3.5" />
+              <MessageCircle className="h-3 w-3" />
               WhatsApp
             </TabsTrigger>
           )}
@@ -133,11 +136,11 @@ export default function MessagingTab({
           <TabsTrigger
             value="discord"
             disabled
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-muted-foreground/40 cursor-default"
           >
-            <Hash className="h-3.5 w-3.5" />
+            <Hash className="h-3 w-3" />
             Discord
-            <Badge variant="outline" className="text-[8px] h-3.5 px-1 ml-0.5">
+            <Badge variant="outline" className="text-[7px] h-3 px-1 ml-0.5 border-border/40 text-muted-foreground/40">
               Planned
             </Badge>
           </TabsTrigger>
@@ -145,11 +148,11 @@ export default function MessagingTab({
           <TabsTrigger
             value="threads"
             disabled
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-muted-foreground/40 cursor-default"
           >
-            <AtSign className="h-3.5 w-3.5" />
+            <AtSign className="h-3 w-3" />
             Threads
-            <Badge variant="outline" className="text-[8px] h-3.5 px-1 ml-0.5">
+            <Badge variant="outline" className="text-[7px] h-3 px-1 ml-0.5 border-border/40 text-muted-foreground/40">
               Planned
             </Badge>
           </TabsTrigger>
@@ -160,14 +163,14 @@ export default function MessagingTab({
           className="transition-opacity duration-150 ease-in-out"
           style={{ opacity: transitioning ? 0 : 1 }}
         >
-          <TabsContent value="telegram" className="mt-3">
+          <TabsContent value="telegram" className="mt-4">
             <Suspense fallback={<TabSkeleton />}>
               <TelegramTab scanId={scanId} isPro={isPro} />
             </Suspense>
           </TabsContent>
 
           {showWhatsApp && (
-            <TabsContent value="whatsapp" className="mt-3">
+            <TabsContent value="whatsapp" className="mt-4">
               <WhatsAppTab
                 scanId={scanId}
                 isPro={isPro}
