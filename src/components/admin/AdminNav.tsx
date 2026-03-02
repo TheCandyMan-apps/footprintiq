@@ -113,6 +113,12 @@ export function AdminNav() {
           icon: Terminal,
         },
         {
+          title: 'Ops Dashboard',
+          path: '/ops',
+          icon: Gauge,
+          badge: 'NEW',
+        },
+        {
           title: 'Database Export',
           path: '/admin/database-export',
           icon: Download,
