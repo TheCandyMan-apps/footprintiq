@@ -256,6 +256,8 @@ const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"
 const EmailResultsPage = lazy(() => import("./pages/scan/EmailResultsPage"));
 const PhoneResultsPage = lazy(() => import("./pages/scan/PhoneResultsPage"));
 const OpsConsole = lazy(() => import("./pages/admin/OpsConsole"));
+const OpsOverview = lazy(() => import("./pages/ops/OpsOverview"));
+const OpsScanDetail = lazy(() => import("./pages/ops/OpsScanDetail"));
 const AuditViewer = lazy(() => import("./pages/admin/AuditViewer"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const Research = lazy(() => import("./pages/Research"));
