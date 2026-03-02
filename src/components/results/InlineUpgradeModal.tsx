@@ -56,15 +56,18 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
   const shouldShowVerification = !verificationLoading && !isVerified;
 
   const handleUpgrade = async () => {
-    if (!workspace?.id) {
-      toast({ title: 'Error', description: 'No workspace selected', variant: 'destructive' });
+    // Check auth first — anonymous users should sign up before checkout
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      onOpenChange(false);
+      navigate('/auth?redirect=pricing');
       return;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({ title: 'Sign in required', description: 'Please sign in to upgrade.', variant: 'destructive' });
-      window.location.href = '/auth';
+    if (!workspace?.id) {
+      // Authenticated but no workspace yet — redirect to dashboard to provision one
+      onOpenChange(false);
+      navigate('/pricing');
       return;
     }
 
