@@ -10,6 +10,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { formatScore, formatConfidence } from "@/lib/formatMetrics";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -163,8 +164,8 @@ function WhatsAppExposureSnapshot({
   const stats = [
     { label: "Core Signals", value: coreSignals.length, proOnly: false },
     { label: "Advanced Signals", value: advancedSignals.length, proOnly: true },
-    { label: "Risk Score", value: `${bundle.riskContribution}/100`, proOnly: true },
-    { label: "Confidence", value: `${Math.round(bundle.overallConfidence * 100)}%`, proOnly: true },
+    { label: "Risk Score", value: formatScore(bundle.riskContribution), proOnly: true },
+    { label: "Confidence", value: formatConfidence(bundle.overallConfidence), proOnly: true },
   ];
 
   return (

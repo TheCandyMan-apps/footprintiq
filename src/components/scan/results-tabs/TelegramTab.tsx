@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, Lock, Send, Shield, Info, Users, Hash, Network, Phone, Eye, EyeOff, Activity, AlertTriangle, TrendingUp, Link, Clock, RefreshCw, CheckCircle2, XCircle, Hourglass, MessageSquare } from 'lucide-react';
+import { formatScore } from '@/lib/formatMetrics';
 import { useTelegramFindings, type TelegramFinding } from '@/hooks/useTelegramFindings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -477,7 +478,7 @@ function ActivityIntelCard({ findings }: { findings: TelegramFinding[] }) {
           <div className={`flex items-center gap-3 rounded-md px-3 py-2 ${riskBg}`}>
             <AlertTriangle className={`h-4 w-4 shrink-0 ${riskColor}`} />
             <div>
-              <p className={`font-semibold ${riskColor}`}>Risk Score: {riskScore}/100</p>
+              <p className={`font-semibold ${riskColor}`}>Risk Score: {formatScore(riskScore)}</p>
               <p className="text-[10px] text-muted-foreground">
                 {riskScore >= 70 ? 'High risk signals detected' : riskScore >= 40 ? 'Moderate risk signals' : 'Low risk profile'}
               </p>

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatScore, formatConfidence } from '@/lib/formatMetrics';
 
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useInvestigation } from '@/contexts/InvestigationContext';
@@ -386,7 +387,7 @@ export function SummaryTab({
                 messagingCombined.risk >= 30 ? "text-amber-500 dark:text-amber-400" :
                 "text-green-600 dark:text-green-400"
               )}>
-                {messagingCombined.risk}/100
+                {formatScore(messagingCombined.risk)}
               </span>
               <Badge variant="outline" className={cn(
                 BADGE_SIZE,
@@ -398,7 +399,7 @@ export function SummaryTab({
                 {messagingCombined.level === 'elevated' ? "Elevated" : messagingCombined.level === 'moderate' ? "Moderate" : "Low"}
               </Badge>
               <span className="text-[11px] text-muted-foreground">
-                {messagingCombined.platformCount} platform{messagingCombined.platformCount !== 1 ? "s" : ""} · {messagingCombined.confidence}% confidence
+                {messagingCombined.platformCount} platform{messagingCombined.platformCount !== 1 ? "s" : ""} · {formatConfidence(messagingCombined.confidence / 100)}
               </span>
             </div>
           </div>

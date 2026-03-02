@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { cn } from "@/lib/utils";
 import { riskBadgeClass, BADGE_SIZE } from "@/lib/badgeStyles";
+import { formatScore, formatConfidence, formatSignals } from "@/lib/formatMetrics";
 
 export interface MessagingScoreInput {
   label: string;
@@ -57,7 +58,7 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
         <div className="flex items-center gap-2">
           <LevelIcon className={cn("h-4 w-4 shrink-0", level.color)} />
           <span className={cn("text-lg font-bold tabular-nums", level.color)}>
-            {summary.risk}/100
+            {formatScore(summary.risk)}
           </span>
           <Badge variant="outline" className={cn(BADGE_SIZE, riskBadgeClass(level.key))}>
             {level.label}
@@ -69,14 +70,10 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
         <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1">
             <Activity className="h-3 w-3" />
-            {summary.signalCount} signal{summary.signalCount !== 1 ? "s" : ""}
+            {formatSignals(summary.signalCount)}
           </span>
           <span>
-            {summary.confidence}%
-            {" "}
-            <span className="text-muted-foreground/60">
-              {summary.confidence > 70 ? "High confidence" : summary.confidence >= 40 ? "Moderate confidence" : "Limited data"}
-            </span>
+            {formatConfidence(summary.confidence / 100)}
           </span>
           {/* Platform badges */}
           {summary.sources.map((src) => (
