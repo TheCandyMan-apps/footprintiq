@@ -92,7 +92,7 @@ export default function MessagingTab({
   const activeLabel = activeMessenger === 'whatsapp' ? 'WhatsApp' : 'Telegram';
 
   return (
-    <div className="px-4 sm:px-6 pt-4 pb-6 space-y-4">
+    <div className="px-4 sm:px-6 pt-8 pb-6 space-y-8">
       {/* Unified header */}
       <div className="space-y-0.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/55">
@@ -163,14 +163,14 @@ export default function MessagingTab({
           className="transition-opacity duration-150 ease-in-out"
           style={{ opacity: transitioning ? 0 : 1 }}
         >
-          <TabsContent value="telegram" className="mt-4">
+          <TabsContent value="telegram" className="mt-8">
             <Suspense fallback={<TabSkeleton />}>
               <TelegramTab scanId={scanId} isPro={isPro} />
             </Suspense>
           </TabsContent>
 
           {showWhatsApp && (
-            <TabsContent value="whatsapp" className="mt-4">
+            <TabsContent value="whatsapp" className="mt-8">
               <WhatsAppTab
                 scanId={scanId}
                 isPro={isPro}

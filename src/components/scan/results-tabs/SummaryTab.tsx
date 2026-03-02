@@ -341,7 +341,7 @@ export function SummaryTab({
       </div>
 
       {/* Intelligence Brief - Compact card */}
-      <div className="border border-border/20 rounded-lg bg-card p-5 space-y-8">
+      <div className="border border-border/20 rounded-lg bg-card p-5 space-y-10">
         {/* 0) Risk Snapshot - Using aggregated counts */}
         <RiskSnapshotCard
           snapshot={aggregatedRiskSnapshot}
@@ -406,7 +406,7 @@ export function SummaryTab({
 
         {/* Intelligence Tiles - Identity Strength, Uniqueness, Clusters */}
         {scanComplete && aggregated.counts.totalProfiles > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
               <IdentityStrengthScore scanId={jobId} />
             </ErrorBoundary>
