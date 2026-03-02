@@ -486,7 +486,22 @@ function escapeCSV(field: string): string {
 export async function generateComprehensiveReport(scan: any, dataSources: any[]): Promise<void> {
   const { jsPDF } = await import('jspdf');
   const autoTable = (await import('jspdf-autotable')).default;
-  
+
+  // If data_sources is empty, fetch canonical_results as the primary data source
+  let findings: any[] = dataSources;
+  let usedCanonical = false;
+  if (!dataSources || dataSources.length === 0) {
+    const { data: canonical } = await supabase
+      .from('canonical_results')
+      .select('*')
+      .eq('scan_id', scan.id)
+      .order('severity', { ascending: true });
+    if (canonical && canonical.length > 0) {
+      findings = canonical;
+      usedCanonical = true;
+    }
+  }
+
   const doc = new jsPDF();
   let pageNumber = 1;
 
@@ -523,6 +538,9 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
     day: 'numeric' 
   }), 105, 70, { align: 'center' });
 
+  // Determine target identifier
+  const target = scan.username || scan.email || scan.phone || scan.domain || 'N/A';
+
   // Report metadata
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(14);
@@ -533,7 +551,9 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
   doc.setFont(undefined, 'normal');
   let yPos = 132;
   
-  doc.text(`Scan ID: ${scan.id || 'N/A'}`, 14, yPos);
+  doc.text(`Scan Type: ${(scan.scan_type || 'N/A').charAt(0).toUpperCase() + (scan.scan_type || '').slice(1)}`, 14, yPos);
+  yPos += 7;
+  doc.text(`Target: ${target}`, 14, yPos);
   yPos += 7;
   doc.text(`Scan Date: ${new Date(scan.created_at).toLocaleDateString('en-US', { 
     year: 'numeric', 
@@ -543,11 +563,9 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
     minute: '2-digit'
   })}`, 14, yPos);
   yPos += 7;
-  doc.text(`Target Email: ${scan.email ? '***@' + scan.email.split('@')[1] : 'Not specified'}`, 14, yPos);
+  doc.text(`Findings: ${findings.length}`, 14, yPos);
   yPos += 7;
-  doc.text(`Data Sources Analyzed: ${dataSources.length}`, 14, yPos);
-  yPos += 7;
-  doc.text(`Total Exposures Found: ${scan.total_sources_found || 0}`, 14, yPos);
+  doc.text(`Total Exposures Found: ${scan.total_sources_found || findings.length}`, 14, yPos);
   yPos += 20;
 
   // Executive Summary
