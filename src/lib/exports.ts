@@ -1,6 +1,7 @@
 import { Finding } from "./ufm";
 import { redactFindings } from "./redact";
 import { exportReactPDF } from "./pdf-export";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Export findings as JSON
