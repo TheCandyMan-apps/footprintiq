@@ -643,27 +643,42 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(16);
   doc.setFont(undefined, 'bold');
-  doc.text('Data Sources Analysis', 14, 25);
+  doc.text('Findings Analysis', 14, 25);
   yPos = 35;
 
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  doc.text('The following data sources were analyzed during this investigation:', 14, yPos);
+  doc.text(`The following ${findings.length} findings were identified during this investigation:`, 14, yPos);
   yPos += 10;
 
-  // Data sources table with enhanced information
-  const tableData = dataSources.map(source => [
-    source.name || 'Unknown',
-    source.category || 'N/A',
-    source.risk_level || 'Unknown',
-    String(source.data_found?.length || 0),
-    source.last_seen ? new Date(source.last_seen).toLocaleDateString() : 'N/A'
-  ]);
+  // Build table based on data type
+  let tableHead: string[][];
+  let tableData: string[][];
+
+  if (usedCanonical) {
+    tableHead = [['Platform', 'Username', 'Severity', 'Confidence', 'Category']];
+    tableData = findings.map((f: any) => [
+      f.platform_name || 'Unknown',
+      f.canonical_username || 'N/A',
+      (f.severity || 'info').charAt(0).toUpperCase() + (f.severity || 'info').slice(1),
+      `${Math.round((f.confidence || 0) * 100)}%`,
+      f.platform_category || 'N/A'
+    ]);
+  } else {
+    tableHead = [['Source', 'Category', 'Risk Level', 'Data Points', 'Last Seen']];
+    tableData = findings.map((source: any) => [
+      source.name || 'Unknown',
+      source.category || 'N/A',
+      source.risk_level || 'Unknown',
+      String(source.data_found?.length || 0),
+      source.last_seen ? new Date(source.last_seen).toLocaleDateString() : 'N/A'
+    ]);
+  }
 
   autoTable(doc, {
     startY: yPos,
-    head: [['Source', 'Category', 'Risk Level', 'Data Points', 'Last Seen']],
-    body: tableData,
+    head: tableHead,
+    body: tableData.length > 0 ? tableData : [['No findings', '', '', '', '']],
     theme: 'grid',
     headStyles: { 
       fillColor: [37, 99, 235],
