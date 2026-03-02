@@ -422,7 +422,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     
     // Mark as recently completed — show loading spinner instead of "no results" for up to 15s
     setRecentlyCompleted(true);
-    recentlyCompletedTimerRef.current = setTimeout(() => setRecentlyCompleted(false), 15000);
+    recentlyCompletedTimerRef.current = setTimeout(() => setRecentlyCompleted(false), 90000);
     
     // Trigger refetch which starts the 30s polling loop in useRealtimeResults
     refetch();
