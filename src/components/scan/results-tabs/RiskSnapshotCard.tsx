@@ -102,17 +102,17 @@ export function RiskSnapshotCard({
           {/* Header */}
           <div className="flex items-center gap-2 mb-4">
             <Shield className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold">Risk Snapshot</h3>
+            <h3 className="text-sm font-semibold tracking-[0.01em]">Risk Snapshot</h3>
           </div>
 
           {/* Metrics Grid */}
           <div className="grid grid-cols-3 gap-4">
             {/* Signals Detected */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-foreground">
+              <div className="text-2xl font-bold text-foreground tabular-nums">
                 {snapshot.signalsFound}
               </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">
+              <div className="text-[10px] text-muted-foreground/60 mt-0.5">
                 Signals detected
               </div>
             </div>
@@ -121,19 +121,19 @@ export function RiskSnapshotCard({
             <div className="text-center">
               {isFullAccess ? (
                 <>
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-2xl font-bold text-foreground tabular-nums">
                     {snapshot.highConfidenceCount}
                   </div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                  <div className="text-[10px] text-muted-foreground/60 mt-0.5">
                     High-confidence
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-foreground">
+                  <div className="text-2xl font-bold text-foreground tabular-nums">
                     {snapshot.highConfidenceCount}
                   </div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                  <div className="text-[10px] text-muted-foreground/60 mt-0.5">
                     High-confidence
                   </div>
                 </>

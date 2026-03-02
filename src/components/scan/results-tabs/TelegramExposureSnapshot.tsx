@@ -74,7 +74,7 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle className="text-sm font-semibold text-foreground">
+            <CardTitle className="text-sm font-semibold tracking-[0.01em] text-foreground">
               Telegram Exposure Snapshot
             </CardTitle>
           </div>
