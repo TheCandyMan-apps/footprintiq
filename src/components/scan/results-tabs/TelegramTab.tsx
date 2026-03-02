@@ -713,7 +713,7 @@ function TelegramHealthIndicator({
 
   return (
     <Card className="border-border/40 bg-muted/20 shadow-sm">
-      <CardHeader className="pb-2 pt-4 px-4">
+      <CardHeader className="pb-0 pt-5 px-5">
        <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center w-7 h-7 rounded-md bg-muted/50">
             <Shield className="h-4 w-4 text-muted-foreground" />
@@ -723,7 +723,7 @@ function TelegramHealthIndicator({
           </CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="px-3 pb-3 space-y-2">
+      <CardContent className="px-5 pb-5 space-y-3">
         {/* Worker reachable signal */}
         <div className="flex items-center justify-between gap-3">
           <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-medium ${workerBadgeClass}`}>
@@ -938,7 +938,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
   const phoneFindings = hasRealData ? (groupedReal['phone_presence'] || []) : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Compliance notice */}
       <div className="p-2.5 rounded-lg bg-muted/20 border border-border/30 text-[11px] text-muted-foreground leading-relaxed">
         <span className="font-medium text-foreground/70">
@@ -949,7 +949,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
       </div>
 
       {/* ── Telegram Content ───────────────────────────────────── */}
-      <div className="space-y-6">
+      <div className="space-y-8">
       {/* Worker health indicator – always visible */}
       <TelegramHealthIndicator
         triggeredAt={localTriggeredAt}
@@ -1042,7 +1042,7 @@ export function TelegramTab({ scanId, isPro, scanType, telegramTriggeredAt }: Te
           </div>
 
           {/* Cards grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {profileFindings.length > 0 && <ProfileCard findings={profileFindings} />}
             {channelProfileFindings.length > 0 && <ChannelProfileCard findings={channelProfileFindings} />}
 

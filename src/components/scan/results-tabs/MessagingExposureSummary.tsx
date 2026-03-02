@@ -50,7 +50,7 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
   const LevelIcon = level.icon;
 
   return (
-    <div className={cn("rounded-lg border px-3 py-2.5 space-y-2", level.border, level.bg)}>
+    <div className={cn("rounded-lg border px-5 py-5 space-y-3", level.border, level.bg)}>
       {/* Top row: score + risk badge + stats */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
 
         <div className="h-4 w-px bg-border/60 hidden sm:block" />
 
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1">
             <Activity className="h-3 w-3" />
             {summary.signalCount} signal{summary.signalCount !== 1 ? "s" : ""}

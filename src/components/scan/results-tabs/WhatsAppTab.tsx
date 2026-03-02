@@ -165,7 +165,7 @@ function WhatsAppExposureSnapshot({
 
   return (
     <Card className="border-border/40 bg-card shadow-sm">
-      <CardHeader className="pb-2 pt-4 px-4">
+      <CardHeader className="pb-0 pt-5 px-5">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-muted">
             <MessageCircle className="h-4 w-4 text-muted-foreground" />
@@ -173,7 +173,7 @@ function WhatsAppExposureSnapshot({
           <CardTitle className="text-sm font-semibold text-foreground">WhatsApp Exposure Snapshot</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-4 space-y-3">
+      <CardContent className="px-5 pb-5 pt-4 space-y-3">
         <div className={cn("flex items-center gap-2.5 rounded-lg border px-3 py-2", level.bg, level.border)}>
           <LevelIcon className={cn("h-4 w-4", level.color)} />
           <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ function WhatsAppExposureSnapshot({
           )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
           {stats.map((stat) => {
             const isLocked = stat.proOnly && !isPro;
             return (
@@ -316,7 +316,7 @@ function CategorySection({
 
   return (
     <Card className={cn("transition-all", isLocked ? "border-border/30 bg-muted/10" : "border-border/40")}>
-      <CardHeader className="pb-2 pt-4 px-4">
+      <CardHeader className="pb-0 pt-5 px-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div
@@ -347,7 +347,7 @@ function CategorySection({
         <CardDescription className="text-xs ml-8">{config.description}</CardDescription>
       </CardHeader>
 
-      <CardContent className="px-4 pb-4">
+      <CardContent className="px-5 pb-5 pt-4">
         {isLocked ? (
           <div className="relative">
             <div className="space-y-2 blur-[4px] select-none pointer-events-none">
@@ -500,7 +500,7 @@ export function WhatsAppTab({ scanId, isPro, phoneNumber, results = [] }: WhatsA
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-8">
         {/* Compliance notice */}
         <div className="p-3 rounded-lg bg-muted/20 border border-border/30 text-[11px] text-muted-foreground leading-relaxed">
           <span className="font-medium text-foreground/70">
