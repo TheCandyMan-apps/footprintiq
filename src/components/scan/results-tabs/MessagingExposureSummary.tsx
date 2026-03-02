@@ -6,7 +6,7 @@
 import { useMemo } from "react";
 import { Shield, ShieldAlert, ShieldX, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+
 import { cn } from "@/lib/utils";
 
 export interface MessagingScoreInput {
@@ -86,8 +86,18 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
         </div>
       </div>
 
-      {/* Progress bar */}
-      <Progress value={summary.risk} className={cn("h-1.5 bg-secondary/30", level.barClass)} />
+      {/* Risk metric bar */}
+      <div className="pt-2">
+        <div className="h-1 w-full rounded-full bg-muted/40 overflow-hidden">
+          <div
+            className={cn(
+              "h-full rounded-full",
+              summary.risk >= 60 ? "bg-destructive" : summary.risk >= 30 ? "bg-amber-500" : "bg-green-500"
+            )}
+            style={{ width: `${summary.risk}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
