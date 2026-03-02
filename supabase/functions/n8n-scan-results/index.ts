@@ -215,7 +215,7 @@ serve(async (req) => {
     // Get the scan record to verify it exists
     const { data: scan, error: fetchError } = await supabase
       .from('scans')
-      .select('id, user_id, workspace_id')
+      .select('id, user_id, workspace_id, created_at')
       .eq('id', scanId)
       .single();
 
