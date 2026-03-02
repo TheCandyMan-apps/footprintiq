@@ -92,33 +92,20 @@ export default function MessagingTab({
   const activeLabel = activeMessenger === 'whatsapp' ? 'WhatsApp' : 'Telegram';
 
   return (
-    <div className="px-4 sm:px-6 pt-2 pb-4 space-y-3">
-      {/* Unified header */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
-          <MessageCircle className="h-5 w-5 text-primary" />
+    <div className="px-4 sm:px-6 pt-1.5 pb-4 space-y-1.5">
+      {/* Unified header – single title row */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
+          <MessageCircle className="h-4 w-4 text-primary" />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Messaging Intelligence</h2>
-            <Badge variant="secondary" className="text-[10px] h-5 px-2 font-medium">
-              {activeLabel}
-            </Badge>
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Public OSINT signals and exposure indicators from messaging platforms.
-          </p>
-        </div>
-        <Badge
-          variant="outline"
-          className="text-[9px] h-4 px-1.5 border-green-500/30 text-green-600 dark:text-green-400 gap-0.5 shrink-0"
-        >
+        <h2 className="text-sm font-semibold text-foreground flex-1 min-w-0">Messaging Intelligence</h2>
+        <span className="flex items-center gap-1 text-[9px] text-muted-foreground/70 shrink-0">
           <Shield className="h-2.5 w-2.5" />
           Public data only
-        </Badge>
+        </span>
       </div>
 
-      {/* Combined exposure summary – elevated prominence */}
+      {/* Combined exposure summary */}
       {combinedScores.length > 0 && (
         <MessagingExposureSummary scores={combinedScores} />
       )}
@@ -173,14 +160,14 @@ export default function MessagingTab({
           className="transition-opacity duration-150 ease-in-out"
           style={{ opacity: transitioning ? 0 : 1 }}
         >
-          <TabsContent value="telegram" className="mt-4">
+          <TabsContent value="telegram" className="mt-3">
             <Suspense fallback={<TabSkeleton />}>
               <TelegramTab scanId={scanId} isPro={isPro} />
             </Suspense>
           </TabsContent>
 
           {showWhatsApp && (
-            <TabsContent value="whatsapp" className="mt-4">
+            <TabsContent value="whatsapp" className="mt-3">
               <WhatsAppTab
                 scanId={scanId}
                 isPro={isPro}
