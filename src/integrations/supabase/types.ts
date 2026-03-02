@@ -5297,6 +5297,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ops_alerts: {
+        Row: {
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          message: string
+          meta: Json | null
+          notified_at: string | null
+          resolved_at: string | null
+          severity: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          message: string
+          meta?: Json | null
+          notified_at?: string | null
+          resolved_at?: string | null
+          severity?: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          message?: string
+          meta?: Json | null
+          notified_at?: string | null
+          resolved_at?: string | null
+          severity?: string
+          type?: string
+        }
+        Relationships: []
+      }
       organization_members: {
         Row: {
           id: string
