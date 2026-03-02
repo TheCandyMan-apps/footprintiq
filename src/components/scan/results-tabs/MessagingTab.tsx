@@ -92,7 +92,7 @@ export default function MessagingTab({
   const activeLabel = activeMessenger === 'whatsapp' ? 'WhatsApp' : 'Telegram';
 
   return (
-    <div className="px-4 sm:px-6 pt-8 pb-6 space-y-8">
+    <div className="px-4 sm:px-6 pt-10 pb-6 space-y-8">
       {/* Unified header */}
       <div className="space-y-0.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/55">
