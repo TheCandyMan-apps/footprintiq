@@ -246,15 +246,13 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   const jobChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const progressChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Use centralized data hook
+  // Use centralized data hook (includes refetch from the same realtime instance)
   const { 
     results, 
     loading: resultsLoading, 
-    breachResults 
+    breachResults,
+    refetch,
   } = useScanResultsData(jobId);
-
-  // Use realtime results hook for refetch capability
-  const { refetch } = useRealtimeResults(jobId);
 
   // Exposure status tracking (Free: marking only, no history)
   const { statuses, updateStatus, getStatus, getScoreImprovement } = useExposureStatuses(jobId);
