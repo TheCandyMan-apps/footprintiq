@@ -120,13 +120,13 @@ export default function OpsOverview() {
 
   const fetchAlerts = async () => {
     const { data } = await (supabase as any)
-      .from('alert_events')
-      .select('id, title, severity, message, created_at, acknowledged_at')
-      .is('acknowledged_at', null)
+      .from('ops_alerts')
+      .select('id, severity, type, message, created_at, resolved_at')
+      .is('resolved_at', null)
       .order('created_at', { ascending: false })
       .limit(10);
 
-    setAlerts(data || []);
+    setAlerts((data || []).map((a: any) => ({ ...a, title: a.type, acknowledged_at: a.resolved_at })));
   };
 
   const stateColor = (state: string) => {
