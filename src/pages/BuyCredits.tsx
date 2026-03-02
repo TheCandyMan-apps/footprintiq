@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Coins, Check, Zap, Shield, TrendingUp } from "lucide-react";
-import { trackCreditPurchase } from "@/lib/sentry-monitoring";
+import { trackCreditPurchase } from "@/lib/sentry";
 import { AutoRefillToggle } from "@/components/billing/AutoRefillToggle";
 import { useSubscription } from '@/hooks/useSubscription';
 
