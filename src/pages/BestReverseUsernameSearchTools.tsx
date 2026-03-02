@@ -323,6 +323,21 @@ const BestReverseUsernameSearchTools = () => {
       <JsonLd data={faqSchema} />
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={articleSchema} />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: "Best Reverse Username Search Tools (2026)",
+          itemListOrder: "https://schema.org/ItemListOrderAscending",
+          numberOfItems: comparisonTools.length,
+          itemListElement: comparisonTools.map((tool, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: tool.name,
+            url: "https://footprintiq.app/best-reverse-username-search-tools",
+          })),
+        }}
+      />
 
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
