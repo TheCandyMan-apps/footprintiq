@@ -1,6 +1,7 @@
 import { Finding } from "./ufm";
 import { redactFindings } from "./redact";
 import { exportReactPDF } from "./pdf-export";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Export findings as JSON
@@ -485,7 +486,22 @@ function escapeCSV(field: string): string {
 export async function generateComprehensiveReport(scan: any, dataSources: any[]): Promise<void> {
   const { jsPDF } = await import('jspdf');
   const autoTable = (await import('jspdf-autotable')).default;
-  
+
+  // If data_sources is empty, fetch canonical_results as the primary data source
+  let findings: any[] = dataSources;
+  let usedCanonical = false;
+  if (!dataSources || dataSources.length === 0) {
+    const { data: canonical } = await supabase
+      .from('canonical_results')
+      .select('*')
+      .eq('scan_id', scan.id)
+      .order('severity', { ascending: true });
+    if (canonical && canonical.length > 0) {
+      findings = canonical;
+      usedCanonical = true;
+    }
+  }
+
   const doc = new jsPDF();
   let pageNumber = 1;
 
@@ -522,6 +538,9 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
     day: 'numeric' 
   }), 105, 70, { align: 'center' });
 
+  // Determine target identifier
+  const target = scan.username || scan.email || scan.phone || scan.domain || 'N/A';
+
   // Report metadata
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(14);
@@ -532,7 +551,9 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
   doc.setFont(undefined, 'normal');
   let yPos = 132;
   
-  doc.text(`Scan ID: ${scan.id || 'N/A'}`, 14, yPos);
+  doc.text(`Scan Type: ${(scan.scan_type || 'N/A').charAt(0).toUpperCase() + (scan.scan_type || '').slice(1)}`, 14, yPos);
+  yPos += 7;
+  doc.text(`Target: ${target}`, 14, yPos);
   yPos += 7;
   doc.text(`Scan Date: ${new Date(scan.created_at).toLocaleDateString('en-US', { 
     year: 'numeric', 
@@ -542,11 +563,9 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
     minute: '2-digit'
   })}`, 14, yPos);
   yPos += 7;
-  doc.text(`Target Email: ${scan.email ? '***@' + scan.email.split('@')[1] : 'Not specified'}`, 14, yPos);
+  doc.text(`Findings: ${findings.length}`, 14, yPos);
   yPos += 7;
-  doc.text(`Data Sources Analyzed: ${dataSources.length}`, 14, yPos);
-  yPos += 7;
-  doc.text(`Total Exposures Found: ${scan.total_sources_found || 0}`, 14, yPos);
+  doc.text(`Total Exposures Found: ${scan.total_sources_found || findings.length}`, 14, yPos);
   yPos += 20;
 
   // Executive Summary
@@ -557,7 +576,7 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
   
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  const summaryText = `This comprehensive report presents findings from a digital footprint investigation conducted on ${new Date(scan.created_at).toLocaleDateString()}. The analysis identified ${scan.total_sources_found || 0} distinct exposures across ${dataSources.length} data sources. ${scan.breach_count ? `The investigation revealed ${scan.breach_count} data breach exposures, ` : ''}requiring immediate attention and remediation.`;
+  const summaryText = `This comprehensive report presents findings from a ${(scan.scan_type || 'digital footprint').replace('_', ' ')} investigation conducted on ${new Date(scan.created_at).toLocaleDateString()}. The analysis identified ${findings.length || scan.total_sources_found || 0} distinct exposures${target !== 'N/A' ? ` for target "${target}"` : ''}. ${scan.breach_count ? `The investigation revealed ${scan.breach_count} data breach exposures, ` : ''}${findings.length > 0 ? 'The findings require review and potential remediation.' : 'No exposures were identified.'}`;
   const splitSummary = doc.splitTextToSize(summaryText, 180);
   doc.text(splitSummary, 14, yPos);
   yPos += splitSummary.length * 6 + 15;
@@ -593,11 +612,16 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
 
   // Risk metrics grid
   doc.setFontSize(10);
+  // Compute risk counts from findings if scan doesn't have them
+  const highCount = scan.high_risk_count || findings.filter((f: any) => f.severity === 'critical' || f.severity === 'high').length;
+  const medCount = scan.medium_risk_count || findings.filter((f: any) => f.severity === 'medium').length;
+  const lowCount = scan.low_risk_count || findings.filter((f: any) => f.severity === 'low' || f.severity === 'info').length;
+
   const metrics = [
-    { label: 'Critical Risk Items', value: scan.high_risk_count || 0, color: [220, 38, 38] },
-    { label: 'Medium Risk Items', value: scan.medium_risk_count || 0, color: [250, 204, 21] },
-    { label: 'Low Risk Items', value: scan.low_risk_count || 0, color: [59, 130, 246] },
-    { label: 'Data Breaches', value: scan.breach_count || 0, color: [168, 85, 247] }
+    { label: 'Critical/High Risk', value: highCount, color: [220, 38, 38] },
+    { label: 'Medium Risk', value: medCount, color: [250, 204, 21] },
+    { label: 'Low/Info Risk', value: lowCount, color: [59, 130, 246] },
+    { label: 'Total Findings', value: findings.length, color: [168, 85, 247] }
   ];
 
   metrics.forEach((metric, index) => {
@@ -619,27 +643,42 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(16);
   doc.setFont(undefined, 'bold');
-  doc.text('Data Sources Analysis', 14, 25);
+  doc.text('Findings Analysis', 14, 25);
   yPos = 35;
 
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  doc.text('The following data sources were analyzed during this investigation:', 14, yPos);
+  doc.text(`The following ${findings.length} findings were identified during this investigation:`, 14, yPos);
   yPos += 10;
 
-  // Data sources table with enhanced information
-  const tableData = dataSources.map(source => [
-    source.name || 'Unknown',
-    source.category || 'N/A',
-    source.risk_level || 'Unknown',
-    String(source.data_found?.length || 0),
-    source.last_seen ? new Date(source.last_seen).toLocaleDateString() : 'N/A'
-  ]);
+  // Build table based on data type
+  let tableHead: string[][];
+  let tableData: string[][];
+
+  if (usedCanonical) {
+    tableHead = [['Platform', 'Username', 'Severity', 'Confidence', 'Category']];
+    tableData = findings.map((f: any) => [
+      f.platform_name || 'Unknown',
+      f.canonical_username || 'N/A',
+      (f.severity || 'info').charAt(0).toUpperCase() + (f.severity || 'info').slice(1),
+      `${Math.round((f.confidence || 0) * 100)}%`,
+      f.platform_category || 'N/A'
+    ]);
+  } else {
+    tableHead = [['Source', 'Category', 'Risk Level', 'Data Points', 'Last Seen']];
+    tableData = findings.map((source: any) => [
+      source.name || 'Unknown',
+      source.category || 'N/A',
+      source.risk_level || 'Unknown',
+      String(source.data_found?.length || 0),
+      source.last_seen ? new Date(source.last_seen).toLocaleDateString() : 'N/A'
+    ]);
+  }
 
   autoTable(doc, {
     startY: yPos,
-    head: [['Source', 'Category', 'Risk Level', 'Data Points', 'Last Seen']],
-    body: tableData,
+    head: tableHead,
+    body: tableData.length > 0 ? tableData : [['No findings', '', '', '', '']],
     theme: 'grid',
     headStyles: { 
       fillColor: [37, 99, 235],
@@ -676,49 +715,83 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
 
   doc.setFontSize(14);
   doc.setFont(undefined, 'bold');
-  doc.text('Detailed Source Information', 14, yPos);
+  doc.text('Detailed Findings', 14, yPos);
   yPos += 10;
 
-  dataSources.forEach((source, index) => {
+  findings.forEach((item: any, index: number) => {
     if (yPos > 250) {
       doc.addPage();
       addHeaderFooter(++pageNumber);
       yPos = 25;
     }
 
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text(`${index + 1}. ${source.name || 'Unknown Source'}`, 14, yPos);
-    yPos += 7;
+    if (usedCanonical) {
+      // Canonical result format
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${index + 1}. ${item.platform_name || 'Unknown Platform'}: ${item.canonical_username || ''}`, 14, yPos);
+      yPos += 7;
 
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Category: ${source.category || 'N/A'}`, 18, yPos);
-    yPos += 5;
-    doc.text(`Risk Level: ${source.risk_level || 'Unknown'}`, 18, yPos);
-    yPos += 5;
-    
-    if (source.description) {
-      const splitDesc = doc.splitTextToSize(`Description: ${source.description}`, 174);
-      doc.text(splitDesc, 18, yPos);
-      yPos += splitDesc.length * 5 + 3;
-    }
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Severity: ${(item.severity || 'info').charAt(0).toUpperCase() + (item.severity || 'info').slice(1)}`, 18, yPos);
+      yPos += 5;
+      doc.text(`Confidence: ${Math.round((item.confidence || 0) * 100)}%`, 18, yPos);
+      yPos += 5;
+      if (item.platform_category) {
+        doc.text(`Category: ${item.platform_category}`, 18, yPos);
+        yPos += 5;
+      }
+      if (item.primary_url) {
+        const urlText = doc.splitTextToSize(`URL: ${item.primary_url}`, 174);
+        doc.text(urlText, 18, yPos);
+        yPos += urlText.length * 5 + 2;
+      }
+      if (item.ai_summary) {
+        const summaryLines = doc.splitTextToSize(`Summary: ${item.ai_summary}`, 174);
+        doc.text(summaryLines, 18, yPos);
+        yPos += summaryLines.length * 5 + 2;
+      }
+      if (item.source_providers && item.source_providers.length > 0) {
+        doc.text(`Sources: ${item.source_providers.join(', ')}`, 18, yPos);
+        yPos += 5;
+      }
+    } else {
+      // Legacy data_sources format
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${index + 1}. ${item.name || 'Unknown Source'}`, 14, yPos);
+      yPos += 7;
 
-    if (source.data_found && source.data_found.length > 0) {
-      doc.text(`Exposed Data (${source.data_found.length} items):`, 18, yPos);
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Category: ${item.category || 'N/A'}`, 18, yPos);
+      yPos += 5;
+      doc.text(`Risk Level: ${item.risk_level || 'Unknown'}`, 18, yPos);
       yPos += 5;
       
-      source.data_found.slice(0, 8).forEach((item: string) => {
-        const itemText = doc.splitTextToSize(`• ${item}`, 170);
-        doc.text(itemText, 22, yPos);
-        yPos += itemText.length * 4.5 + 1;
-      });
+      if (item.description) {
+        const splitDesc = doc.splitTextToSize(`Description: ${item.description}`, 174);
+        doc.text(splitDesc, 18, yPos);
+        yPos += splitDesc.length * 5 + 3;
+      }
 
-      if (source.data_found.length > 8) {
-        doc.setFont(undefined, 'italic');
-        doc.text(`... and ${source.data_found.length - 8} more items`, 22, yPos);
-        doc.setFont(undefined, 'normal');
+      if (item.data_found && item.data_found.length > 0) {
+        doc.text(`Exposed Data (${item.data_found.length} items):`, 18, yPos);
         yPos += 5;
+        
+        item.data_found.slice(0, 8).forEach((dataItem: string) => {
+          const itemText = doc.splitTextToSize(`• ${dataItem}`, 170);
+          doc.text(itemText, 22, yPos);
+          yPos += itemText.length * 4.5 + 1;
+        });
+
+        if (item.data_found.length > 8) {
+          doc.setFont(undefined, 'italic');
+          doc.text(`... and ${item.data_found.length - 8} more items`, 22, yPos);
+          doc.setFont(undefined, 'normal');
+          yPos += 5;
+        }
       }
     }
     yPos += 8;
