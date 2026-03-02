@@ -13,7 +13,7 @@ const FreeVsPaidOsintTools = () => {
   return (
     <>
       <SEO
-        title="Free vs Paid OSINT Tools: What's the Real Difference?"
+        title="Free vs Paid OSINT Tools: What's the Real Difference? | FootprintIQ"
         description="A neutral comparison of free and paid OSINT tools covering coverage, correlation depth, false-positive filtering, ethical considerations, and how to decide what you actually need."
         canonical="https://footprintiq.app/guides/free-vs-paid-osint-tools"
         schema={{

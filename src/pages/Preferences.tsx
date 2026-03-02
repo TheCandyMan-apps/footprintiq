@@ -32,7 +32,7 @@ export default function Preferences() {
   return (
     <>
       <SEO
-        title="Preferences — FootprintIQ"
+        title="Preferences – Customise Your Experience | FootprintIQ"
         description="Customize your FootprintIQ experience with theme, language, and display preferences."
       />
       <Header />

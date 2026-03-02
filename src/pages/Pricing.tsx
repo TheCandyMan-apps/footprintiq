@@ -211,7 +211,7 @@ const PricingPage = () => {
   return (
     <>
       <SEO
-        title="Pricing — FootprintIQ"
+        title="Pricing – Simple, Transparent Plans | FootprintIQ"
         description="Simple pricing. No surprises. Understand your online exposure before it's used against you."
         canonical="https://footprintiq.app/pricing"
         schema={{ custom: combinedStructuredData }}

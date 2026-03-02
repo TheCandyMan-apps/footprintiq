@@ -186,7 +186,7 @@ export default function Automation() {
   return (
     <>
       <SEO
-        title="Automation & Playbooks"
+        title="Automation & Playbooks – Streamline OSINT Workflows | FootprintIQ"
         description="Automate your OSINT workflows with custom playbooks"
       />
       <Header />

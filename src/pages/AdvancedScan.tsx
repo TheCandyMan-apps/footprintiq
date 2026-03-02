@@ -821,7 +821,7 @@ export default function AdvancedScan() {
     <ScanErrorBoundary context="scan">
       <div className="min-h-screen bg-background">
         <SEO
-          title="Advanced Scan | FootprintIQ"
+          title="Advanced Scan – Deep OSINT Analysis | FootprintIQ"
           description="Perform comprehensive OSINT scans across 400+ sources including dark web monitoring, social media, breaches, and more."
         />
         <Header />
