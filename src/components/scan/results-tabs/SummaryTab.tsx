@@ -31,6 +31,7 @@ import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterM
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useMessagingScores } from '@/hooks/useMessagingScores';
 import { cn } from '@/lib/utils';
+import { riskBadgeClass, BADGE_SIZE } from '@/lib/badgeStyles';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
@@ -388,10 +389,11 @@ export function SummaryTab({
                 {messagingCombined.risk}/100
               </span>
               <Badge variant="outline" className={cn(
-                "text-[10px] h-4 px-1.5",
-                messagingCombined.risk >= 60 ? "border-destructive/30 text-destructive" :
-                messagingCombined.risk >= 30 ? "border-amber-500/30 text-amber-500" :
-                "border-green-500/30 text-green-600 dark:text-green-400"
+                BADGE_SIZE,
+                riskBadgeClass(
+                  messagingCombined.level === 'elevated' ? 'elevated' :
+                  messagingCombined.level === 'moderate' ? 'moderate' : 'low'
+                )
               )}>
                 {messagingCombined.level === 'elevated' ? "Elevated" : messagingCombined.level === 'moderate' ? "Moderate" : "Low"}
               </Badge>

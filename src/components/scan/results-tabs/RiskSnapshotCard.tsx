@@ -54,10 +54,10 @@ const STATUS_CONFIG = {
 };
 
 const RISK_LEVEL_CONFIG = {
-  low: { label: 'Low', color: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30' },
-  moderate: { label: 'Moderate', color: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30' },
-  high: { label: 'High', color: 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/30' },
-  critical: { label: 'Critical', color: 'bg-destructive/15 text-destructive border-destructive/30' },
+  low: { label: 'Low', color: 'rounded-md bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 font-medium' },
+  moderate: { label: 'Moderate', color: 'rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 font-medium' },
+  high: { label: 'High', color: 'rounded-md bg-destructive/10 text-destructive border-destructive/20 font-medium' },
+  critical: { label: 'Critical', color: 'rounded-md bg-destructive/10 text-destructive border-destructive/20 font-medium' },
 };
 
 export function RiskSnapshotCard({ 

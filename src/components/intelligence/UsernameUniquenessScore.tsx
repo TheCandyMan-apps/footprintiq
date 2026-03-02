@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { HelpIcon } from '@/components/ui/help-icon';
+import { scoreBadgeClass, BADGE_SIZE } from '@/lib/badgeStyles';
 
 interface UsernameUniquenessScoreProps {
   scanId: string;
@@ -91,14 +92,14 @@ export function UsernameUniquenessScore({ scanId }: UsernameUniquenessScoreProps
   const score = calculateUniqueness(props);
   
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return { label: 'Very Unique', color: 'text-green-600 dark:text-green-400' };
-    if (score >= 60) return { label: 'Unique', color: 'text-blue-600 dark:text-blue-400' };
-    if (score >= 40) return { label: 'Common', color: 'text-yellow-600 dark:text-yellow-400' };
-    if (score >= 20) return { label: 'Very Common', color: 'text-orange-600 dark:text-orange-400' };
-    return { label: 'Extremely Common', color: 'text-red-600 dark:text-red-400' };
+    if (score >= 80) return 'Very Unique';
+    if (score >= 60) return 'Unique';
+    if (score >= 40) return 'Common';
+    if (score >= 20) return 'Very Common';
+    return 'Extremely Common';
   };
   
-  const scoreInfo = getScoreLabel(score);
+  const scoreLabel = getScoreLabel(score);
   
   return (
     <Card className="min-h-[420px]">
@@ -111,8 +112,8 @@ export function UsernameUniquenessScore({ scanId }: UsernameUniquenessScoreProps
               <HelpIcon helpKey="username_uniqueness" />
             </CardTitle>
           </div>
-          <Badge variant="outline" className={scoreInfo.color}>
-            {scoreInfo.label}
+          <Badge variant="outline" className={cn(BADGE_SIZE, scoreBadgeClass(scoreLabel))}>
+            {scoreLabel}
           </Badge>
         </div>
         <CardDescription>

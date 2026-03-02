@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getPlatformCategory } from '@/lib/categoryMapping';
 import { parseEvidence, extractPlatform, isNSFW } from '@/lib/evidenceParser';
 import { HelpIcon } from '@/components/ui/help-icon';
+import { scoreBadgeClass, BADGE_SIZE } from '@/lib/badgeStyles';
 
 interface IdentityStrengthScoreProps {
   scanId: string;
@@ -117,14 +118,14 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
   const score = calculateIdentityStrength(props);
   
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return { label: 'Very Strong', color: 'text-green-600 dark:text-green-400' };
-    if (score >= 60) return { label: 'Strong', color: 'text-blue-600 dark:text-blue-400' };
-    if (score >= 40) return { label: 'Moderate', color: 'text-yellow-600 dark:text-yellow-400' };
-    if (score >= 20) return { label: 'Weak', color: 'text-orange-600 dark:text-orange-400' };
-    return { label: 'Very Weak', color: 'text-red-600 dark:text-red-400' };
+    if (score >= 80) return 'Very Strong';
+    if (score >= 60) return 'Strong';
+    if (score >= 40) return 'Moderate';
+    if (score >= 20) return 'Weak';
+    return 'Very Weak';
   };
   
-  const scoreInfo = getScoreLabel(score);
+  const scoreLabel = getScoreLabel(score);
   
   return (
     <Card className="min-h-[420px]">
@@ -137,8 +138,8 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
               <HelpIcon helpKey="identity_strength" />
             </CardTitle>
           </div>
-          <Badge variant="outline" className={scoreInfo.color}>
-            {scoreInfo.label}
+          <Badge variant="outline" className={cn(BADGE_SIZE, scoreBadgeClass(scoreLabel))}>
+            {scoreLabel}
           </Badge>
         </div>
         <CardDescription>

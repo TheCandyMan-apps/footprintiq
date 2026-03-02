@@ -34,6 +34,7 @@ import {
   Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { riskBadgeClass, BADGE_SIZE } from "@/lib/badgeStyles";
 import { flags } from "@/lib/featureFlags";
 import { ProUpgradeModal } from "@/components/results/ProUpgradeModal";
 import type {
@@ -129,27 +130,30 @@ function WhatsAppExposureSnapshot({
   const levelConfig = {
     minimal: {
       label: "Minimal",
+      key: "low" as const,
       icon: ShieldCheck,
-      color: "text-green-500",
-      bg: "bg-green-500/10",
-      border: "border-green-500/20",
+      color: "text-green-700 dark:text-green-400",
+      bg: "bg-green-500/5",
+      border: "border-green-500/15",
       dot: "bg-green-500",
     },
     moderate: {
       label: "Moderate",
+      key: "moderate" as const,
       icon: ShieldAlert,
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/20",
+      color: "text-amber-700 dark:text-amber-400",
+      bg: "bg-amber-500/5",
+      border: "border-amber-500/15",
       dot: "bg-amber-500",
     },
     elevated: {
       label: "Elevated",
+      key: "elevated" as const,
       icon: ShieldX,
-      color: "text-red-500",
-      bg: "bg-red-500/10",
-      border: "border-red-500/20",
-      dot: "bg-red-500",
+      color: "text-destructive",
+      bg: "bg-destructive/5",
+      border: "border-destructive/15",
+      dot: "bg-destructive",
     },
   };
 
@@ -178,8 +182,7 @@ function WhatsAppExposureSnapshot({
           <LevelIcon className={cn("h-4 w-4", level.color)} />
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-foreground">Exposure Level</span>
-            <div className={cn("h-1.5 w-1.5 rounded-full", level.dot)} />
-            <span className={cn("text-xs font-semibold", level.color)}>{level.label}</span>
+            <Badge variant="outline" className={cn(BADGE_SIZE, riskBadgeClass(level.key))}>{level.label}</Badge>
           </div>
           {!isPro && (
             <Badge
