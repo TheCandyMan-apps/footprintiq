@@ -68,7 +68,7 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
 
   return (
     <>
-      <Card className="border-border/40 bg-card shadow-sm">
+      <Card className="border-border/30 bg-card">
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
@@ -81,7 +81,7 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-3">
           {/* Exposure Level Indicator */}
-          <div className={cn('flex items-center gap-2.5 rounded-lg border px-3 py-2', level.bg, level.border)}>
+          <div className={cn('flex items-center gap-2.5 rounded-xl border px-3 py-2', level.bg, level.border)}>
             <LevelIcon className={cn('h-4 w-4', level.color)} />
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-foreground">Exposure Level</span>
@@ -107,10 +107,10 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
                 <div
                   key={stat.label}
                   className={cn(
-                    'relative flex flex-col gap-1.5 rounded-lg border p-3 transition-colors',
+                    'relative flex flex-col gap-1.5 rounded-xl border p-3 transition-colors',
                     isLocked
-                      ? 'border-border/30 bg-muted/20 cursor-pointer hover:border-primary/20 group'
-                      : 'border-border/40 bg-card/50'
+                      ? 'border-border/25 bg-muted/15 cursor-pointer hover:border-primary/20 group'
+                      : 'border-border/30 bg-card/50'
                   )}
                   onClick={isLocked ? () => setShowModal(true) : undefined}
                 >

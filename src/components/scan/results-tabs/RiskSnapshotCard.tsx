@@ -97,7 +97,7 @@ export function RiskSnapshotCard({
   // Narrative variant for Free users - shows "Risk Snapshot" card
   if (variant === 'narrative') {
     return (
-      <Card className={cn('overflow-hidden border-border/50', className)}>
+      <Card className={cn('overflow-hidden border-border/30', className)}>
         <CardContent className="p-4">
           {/* Header */}
           <div className="flex items-center gap-2 mb-4">
