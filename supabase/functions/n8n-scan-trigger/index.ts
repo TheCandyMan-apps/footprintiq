@@ -479,6 +479,11 @@ serve(async (req) => {
         } else {
           console.log(`[n8n-scan-trigger] n8n webhook accepted scan ${scan.id}`);
           await serviceClient.from("scans").update({ status: "running" }).eq("id", scan.id);
+          await writeScanEvent(serviceClient, {
+            scan_id: scan.id, workspace_id: workspaceId, user_id: user.id,
+            provider: 'system', stage: 'start', status: 'running',
+            message: `Workflow dispatched to ${providers.length} providers`,
+          });
         }
       } catch (fetchError) {
         clearTimeout(timeoutId);
@@ -505,6 +510,12 @@ serve(async (req) => {
           message: `n8n webhook failed for scan ${scan.id}: ${errMsg}`,
           metadata: { scanId: scan.id, username, error: errMsg },
           severity: "error",
+        });
+        await writeScanEvent(serviceClient, {
+          scan_id: scan.id, workspace_id: workspaceId, user_id: user.id,
+          provider: 'system', stage: 'error', status: 'failed',
+          message: `Workflow unreachable: ${errMsg.substring(0, 200)}`,
+          error_message: errMsg,
         });
       }
     }
