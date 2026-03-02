@@ -68,7 +68,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
-import { useRealtimeResults } from '@/hooks/useRealtimeResults';
+import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { ScanProgress } from './ScanProgress';
 import { LowResultsNotice } from './LowResultsNotice';
 import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink, Clock, TrendingUp, BarChart3, CheckCircle2, Send } from 'lucide-react';
