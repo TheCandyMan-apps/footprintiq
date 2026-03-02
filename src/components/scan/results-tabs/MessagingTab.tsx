@@ -95,12 +95,12 @@ export default function MessagingTab({
     <div className="px-4 sm:px-6 pt-4 pb-6 space-y-4">
       {/* Unified header */}
       <div className="space-y-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/55">
           Messaging Intelligence
         </p>
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-foreground">Platform Overview</h2>
-          <span className="flex items-center gap-1 text-[9px] text-muted-foreground/50 shrink-0">
+          <h2 className="text-base font-semibold tracking-[0.01em] text-foreground">Platform Overview</h2>
+          <span className="flex items-center gap-1 text-[8px] text-muted-foreground/40 shrink-0">
             <Shield className="h-2.5 w-2.5" />
             Public data only
           </span>

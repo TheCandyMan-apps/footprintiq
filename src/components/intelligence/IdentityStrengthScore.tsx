@@ -133,7 +133,7 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg font-semibold tracking-[0.01em] flex items-center gap-2">
               Identity Strength
               <HelpIcon helpKey="identity_strength" />
             </CardTitle>
@@ -142,14 +142,14 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
             {scoreLabel}
           </Badge>
         </div>
-        <CardDescription>
+        <CardDescription className="text-muted-foreground/60">
           Digital footprint robustness score
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold text-primary truncate">{score.toFixed(1)}</span>
-          <span className="text-muted-foreground">/100</span>
+          <span className="text-4xl font-bold text-foreground tabular-nums truncate">{score.toFixed(1)}</span>
+          <span className="text-muted-foreground/50">/100</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
           <div

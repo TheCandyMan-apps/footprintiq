@@ -174,7 +174,7 @@ function WhatsAppExposureSnapshot({
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-muted">
             <MessageCircle className="h-4 w-4 text-muted-foreground" />
           </div>
-          <CardTitle className="text-sm font-semibold text-foreground">WhatsApp Exposure Snapshot</CardTitle>
+          <CardTitle className="text-sm font-semibold tracking-[0.01em] text-foreground">WhatsApp Exposure Snapshot</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="px-5 pb-5 pt-4 space-y-3">
