@@ -41,6 +41,10 @@ export default function InstallApp() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEO
+        title="Install FootprintIQ – Mobile & Desktop App | FootprintIQ"
+        description="Install FootprintIQ as a progressive web app on your mobile or desktop device for instant access to OSINT scanning."
+      />
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-16">

@@ -282,7 +282,7 @@ const Monitoring = () => {
   return (
     <>
       <SEO
-        title="Monitoring & Alerts — FootprintIQ"
+        title="Monitoring & Alerts – Real-Time Exposure Detection | FootprintIQ"
         description="Monitor your digital footprint continuously and receive real-time alerts for new data exposures and breaches"
         canonical="https://footprintiq.app/monitoring"
         schema={{

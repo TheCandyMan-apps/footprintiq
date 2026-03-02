@@ -86,7 +86,7 @@ const Subscription = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO 
-        title="Subscription Management - FootprintIQ"
+        title="Subscription Management – Billing & Plans | FootprintIQ"
         description="Manage your FootprintIQ subscription, billing, and payment methods"
       />
       <Header />

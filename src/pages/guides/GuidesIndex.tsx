@@ -44,7 +44,7 @@ const GuidesIndex = () => {
   return (
     <>
       <SEO
-        title="OSINT Guides — FootprintIQ"
+        title="OSINT Guides – Educational Resources for Digital Privacy | FootprintIQ"
         description="Educational guides on interpreting OSINT scan results, understanding digital footprints, and evaluating open-source intelligence tools responsibly."
         canonical={`${origin}/guides`}
         ogType="website"

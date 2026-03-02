@@ -208,7 +208,7 @@ export default function BatchScan() {
   return (
     <>
       <SEO
-        title="Batch Scan — FootprintIQ"
+        title="Batch Scan – Scan Multiple Targets at Once | FootprintIQ"
         description="Upload CSV files and scan multiple targets at once"
         canonical="https://footprintiq.app/scan/batch"
       />
