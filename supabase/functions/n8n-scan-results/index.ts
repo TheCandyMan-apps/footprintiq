@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sanitizeScanId } from "../_shared/sanitizeIds.ts";
 import { verifyFpiqHmac } from "../_shared/hmacAuth.ts";
+import { writeScanEvent } from "../_shared/scanHealthWriter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

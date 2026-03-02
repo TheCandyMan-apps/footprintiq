@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enforceTurnstile } from "../_shared/turnstile.ts";
 import { normalizePlanTier } from "../_shared/planCapabilities.ts";
 import { signFpiqHmac } from "../_shared/hmacAuth.ts";
+import { writeScanEvent } from "../_shared/scanHealthWriter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
