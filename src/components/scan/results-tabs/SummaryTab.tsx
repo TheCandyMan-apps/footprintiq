@@ -371,21 +371,6 @@ export function SummaryTab({
           verifiedCount={verifiedEntities.size}
         />
 
-        {/* Intelligence Tiles - Identity Strength, Uniqueness, Clusters */}
-        {scanComplete && aggregated.counts.totalProfiles > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
-              <IdentityStrengthScore scanId={jobId} />
-            </ErrorBoundary>
-            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
-              <UsernameUniquenessScore scanId={jobId} />
-            </ErrorBoundary>
-            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
-              <FootprintClusterMap scanId={jobId} />
-            </ErrorBoundary>
-          </div>
-        )}
-
         {/* Messaging Exposure Summary */}
         {hasMessagingData && messagingCombined && (
           <div className="rounded-lg border-2 border-primary/20 shadow-sm bg-card p-3 space-y-1.5">
@@ -414,6 +399,21 @@ export function SummaryTab({
                 {messagingCombined.platformCount} platform{messagingCombined.platformCount !== 1 ? "s" : ""} · {messagingCombined.confidence}% confidence
               </span>
             </div>
+          </div>
+        )}
+
+        {/* Intelligence Tiles - Identity Strength, Uniqueness, Clusters */}
+        {scanComplete && aggregated.counts.totalProfiles > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+              <IdentityStrengthScore scanId={jobId} />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+              <UsernameUniquenessScore scanId={jobId} />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+              <FootprintClusterMap scanId={jobId} />
+            </ErrorBoundary>
           </div>
         )}
 
