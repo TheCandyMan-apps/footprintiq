@@ -153,15 +153,6 @@ const ReverseUsernameSearch = () => {
     mainEntityOfPage: { "@type": "WebPage", "@id": "https://footprintiq.app/reverse-username-search" },
   };
 
-  const softwareSchema = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "FootprintIQ Reverse Username Lookup",
-    applicationCategory: "SecurityApplication",
-    operatingSystem: "Web",
-    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    description: "Free reverse username search tool to find public accounts across 500+ social platforms, forums, and communities.",
-  };
 
   return (
     <>
@@ -184,7 +175,7 @@ const ReverseUsernameSearch = () => {
       <JsonLd data={faqSchema} />
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={articleSchema} />
-      <JsonLd data={softwareSchema} />
+      
 
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
