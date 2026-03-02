@@ -715,49 +715,83 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
 
   doc.setFontSize(14);
   doc.setFont(undefined, 'bold');
-  doc.text('Detailed Source Information', 14, yPos);
+  doc.text('Detailed Findings', 14, yPos);
   yPos += 10;
 
-  dataSources.forEach((source, index) => {
+  findings.forEach((item: any, index: number) => {
     if (yPos > 250) {
       doc.addPage();
       addHeaderFooter(++pageNumber);
       yPos = 25;
     }
 
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text(`${index + 1}. ${source.name || 'Unknown Source'}`, 14, yPos);
-    yPos += 7;
+    if (usedCanonical) {
+      // Canonical result format
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${index + 1}. ${item.platform_name || 'Unknown Platform'}: ${item.canonical_username || ''}`, 14, yPos);
+      yPos += 7;
 
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Category: ${source.category || 'N/A'}`, 18, yPos);
-    yPos += 5;
-    doc.text(`Risk Level: ${source.risk_level || 'Unknown'}`, 18, yPos);
-    yPos += 5;
-    
-    if (source.description) {
-      const splitDesc = doc.splitTextToSize(`Description: ${source.description}`, 174);
-      doc.text(splitDesc, 18, yPos);
-      yPos += splitDesc.length * 5 + 3;
-    }
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Severity: ${(item.severity || 'info').charAt(0).toUpperCase() + (item.severity || 'info').slice(1)}`, 18, yPos);
+      yPos += 5;
+      doc.text(`Confidence: ${Math.round((item.confidence || 0) * 100)}%`, 18, yPos);
+      yPos += 5;
+      if (item.platform_category) {
+        doc.text(`Category: ${item.platform_category}`, 18, yPos);
+        yPos += 5;
+      }
+      if (item.primary_url) {
+        const urlText = doc.splitTextToSize(`URL: ${item.primary_url}`, 174);
+        doc.text(urlText, 18, yPos);
+        yPos += urlText.length * 5 + 2;
+      }
+      if (item.ai_summary) {
+        const summaryLines = doc.splitTextToSize(`Summary: ${item.ai_summary}`, 174);
+        doc.text(summaryLines, 18, yPos);
+        yPos += summaryLines.length * 5 + 2;
+      }
+      if (item.source_providers && item.source_providers.length > 0) {
+        doc.text(`Sources: ${item.source_providers.join(', ')}`, 18, yPos);
+        yPos += 5;
+      }
+    } else {
+      // Legacy data_sources format
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${index + 1}. ${item.name || 'Unknown Source'}`, 14, yPos);
+      yPos += 7;
 
-    if (source.data_found && source.data_found.length > 0) {
-      doc.text(`Exposed Data (${source.data_found.length} items):`, 18, yPos);
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Category: ${item.category || 'N/A'}`, 18, yPos);
+      yPos += 5;
+      doc.text(`Risk Level: ${item.risk_level || 'Unknown'}`, 18, yPos);
       yPos += 5;
       
-      source.data_found.slice(0, 8).forEach((item: string) => {
-        const itemText = doc.splitTextToSize(`• ${item}`, 170);
-        doc.text(itemText, 22, yPos);
-        yPos += itemText.length * 4.5 + 1;
-      });
+      if (item.description) {
+        const splitDesc = doc.splitTextToSize(`Description: ${item.description}`, 174);
+        doc.text(splitDesc, 18, yPos);
+        yPos += splitDesc.length * 5 + 3;
+      }
 
-      if (source.data_found.length > 8) {
-        doc.setFont(undefined, 'italic');
-        doc.text(`... and ${source.data_found.length - 8} more items`, 22, yPos);
-        doc.setFont(undefined, 'normal');
+      if (item.data_found && item.data_found.length > 0) {
+        doc.text(`Exposed Data (${item.data_found.length} items):`, 18, yPos);
         yPos += 5;
+        
+        item.data_found.slice(0, 8).forEach((dataItem: string) => {
+          const itemText = doc.splitTextToSize(`• ${dataItem}`, 170);
+          doc.text(itemText, 22, yPos);
+          yPos += itemText.length * 4.5 + 1;
+        });
+
+        if (item.data_found.length > 8) {
+          doc.setFont(undefined, 'italic');
+          doc.text(`... and ${item.data_found.length - 8} more items`, 22, yPos);
+          doc.setFont(undefined, 'normal');
+          yPos += 5;
+        }
       }
     }
     yPos += 8;
