@@ -8,6 +8,7 @@ import { Shield, ShieldAlert, ShieldX, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 import { cn } from "@/lib/utils";
+import { riskBadgeClass, BADGE_SIZE } from "@/lib/badgeStyles";
 
 export interface MessagingScoreInput {
   label: string;
@@ -22,9 +23,9 @@ interface MessagingExposureSummaryProps {
 }
 
 function getRiskLevel(score: number) {
-  if (score >= 60) return { label: "Elevated", icon: ShieldX, color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/20", barClass: "[&_div]:bg-destructive" };
-  if (score >= 30) return { label: "Moderate", icon: ShieldAlert, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20", barClass: "[&_div]:bg-amber-500" };
-  return { label: "Low", icon: Shield, color: "text-green-500", bg: "bg-green-500/10", border: "border-green-500/20", barClass: "[&_div]:bg-green-500" };
+  if (score >= 60) return { label: "Elevated", key: "elevated" as const, icon: ShieldX, color: "text-destructive", bg: "bg-destructive/5", border: "border-destructive/15" };
+  if (score >= 30) return { label: "Moderate", key: "moderate" as const, icon: ShieldAlert, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/5", border: "border-amber-500/15" };
+  return { label: "Low", key: "low" as const, icon: Shield, color: "text-green-600 dark:text-green-400", bg: "bg-green-500/5", border: "border-green-500/15" };
 }
 
 export function MessagingExposureSummary({ scores }: MessagingExposureSummaryProps) {
@@ -58,7 +59,7 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
           <span className={cn("text-lg font-bold tabular-nums", level.color)}>
             {summary.risk}/100
           </span>
-          <Badge variant="outline" className={cn("text-[10px] h-4 px-1.5 font-medium", level.border, level.color)}>
+          <Badge variant="outline" className={cn(BADGE_SIZE, riskBadgeClass(level.key))}>
             {level.label}
           </Badge>
         </div>

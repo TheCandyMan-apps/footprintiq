@@ -10,6 +10,7 @@ import { User, Users, Hash, Network, Lock, Sparkles, ChevronRight, ShieldCheck, 
 import { cn } from '@/lib/utils';
 import { ProUpgradeModal } from '@/components/results/ProUpgradeModal';
 import type { TelegramFinding } from '@/hooks/useTelegramFindings';
+import { riskBadgeClass, BADGE_SIZE } from '@/lib/badgeStyles';
 
 interface TelegramExposureSnapshotProps {
   findings: TelegramFinding[];
@@ -57,9 +58,9 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
   }, [stats]);
 
   const levelConfig = {
-    minimal:  { label: 'Minimal',  icon: ShieldCheck, color: 'text-green-500',  bg: 'bg-green-500/10', border: 'border-green-500/20', dot: 'bg-green-500' },
-    moderate: { label: 'Moderate', icon: ShieldAlert, color: 'text-amber-500',  bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-500' },
-    elevated: { label: 'Elevated', icon: ShieldX,     color: 'text-red-500',    bg: 'bg-red-500/10',   border: 'border-red-500/20',   dot: 'bg-red-500'   },
+    minimal:  { label: 'Minimal',  key: 'low' as const,      icon: ShieldCheck, color: 'text-green-700 dark:text-green-400',  bg: 'bg-green-500/5', border: 'border-green-500/15', dot: 'bg-green-500' },
+    moderate: { label: 'Moderate', key: 'moderate' as const,  icon: ShieldAlert, color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-500/5', border: 'border-amber-500/15', dot: 'bg-amber-500' },
+    elevated: { label: 'Elevated', key: 'elevated' as const,  icon: ShieldX,     color: 'text-destructive',                    bg: 'bg-destructive/5', border: 'border-destructive/15', dot: 'bg-destructive' },
   };
 
   const level = levelConfig[exposureLevel];
@@ -67,7 +68,7 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
 
   return (
     <>
-      <Card className="border-primary/15 bg-gradient-to-br from-primary/[0.03] to-transparent shadow-sm">
+      <Card className="border-border/40 bg-card shadow-sm">
         <CardHeader className="pb-2 pt-4 px-4">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
@@ -85,7 +86,7 @@ export function TelegramExposureSnapshot({ findings, isPro }: TelegramExposureSn
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-foreground">Exposure Level</span>
               <div className={cn('h-1.5 w-1.5 rounded-full', level.dot)} />
-              <span className={cn('text-xs font-semibold', level.color)}>{level.label}</span>
+              <Badge variant="outline" className={cn(BADGE_SIZE, riskBadgeClass(level.key))}>{level.label}</Badge>
             </div>
             {!isPro && (
               <Badge
