@@ -120,9 +120,7 @@ export default function MessagingTab({
 
       {/* Combined exposure summary – elevated prominence */}
       {combinedScores.length > 0 && (
-        <div className="rounded-xl border-2 border-primary/20 shadow-sm bg-card">
-          <MessagingExposureSummary scores={combinedScores} />
-        </div>
+        <MessagingExposureSummary scores={combinedScores} />
       )}
 
       <Tabs value={activeMessenger} onValueChange={handleMessengerChange}>
