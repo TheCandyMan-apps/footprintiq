@@ -580,6 +580,20 @@ serve(async (req) => {
       });
     }
 
+    // Write scan_event + scan_health for completion
+    await writeScanEvent(supabase, {
+      scan_id: scanId,
+      workspace_id: scan.workspace_id,
+      user_id: scan.user_id,
+      provider: 'system',
+      stage: 'complete',
+      status: finalStatus,
+      message: `Scan finalized: ${findings?.length || 0} findings, status=${finalStatus}`,
+      findings_count: findings?.length || 0,
+      error_message: scanError ? String(scanError) : null,
+      metadata: { provider_count: Object.keys(computedProviderResults).length },
+    });
+
     // Update scan_progress table for real-time UI updates
     // Preserve the original total_providers from initial setup, only update completed
     const { data: existingProgress } = await supabase
