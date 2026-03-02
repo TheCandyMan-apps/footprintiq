@@ -195,5 +195,5 @@ export function useScanResultsData(jobId: string) {
     geoLocations,
     breachResults,
     refetch,
-  };
+  } as const;
 }

@@ -68,7 +68,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
-import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { ScanProgress } from './ScanProgress';
 import { LowResultsNotice } from './LowResultsNotice';
 import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink, Clock, TrendingUp, BarChart3, CheckCircle2, Send } from 'lucide-react';
@@ -246,15 +245,13 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   const jobChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const progressChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  // Use centralized data hook
+  // Use centralized data hook (includes refetch from the same realtime instance)
   const { 
     results, 
     loading: resultsLoading, 
-    breachResults 
+    breachResults,
+    refetch,
   } = useScanResultsData(jobId);
-
-  // Use realtime results hook for refetch capability
-  const { refetch } = useRealtimeResults(jobId);
 
   // Exposure status tracking (Free: marking only, no history)
   const { statuses, updateStatus, getStatus, getScoreImprovement } = useExposureStatuses(jobId);
