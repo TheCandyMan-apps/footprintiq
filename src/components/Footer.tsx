@@ -5,7 +5,32 @@ import { JsonLd } from "@/components/seo/JsonLd";
 
 export const Footer = () => {
   return (
-    <footer className="bg-card border-t border-accent pb-safe">
+    <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "FootprintIQ",
+          applicationCategory: "SecurityApplication",
+          operatingSystem: "Web",
+          url: "https://footprintiq.app/",
+          description:
+            "FootprintIQ is an ethical digital footprint intelligence platform that scans usernames, emails, and phone numbers across 500+ public sources to map your online exposure, score risk, and provide actionable remediation guidance.",
+          publisher: {
+            "@type": "Organization",
+            name: "FootprintIQ",
+            url: "https://footprintiq.app/",
+          },
+          offers: {
+            "@type": "AggregateOffer",
+            url: "https://footprintiq.app/pricing",
+            priceCurrency: "USD",
+            lowPrice: "0",
+            offerCount: "3",
+          },
+        }}
+      />
+      <footer className="bg-card border-t border-accent pb-safe">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Trust Badges - Horizontal Scroll */}
         <div className="mb-10">
