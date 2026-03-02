@@ -112,7 +112,7 @@ export function useRealtimeResults(jobId: string | null) {
   // Ref to track active post-completion polling loop
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollAttemptsRef = useRef(0);
-  const MAX_POLL_ATTEMPTS = 15; // poll every 2s for up to 30s
+  const MAX_POLL_ATTEMPTS = 45; // poll every 2s for up to 90s
 
   useEffect(() => {
     if (!jobId) {
