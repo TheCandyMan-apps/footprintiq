@@ -38,7 +38,7 @@ const Trends = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Privacy Trends - FootprintIQ"
+        title="Privacy Trends – Track Exposure Over Time | FootprintIQ"
         description="Track your digital privacy trends over time"
       />
       <Header />

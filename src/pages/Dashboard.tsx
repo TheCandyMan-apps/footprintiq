@@ -682,7 +682,7 @@ const Dashboard = () => {
   return <>
       <InitializeDarkWebDemo />
       <WelcomeInterstitial isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
-      <SEO title="Dashboard — FootprintIQ" description="View your OSINT scans, findings, and entity relationships" canonical="https://footprintiq.app/dashboard" />
+      <SEO title="Dashboard – Your Digital Exposure Overview | FootprintIQ" description="View your OSINT scans, findings, and entity relationships" canonical="https://footprintiq.app/dashboard" />
       <AnnouncementBar message="💡 Pro Tip: Use AI Analyst to get instant insights from your scan results." link="/ai-analyst" linkText="Try AI Analyst" storageKey="ai-analyst-dashboard-tip" variant="update" />
       <ScrollProgressBar />
       <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden animate-fadeIn relative z-10">

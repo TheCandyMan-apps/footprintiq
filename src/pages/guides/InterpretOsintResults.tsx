@@ -12,7 +12,7 @@ const InterpretOsintResults = () => {
   return (
     <>
       <SEO
-        title="How to Interpret OSINT Scan Results Responsibly — A Guide"
+        title="How to Interpret OSINT Scan Results Responsibly – Practical Guide | FootprintIQ"
         description="An authoritative guide to interpreting open-source intelligence (OSINT) scan results. Covers confidence levels, false positives, partial matches, missing data, and ethical considerations for general users, journalists, and educators."
         canonical="https://footprintiq.app/guides/interpret-osint-results"
         schema={{

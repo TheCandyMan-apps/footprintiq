@@ -13,7 +13,7 @@ const WhatOsintResultsMean = () => {
   return (
     <>
       <SEO
-        title="What OSINT Scan Results Actually Mean (and What They Don't)"
+        title="What OSINT Scan Results Actually Mean (and What They Don't) | FootprintIQ"
         description="An educational guide clarifying what OSINT scan results represent, the difference between correlation and attribution, common misconceptions, and how to evaluate findings responsibly."
         canonical="https://footprintiq.app/guides/what-osint-results-mean"
         schema={{

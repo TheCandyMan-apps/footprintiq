@@ -83,7 +83,7 @@ export default function MarketplaceReview() {
   return (
     <div className="min-h-screen flex flex-col">
       <SEO
-        title="Marketplace Review"
+        title="Marketplace Review – Plugin Submissions | FootprintIQ"
         description="Review pending plugin submissions"
       />
       <Header />

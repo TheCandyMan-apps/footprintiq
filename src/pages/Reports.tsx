@@ -108,7 +108,7 @@ const Reports = () => {
   return (
     <>
       <SEO
-        title="Reports & Export — FootprintIQ"
+        title="Reports & Export – Generate OSINT Intelligence Reports | FootprintIQ"
         description="Generate comprehensive PDF reports with executive summaries and detailed findings"
       />
       <div className="min-h-screen flex flex-col">

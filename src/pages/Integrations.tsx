@@ -240,7 +240,7 @@ const Integrations = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
       <SEO 
-        title="Integrations - FootprintIQ"
+        title="Integrations – Connect Your Security Stack | FootprintIQ"
         description="Connect FootprintIQ with your favorite tools and platforms"
       />
       <Header />

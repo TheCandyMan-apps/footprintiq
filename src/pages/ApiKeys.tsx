@@ -114,7 +114,7 @@ export default function ApiKeys() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="API Keys | FootprintIQ"
+        title="API Keys – Manage Integration Access | FootprintIQ"
         description="Manage your API keys for FootprintIQ integration"
       />
       <Header />

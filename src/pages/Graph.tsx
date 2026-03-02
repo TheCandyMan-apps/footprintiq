@@ -138,7 +138,7 @@ export default function Graph() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <SEO
-          title="Entity Graph - FootprintIQ"
+          title="Entity Graph – Visualise OSINT Connections | FootprintIQ"
           description="Interactive OSINT correlation graph. Visualize entity relationships, explore connections, and analyze intelligence patterns."
         />
         <Header />
@@ -158,7 +158,7 @@ export default function Graph() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <SEO
-          title="Entity Graph - FootprintIQ"
+          title="Entity Graph – Visualise OSINT Connections | FootprintIQ"
           description="Interactive OSINT correlation graph."
         />
         <Header />
@@ -183,7 +183,7 @@ export default function Graph() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <SEO
-          title="Entity Graph - FootprintIQ"
+          title="Entity Graph – Visualise OSINT Connections | FootprintIQ"
           description="Interactive OSINT correlation graph."
         />
         <Header />
@@ -206,7 +206,7 @@ export default function Graph() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SEO
-        title="Entity Graph - FootprintIQ"
+        title="Entity Graph – Visualise OSINT Connections | FootprintIQ"
         description="Interactive OSINT correlation graph. Visualize entity relationships, explore connections, and analyze intelligence patterns."
       />
       <Header />

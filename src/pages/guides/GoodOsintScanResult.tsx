@@ -13,7 +13,7 @@ const GoodOsintScanResult = () => {
   return (
     <>
       <SEO
-        title="What a 'Good' OSINT Scan Result Looks Like"
+        title="What a 'Good' OSINT Scan Result Looks Like – Quality Over Quantity | FootprintIQ"
         description="An educational guide explaining what realistic OSINT scan results look like, why fewer high-confidence findings beat volume, and how to evaluate quality over quantity."
         canonical="https://footprintiq.app/guides/good-osint-scan-result"
         schema={{

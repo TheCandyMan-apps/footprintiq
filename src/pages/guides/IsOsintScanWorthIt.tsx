@@ -13,7 +13,7 @@ const IsOsintScanWorthIt = () => {
   return (
     <>
       <SEO
-        title="Is an OSINT Scan Worth It for Personal Privacy?"
+        title="Is an OSINT Scan Worth It for Personal Privacy? – Honest Assessment | FootprintIQ"
         description="A balanced, practical guide exploring when OSINT scans are useful for personal privacy, when they are not, and how to evaluate cost versus value honestly."
         canonical="https://footprintiq.app/guides/is-osint-scan-worth-it"
         schema={{
