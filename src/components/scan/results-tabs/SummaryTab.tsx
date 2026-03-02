@@ -25,6 +25,7 @@ import { ProfilesExposureSection } from './summary/ProfilesExposureSection';
 import { ProUpgradeBlock } from './summary/ProUpgradeBlock';
 import { ConnectionsPreview } from './summary/ConnectionsPreview';
 import { AdvancedModeHint } from './summary/AdvancedModeHint';
+import { ExecutiveInsightCard } from './summary/ExecutiveInsightCard';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 import { IdentityStrengthScore } from '@/components/intelligence/IdentityStrengthScore';
 import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniquenessScore';
