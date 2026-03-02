@@ -576,7 +576,7 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
   
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
-  const summaryText = `This comprehensive report presents findings from a digital footprint investigation conducted on ${new Date(scan.created_at).toLocaleDateString()}. The analysis identified ${scan.total_sources_found || 0} distinct exposures across ${dataSources.length} data sources. ${scan.breach_count ? `The investigation revealed ${scan.breach_count} data breach exposures, ` : ''}requiring immediate attention and remediation.`;
+  const summaryText = `This comprehensive report presents findings from a ${(scan.scan_type || 'digital footprint').replace('_', ' ')} investigation conducted on ${new Date(scan.created_at).toLocaleDateString()}. The analysis identified ${findings.length || scan.total_sources_found || 0} distinct exposures${target !== 'N/A' ? ` for target "${target}"` : ''}. ${scan.breach_count ? `The investigation revealed ${scan.breach_count} data breach exposures, ` : ''}${findings.length > 0 ? 'The findings require review and potential remediation.' : 'No exposures were identified.'}`;
   const splitSummary = doc.splitTextToSize(summaryText, 180);
   doc.text(splitSummary, 14, yPos);
   yPos += splitSummary.length * 6 + 15;
