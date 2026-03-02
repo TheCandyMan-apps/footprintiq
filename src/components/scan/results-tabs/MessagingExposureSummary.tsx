@@ -70,7 +70,13 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
             <Activity className="h-3 w-3" />
             {summary.signalCount} signal{summary.signalCount !== 1 ? "s" : ""}
           </span>
-          <span>{summary.confidence}% confidence</span>
+          <span>
+            {summary.confidence}%
+            {" "}
+            <span className="text-muted-foreground/60">
+              {summary.confidence > 70 ? "High confidence" : summary.confidence >= 40 ? "Moderate confidence" : "Limited data"}
+            </span>
+          </span>
           {/* Platform badges */}
           {summary.sources.map((src) => (
             <Badge key={src} variant="secondary" className="text-[9px] h-4 px-1.5 font-medium">
