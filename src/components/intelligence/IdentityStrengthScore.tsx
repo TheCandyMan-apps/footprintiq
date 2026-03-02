@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, TrendingUp, Loader2 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,7 +150,15 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
           <span className="text-4xl font-bold text-primary truncate">{score.toFixed(1)}</span>
           <span className="text-muted-foreground">/100</span>
         </div>
-        <Progress value={score} className="h-2" />
+        <div className="h-1.5 w-full rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
+          <div
+            className={cn(
+              "h-full rounded-full",
+              score <= 30 ? "bg-green-500" : score <= 70 ? "bg-amber-500" : "bg-destructive"
+            )}
+            style={{ width: `${score}%` }}
+          />
+        </div>
         
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="text-xs">

@@ -164,7 +164,7 @@ function WhatsAppExposureSnapshot({
   ];
 
   return (
-    <Card className="border-primary/15 bg-gradient-to-br from-primary/[0.03] to-transparent shadow-sm">
+    <Card className="border-border/40 bg-card shadow-sm">
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-green-500/10">
