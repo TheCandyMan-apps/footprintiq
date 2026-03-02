@@ -696,6 +696,8 @@ function RouterContent() {
           <Route path="/admin/performance" element={<Performance />} />
           <Route path="/admin/errors" element={<ErrorViewer />} />
           <Route path="/admin/ops" element={<OpsConsole />} />
+          <Route path="/ops" element={<OpsOverview />} />
+          <Route path="/ops/scans/:scanId" element={<OpsScanDetail />} />
           <Route path="/admin/audit-viewer" element={<AuditViewer />} />
           <Route path="/referrals" element={<Referrals />} />
           <Route path="/admin/system-health" element={<SystemHealth />} />
