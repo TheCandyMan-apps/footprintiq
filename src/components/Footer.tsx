@@ -1,6 +1,7 @@
 import { Shield, Mail, Twitter, Linkedin, Github } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TrustBadges } from "./TrustBadges";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export const Footer = () => {
   return (
