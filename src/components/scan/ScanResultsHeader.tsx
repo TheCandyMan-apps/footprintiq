@@ -28,37 +28,41 @@ export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, start
     : null;
 
   return (
-    <div className="sticky top-0 z-20 border-b border-border/40 bg-background/95 backdrop-blur-sm px-4 sm:px-6 py-4">
-      <div className="flex items-start justify-between gap-x-6 gap-y-2">
+    <div className="sticky top-0 z-20 border-b border-border/30 bg-background/95 backdrop-blur-sm px-4 sm:px-6 py-5 shadow-[0_1px_3px_0_hsl(var(--foreground)/0.04)]">
+      <div className="flex items-center justify-between gap-x-6 gap-y-2">
         {/* Left: label hierarchy */}
         <div className="min-w-0 space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/55">
             Scan Results
           </p>
-          <h1 className="text-xl font-bold text-foreground truncate max-w-[360px] leading-tight">
+          <h1 className="text-xl font-semibold tracking-[0.01em] text-foreground truncate max-w-[400px] leading-tight">
             {displayLabel}
           </h1>
-          <p className="text-xs text-muted-foreground">{targetTypeLabel}</p>
+          <p className="text-xs text-muted-foreground/60">{targetTypeLabel}</p>
         </div>
 
         {/* Right: status + meta */}
-        <div className="flex flex-col items-end gap-1.5 flex-shrink-0 pt-0.5">
-          <Badge variant="outline" className={`gap-1 text-[10px] h-5 px-2 font-medium ${cfg.className}`}>
-            <StatusIcon className={`h-3 w-3 ${status === 'running' ? 'animate-spin' : ''}`} />
-            {cfg.label}
-          </Badge>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4 flex-shrink-0">
+          {/* Timestamp cluster */}
+          <div className="flex flex-col items-end gap-0.5">
             {startedAt && (
-              <span className="text-[10px] text-muted-foreground/60">
+              <span className="text-[10px] text-muted-foreground/50 tabular-nums">
                 {new Date(startedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             )}
             {duration && (
-              <span className="text-[10px] text-muted-foreground/60">
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground/40 tabular-nums">
+                <Timer className="h-2.5 w-2.5" />
                 {duration}
               </span>
             )}
           </div>
+
+          {/* Status badge */}
+          <Badge variant="outline" className={`gap-1 text-[10px] h-5 px-2.5 font-medium ${cfg.className}`}>
+            <StatusIcon className={`h-3 w-3 ${status === 'running' ? 'animate-spin' : ''}`} />
+            {cfg.label}
+          </Badge>
         </div>
       </div>
     </div>
