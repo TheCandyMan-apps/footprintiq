@@ -261,6 +261,18 @@ export function SummaryTab({
           isFullAccess={isFullAccess}
         />
 
+        {/* Executive Insight — AI summary, only when complete */}
+        {scanComplete && (
+          <ExecutiveInsightCard
+            jobId={jobId}
+            scanType={scanType}
+            username={job?.username || "Unknown"}
+            profileCount={aggregated.counts.totalProfiles}
+            breachCount={aggregated.counts.totalBreaches}
+            platformCount={platforms.length}
+          />
+        )}
+
         {/* Risk Snapshot Card - Using aggregated counts */}
         <RiskSnapshotCard
           snapshot={aggregatedRiskSnapshot}
@@ -341,6 +353,18 @@ export function SummaryTab({
           )}
         </div>
       </div>
+
+      {/* Executive Insight — AI summary, only when complete */}
+      {scanComplete && (
+        <ExecutiveInsightCard
+          jobId={jobId}
+          scanType={scanType}
+          username={job?.username || "Unknown"}
+          profileCount={aggregated.counts.totalProfiles}
+          breachCount={aggregated.counts.totalBreaches}
+          platformCount={platforms.length}
+        />
+      )}
 
       {/* Intelligence Brief - Compact card */}
       <div className="border border-border/30 rounded-xl bg-card shadow-card p-5 space-y-8">
