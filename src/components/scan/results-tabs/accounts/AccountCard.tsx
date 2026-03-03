@@ -87,8 +87,8 @@ export function AccountCard({
       role="button"
       aria-pressed={isSelected}
     >
-      {/* Header: icon + platform + confidence */}
-      <div className="flex items-center gap-2 px-2.5 pt-2.5 pb-1.5">
+      {/* Header: avatar left, name+handle stacked, confidence right */}
+      <div className="flex items-center gap-2 px-2 py-1.5 md:px-2.5 md:pt-2.5 md:pb-1.5">
         <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="card" />
 
         <div className="flex-1 min-w-0 space-y-0.5">
@@ -124,8 +124,8 @@ export function AccountCard({
         </TooltipProvider>
       </div>
 
-      {/* Bio / risk context */}
-      <div className="px-2.5 pt-1 pb-1.5">
+      {/* Bio / risk context — hidden on mobile to save space, visible md+ */}
+      <div className="hidden md:block px-2.5 pt-1 pb-1.5">
         {bio ? (
           <p className="text-[10px] text-muted-foreground/80 leading-snug line-clamp-2">{bio}</p>
         ) : null}
@@ -154,9 +154,16 @@ export function AccountCard({
         </div>
       </div>
 
+      {/* Mobile-only: single-line risk context */}
+      <div className="md:hidden px-2 pb-1">
+        <p className="text-[9px] text-muted-foreground/60 leading-snug truncate italic">
+          {generateRiskContext(result, lensScore).split('. ')[0]}.
+        </p>
+      </div>
+
       {/* Broker removal guide link */}
       {removalGuide && (
-        <div className="px-2.5 pb-1">
+        <div className="px-2 md:px-2.5 pb-1">
           <Link
             to={removalGuide}
             className="text-[9px] text-accent hover:underline transition-colors"
@@ -170,14 +177,14 @@ export function AccountCard({
 
       {/* LENS badge if verified */}
       {verificationResult && (
-        <div className="px-2.5 pb-1">
+        <div className="px-2 md:px-2.5 pb-1">
           <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact />
         </div>
       )}
 
       {/* Claim dot */}
       {claimStatus && (
-        <div className="px-2.5 pb-1">
+        <div className="px-2 md:px-2.5 pb-1">
           <span className={cn('inline-flex items-center gap-1 text-[9px]', claimStatus === 'me' ? 'text-green-600' : 'text-red-500')}>
             <span className={cn('w-1.5 h-1.5 rounded-full', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
             {claimStatus === 'me' ? 'Claimed' : 'Not me'}
@@ -185,31 +192,32 @@ export function AccountCard({
         </div>
       )}
 
-      {/* Action row */}
+      {/* Action row — compact touch targets (min-h 44px) */}
       <div className="flex items-center border-t border-border/15 divide-x divide-border/15">
         {profileUrl && (
           <a
             href={profileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] text-muted-foreground hover:text-primary hover:bg-muted/10 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-primary hover:bg-muted/10 transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="w-3 h-3" />
-            Visit profile
+            <span className="hidden sm:inline">Visit profile</span>
+            <span className="sm:hidden">Open</span>
           </a>
         )}
         <button
           onClick={(e) => { e.stopPropagation(); onSelect(); }}
-          className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
+          className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
         >
           <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', isSelected && 'rotate-180')} />
-          {isSelected ? 'Collapse' : 'Details'}
+          Details
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onFocus(); }}
           className={cn(
-            'flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] transition-colors',
+            'flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] transition-colors',
             isFocused ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-foreground hover:bg-muted/10'
           )}
         >
