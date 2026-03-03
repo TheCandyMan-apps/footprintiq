@@ -65,6 +65,20 @@ serve(async (req: Request) => {
       }
 
       console.log(`[ops-watchdog] Found ${stuckScans.length} stuck scan(s)`);
+
+      // Auto-remediate: mark stuck scans as failed/timeout
+      const { data: cleaned, error: cleanupErr } = await supabase.rpc("cleanup_stuck_scans", {
+        timeout_minutes: STUCK_SCAN_MINUTES,
+      });
+
+      if (cleanupErr) {
+        console.error("[ops-watchdog] cleanup_stuck_scans error:", cleanupErr.message);
+      } else if (cleaned && cleaned.length > 0) {
+        console.log(`[ops-watchdog] Auto-remediated ${cleaned.length} stuck scan(s)`);
+        for (const s of cleaned) {
+          console.log(`  → ${s.scan_id}: ${s.old_status} → ${s.new_status}`);
+        }
+      }
     }
 
     // ═══════════════════════════════════════════════
