@@ -114,18 +114,18 @@ const FindSocialMediaAccounts = () => {
   return (
     <>
       <Helmet>
-        <title>Find Social Media Accounts by Username | FootprintIQ</title>
-        <meta name="description" content="Discover public social media accounts linked to a username. Ethical OSINT scanning with verification guidance and privacy-first methodology." />
+        <title>Find Social Media Accounts – Search 500+ Platforms Free | FootprintIQ</title>
+        <meta name="description" content="Find social media accounts linked to any username across 500+ platforms. Free ethical OSINT scan — map exposure, verify profiles, and reduce your digital footprint." />
         <link rel="canonical" href="https://footprintiq.app/find-social-media-accounts" />
 
-        <meta property="og:title" content="Find Social Media Accounts by Username | FootprintIQ" />
-        <meta property="og:description" content="Discover public social media accounts linked to a username. Ethical OSINT scanning with verification guidance and privacy-first methodology." />
+        <meta property="og:title" content="Find Social Media Accounts – Search 500+ Platforms Free | FootprintIQ" />
+        <meta property="og:description" content="Find social media accounts linked to any username across 500+ platforms. Free ethical OSINT scan with verification guidance." />
         <meta property="og:url" content="https://footprintiq.app/find-social-media-accounts" />
         <meta property="og:type" content="article" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Find Social Media Accounts by Username | FootprintIQ" />
-        <meta name="twitter:description" content="Discover public social media accounts linked to a username. Ethical OSINT scanning with verification guidance and privacy-first methodology." />
+        <meta name="twitter:title" content="Find Social Media Accounts – Search 500+ Platforms Free | FootprintIQ" />
+        <meta name="twitter:description" content="Find social media accounts linked to any username across 500+ platforms. Free ethical OSINT scan with verification guidance." />
 
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>

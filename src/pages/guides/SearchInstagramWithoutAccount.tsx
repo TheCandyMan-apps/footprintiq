@@ -4,8 +4,8 @@ import { QAGuideLayout, qaGuideLinks, type QAGuideData } from "@/components/guid
 
 const data: QAGuideData = {
   slug: "guides/search-instagram-without-account",
-  title: "How to Search Instagram Without an Account (2026) | FootprintIQ",
-  metaDescription: "Learn how to view and search Instagram profiles without creating an account. Ethical methods, limitations, and privacy-first alternatives for profile research.",
+  title: "Search Instagram Without an Account – Free Methods | FootprintIQ",
+  metaDescription: "Search Instagram profiles without an account. Free ethical methods, exposure insights across 500+ platforms, and privacy-first alternatives for profile research.",
   h1: "How to Search Instagram Without an Account",
   subtitle: "What Instagram shows to unauthenticated visitors, which search methods still work, and how cross-platform OSINT provides better results.",
   publishedDate: "2026-02-27",

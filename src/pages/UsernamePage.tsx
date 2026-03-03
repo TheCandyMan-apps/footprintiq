@@ -190,8 +190,8 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="Username Search — Find Accounts by Username Free | FootprintIQ"
-        description="Search username across 500+ platforms free. Find accounts by username, lookup usernames on social media including Instagram, Facebook, TikTok & more. Best free username search tool using ethical OSINT."
+        title="Username Search – Check Accounts Across 500+ Sites | FootprintIQ"
+        description="Free username search across 500+ platforms. Find where a handle appears, assess your exposure, and take control of your digital footprint. Ethical OSINT — no login required."
         canonical="https://footprintiq.app/usernames"
         schema={{
           breadcrumbs: {

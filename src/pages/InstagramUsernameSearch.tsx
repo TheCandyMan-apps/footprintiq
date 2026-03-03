@@ -80,11 +80,11 @@ export default function InstagramUsernameSearchPage() {
   return (
     <>
       <Helmet>
-        <title>Instagram Username Search – Check Linked Accounts & Exposure | FootprintIQ</title>
-        <meta name="description" content="Search Instagram usernames to find linked accounts and public exposure across 500+ platforms. Free Instagram username lookup and digital footprint intelligence tool." />
+        <title>Instagram Username Search – Find Linked Profiles Free | FootprintIQ</title>
+        <meta name="description" content="Free Instagram username search across 500+ platforms. Check where a handle appears, assess exposure, and discover linked profiles — ethical OSINT, no login required." />
         <link rel="canonical" href="https://footprintiq.app/instagram-username-search" />
-        <meta property="og:title" content="Instagram Username Search – Check Linked Accounts & Exposure | FootprintIQ" />
-        <meta property="og:description" content="Find Instagram profiles, check linked accounts, and discover cross-platform exposure. Free instant results." />
+        <meta property="og:title" content="Instagram Username Search – Find Linked Profiles Free | FootprintIQ" />
+        <meta property="og:description" content="Free Instagram username search across 500+ platforms. Check exposure and discover linked profiles with ethical OSINT." />
       </Helmet>
       <JsonLd data={faqSchema} />
       <JsonLd data={breadcrumbSchema} />
