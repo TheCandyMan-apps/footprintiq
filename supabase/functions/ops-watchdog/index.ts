@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 // ── Thresholds ──
-const STUCK_SCAN_MINUTES = 10; // scan running > 10 min = stuck
+const STUCK_SCAN_MINUTES = 15; // scan running > 15 min = stuck (matches cleanup_stuck_scans default)
 const MISSING_TRANSITION_MINUTES = 5; // no heartbeat in 5 min after start
 const BILLING_DESYNC_MINUTES = 2; // payment succeeded but plan not upgraded
 
