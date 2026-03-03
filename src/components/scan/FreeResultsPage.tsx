@@ -900,7 +900,8 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
-            {/* ===== EXPOSURE SUMMARY ===== */}
+            {/* ===== EXPOSURE SUMMARY (lazy-loaded on mobile) ===== */}
+            <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
                 <div className="mb-3">
@@ -934,9 +935,11 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </p>
               </CardContent>
             </Card>
+            </LazySection>
 
             {/* ===== WHAT REQUIRES ATTENTION + BLURRED ACTION PLAN ===== */}
             {foundProfiles.length > 0 && (
+              <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
               <AttentionSection
                 profiles={foundProfiles}
                 totalExposures={signalsFound}
