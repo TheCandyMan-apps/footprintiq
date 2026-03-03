@@ -102,6 +102,7 @@ import { AttentionSection } from './AttentionSection';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
 import { LazySection } from './LazySection';
+import { MobileCollapsible } from './MobileCollapsible';
 import { AccountsListSkeleton } from './skeletons/ProfileCardSkeleton';
 import { ConfidenceBreakdownSkeleton } from './skeletons/ConfidenceBreakdownSkeleton';
 
