@@ -822,7 +822,6 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 <p className="text-xs text-muted-foreground mb-3 md:hidden">
                   Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings.
                 </p>
-                </div>
 
                 {previewProfiles.length > 0 ? (
                   <div className="space-y-0 border border-border/30 rounded-lg overflow-hidden">
