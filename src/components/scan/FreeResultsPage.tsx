@@ -102,6 +102,7 @@ import { AttentionSection } from './AttentionSection';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
 import { LazySection } from './LazySection';
+import { MobileCollapsible } from './MobileCollapsible';
 import { AccountsListSkeleton } from './skeletons/ProfileCardSkeleton';
 import { ConfidenceBreakdownSkeleton } from './skeletons/ConfidenceBreakdownSkeleton';
 
@@ -722,13 +723,13 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </p>
             </div>
             {/* ===== RISK SNAPSHOT (with emotional context) ===== */}
+            <MobileCollapsible
+              storageKey="risk-snapshot"
+              title="Risk Snapshot"
+              icon={<Shield className="h-4 w-4 text-primary" />}
+            >
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold">Risk Snapshot</h3>
-                </div>
-
                 {/* Enhanced emotional context */}
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-4">
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
@@ -793,14 +794,20 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </p>
               </CardContent>
             </Card>
+            </MobileCollapsible>
 
             {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
             <HiddenInsightsTeaser signalsCount={signalsFound} />
 
-            {/* ===== PUBLIC PROFILES FOUND (Pro-style AccountRow for first 10) ===== */}
+            <MobileCollapsible
+              storageKey="public-profiles"
+              title="Public profiles found"
+              icon={<User className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+              badge={<Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{totalProfiles}</Badge>}
+            >
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
-                <div className="mb-4">
+                <div className="mb-4 hidden md:block">
                   <div className="flex items-center gap-2 mb-1">
                     <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-sm font-semibold">Public profiles found</h3>
@@ -812,6 +819,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings in full detail.
                   </p>
                 </div>
+                <p className="text-xs text-muted-foreground mb-3 md:hidden">
+                  Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings.
+                </p>
 
                 {previewProfiles.length > 0 ? (
                   <div className="space-y-0 border border-border/30 rounded-lg overflow-hidden">
@@ -899,12 +909,18 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 )}
               </CardContent>
             </Card>
+            </MobileCollapsible>
 
-            {/* ===== EXPOSURE SUMMARY (lazy-loaded on mobile) ===== */}
+            {/* ===== EXPOSURE SUMMARY (lazy-loaded, collapsible on mobile) ===== */}
             <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
+            <MobileCollapsible
+              storageKey="exposure-summary"
+              title="Exposure summary"
+              icon={<Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />}
+            >
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
-                <div className="mb-3">
+                <div className="mb-3 hidden md:block">
                   <div className="flex items-center gap-2 mb-1">
                     <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <h3 className="text-sm font-semibold">Exposure summary</h3>
@@ -913,6 +929,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     Based on public sources, this identifier appears on platforms that commonly expose:
                   </p>
                 </div>
+                <p className="text-xs text-muted-foreground mb-3 md:hidden">
+                  Platforms that commonly expose this identifier:
+                </p>
 
                 <ul className="space-y-1.5 mb-3">
                   <li className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -935,6 +954,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </p>
               </CardContent>
             </Card>
+            </MobileCollapsible>
             </LazySection>
 
             {/* ===== WHAT REQUIRES ATTENTION + BLURRED ACTION PLAN ===== */}
