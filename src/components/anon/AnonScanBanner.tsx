@@ -27,8 +27,9 @@ export function AnonScanBanner({ scanId, className }: AnonScanBannerProps) {
   return (
     <div
       className={cn(
-        "relative flex items-center justify-between gap-3 md:gap-4 px-3 py-2.5 md:px-5 md:py-3.5",
-        "bg-muted/30 md:bg-primary/10 border border-border/50 md:border-primary/30 rounded-lg md:rounded-xl",
+        "relative flex items-center justify-between gap-3 md:gap-4",
+        "px-3 py-2.5 md:px-5 md:py-3.5",
+        "bg-muted/20 md:bg-primary/10 border border-border/40 md:border-primary/30 rounded-lg md:rounded-xl",
         "text-xs md:text-sm",
         className
       )}
@@ -37,9 +38,11 @@ export function AnonScanBanner({ scanId, className }: AnonScanBannerProps) {
       <div className="flex items-center gap-3 min-w-0">
         <BookmarkCheck className="h-5 w-5 text-primary shrink-0" />
         <p className="text-foreground">
-          <span className="font-semibold">Save this report to your dashboard</span>
+          <span className="font-semibold hidden md:inline">Save this report to your dashboard</span>
+          <span className="font-semibold md:hidden">Want to track changes over time?</span>
           {" — "}
-          <span className="text-muted-foreground">create a free account to monitor changes over time.</span>
+          <span className="text-muted-foreground hidden md:inline">create a free account to monitor changes over time.</span>
+          <span className="text-muted-foreground md:hidden">Create a free account to save this report and track changes as new signals appear.</span>
         </p>
       </div>
 
