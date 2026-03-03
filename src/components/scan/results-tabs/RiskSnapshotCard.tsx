@@ -98,15 +98,15 @@ export function RiskSnapshotCard({
   if (variant === 'narrative') {
     return (
       <Card className={cn('overflow-hidden border-border/30', className)}>
-        <CardContent className="p-4">
+        <CardContent className="p-3 md:p-4">
           {/* Header */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-3 md:mb-4">
             <Shield className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold tracking-[0.01em]">Risk Snapshot</h3>
           </div>
 
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Metrics Grid - signals + confidence merge into single row on mobile */}
+          <div className="grid grid-cols-3 gap-2 md:gap-4">
             {/* Signals Detected */}
             <div className="text-center">
               <div className="text-2xl font-bold text-foreground tabular-nums">
