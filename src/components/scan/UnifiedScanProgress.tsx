@@ -22,6 +22,7 @@ export function UnifiedScanProgress({
 }: UnifiedScanProgressProps) {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isTakingLong, setIsTakingLong] = useState(false);
+  const [whatOpen, setWhatOpen] = useState(false);
   const startTimeRef = useRef(Date.now());
 
   // Get scan-type-specific status messages from centralized steps
