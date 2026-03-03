@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Shield, Mail, Phone, User, UserCircle, Info, AlertCircle } from "lucide-react";
+import { ArrowRight, Shield, Mail, Phone, User, UserCircle, Info, AlertCircle, Search, BarChart3, ListChecks, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { TurnstileWidget, type TurnstileWidgetRef } from "@/components/security/TurnstileWidget";
@@ -221,74 +221,54 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
   return (
     <>
       <div className="min-h-screen flex flex-col">
-        {/* SEO Header - provides H1 and content for crawlers */}
-        <header className="bg-muted/30 border-b border-border">
-          <div className="max-w-4xl mx-auto px-6 py-8 text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
-              Digital Exposure Scanner
+        {/* ═══ ABOVE THE FOLD — input + CTA + trust ═══ */}
+        <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
+          <div className="w-full max-w-lg text-center mb-6">
+            <Shield className="h-8 w-8 text-primary mx-auto mb-3" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+              Check Your Exposure
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See where your information appears across public sources. This tool performs observational analysis only — no identity verification, no private database access, no surveillance.
+            <p className="text-sm text-muted-foreground">
+              Enter a username, email, phone, or name
             </p>
           </div>
-        </header>
 
-        {/* Main Form */}
-        <main className="flex-1 flex items-center justify-center px-6 py-12">
-          <Card className="w-full max-w-2xl p-8 bg-gradient-card border-border shadow-card">
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Shield className="h-7 w-7 text-primary" />
-                <h2 className="text-2xl font-semibold">Check Your Exposure</h2>
+          <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-4">
+            <Label htmlFor="identifier" className="sr-only">Search identifier</Label>
+            <Input
+              id="identifier"
+              type="text"
+              placeholder="Username, email, phone, or full name"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="h-12 text-base sm:text-lg bg-secondary border-border"
+              maxLength={255}
+              autoFocus
+              data-tour="scan-input"
+            />
+
+            {/* Dynamic type detection hint */}
+            {detectedType ? (
+              <div className={cn(
+                "flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-all border",
+                FORMAT_HINTS[detectedType].color
+              )}>
+                {FORMAT_HINTS[detectedType].icon}
+                <span className="font-medium">{FORMAT_HINTS[detectedType].label}</span>
+                {detectedType === "phone" && (
+                  <>
+                    <span className="text-muted-foreground">—</span>
+                    <span className="opacity-80">Include country code (+1, +44)</span>
+                  </>
+                )}
               </div>
-              <p className="text-muted-foreground">
-                Enter a username, email, phone number, or full name to review publicly visible information
-              </p>
-            </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Single Input Field */}
-            <div className="space-y-3">
-              <Label htmlFor="identifier" className="sr-only">
-                Search identifier
-              </Label>
-              <Input
-                id="identifier"
-                type="text"
-                placeholder="Username, email, phone number, or full name"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="h-12 text-lg bg-secondary border-border"
-                maxLength={255}
-                autoFocus
-                data-tour="scan-input"
-              />
-              
-              {/* Dynamic type detection hint */}
-              {detectedType ? (
-                <div className={cn(
-                  "flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-all border",
-                  FORMAT_HINTS[detectedType].color
-                )}>
-                  {FORMAT_HINTS[detectedType].icon}
-                  <span className="font-medium">{FORMAT_HINTS[detectedType].label}</span>
-                  {detectedType === "phone" && (
-                    <>
-                      <span className="text-muted-foreground">—</span>
-                      <span className="opacity-80">Include country code (+1, +44, etc.)</span>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground px-3 py-2 rounded-lg bg-muted/30 border border-border/50">
-                  <Info className="h-3.5 w-3.5" />
-                  <span>
-                    <strong>Phone format:</strong> Include country code (+1, +44, etc.) for best results
-                  </span>
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-3 py-2 rounded-lg bg-muted/30 border border-border/50">
+                <Info className="h-3.5 w-3.5" />
+                <span><strong>Tip:</strong> Include country code for phone (+1, +44)</span>
+              </div>
+            )}
 
             {/* Turnstile verification */}
             {requiresTurnstile && (
@@ -311,20 +291,20 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
             )}
 
             {/* Primary CTA */}
-            <Button 
-              type="submit" 
-              size="lg" 
+            <Button
+              type="submit"
+              size="lg"
               data-tour="scan-button"
-              className="w-full"
+              className="w-full h-12"
               disabled={!identifier.trim()}
             >
               Analyse exposure
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
 
-            {/* Trust Line */}
+            {/* Trust statement */}
             <p className="text-xs text-muted-foreground text-center">
-              Public-source data only. Observational analysis — no identity verification performed.
+              Public / OSINT only. No private data access.
             </p>
 
             {/* Pro Options Panel - Progressive Disclosure */}
@@ -340,39 +320,49 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
               </div>
             )}
           </form>
-        </Card>
-      </main>
+        </main>
 
-      {/* SEO Footer Content - adds more text for crawlers */}
-      <footer className="bg-muted/20 border-t border-border">
-        <div className="max-w-4xl mx-auto px-6 py-10">
-          <div className="grid md:grid-cols-2 gap-8 text-sm text-muted-foreground">
+        {/* ═══ BELOW THE FOLD — lightweight conversion helpers ═══ */}
+        <section className="border-t border-border bg-muted/20 px-4 sm:px-6 py-8">
+          <div className="max-w-lg mx-auto space-y-8">
+            {/* What you'll get */}
             <div>
-              <h3 className="font-semibold text-foreground mb-2">What We Analyse</h3>
-              <ul className="space-y-1">
-                <li>• Social media platforms (Instagram, TikTok, Reddit, X/Twitter, etc.)</li>
-                <li>• Professional networks (LinkedIn, GitHub, Behance)</li>
-                <li>• Gaming platforms (Steam, PlayStation, Xbox)</li>
-                <li>• Forums, communities, and creative sites</li>
-                <li>• Known data breach records</li>
+              <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">
+                What you'll get
+              </h2>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <Search className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Accounts found across 500+ platforms</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <BarChart3 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Exposure signals &amp; risk score</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <ListChecks className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Suggested next steps to reduce exposure</span>
+                </li>
               </ul>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">Our Approach</h3>
-              <p className="mb-3">
-                FootprintIQ performs observational analysis of publicly available data only. We do not verify identity, 
-                access private databases, or conduct surveillance. This tool is designed for exposure awareness — helping 
-                you understand what is publicly visible so you can make informed decisions.
-              </p>
-              <p>
-                <a href="/responsible-use" className="text-primary hover:underline">Read our Responsible Use Policy</a>
-              </p>
-            </div>
+
+            {/* Privacy-first micro panel */}
+            <Card disableHover className="p-4 flex items-start gap-3 bg-card border-border">
+              <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground mb-1">Privacy-first by design</p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  We only analyse publicly available data. No private databases, no dark web scraping, no data resale.
+                </p>
+                <Link to="/trust-safety" className="text-primary text-xs hover:underline mt-1 inline-block">
+                  Read our Trust &amp; Safety policy →
+                </Link>
+              </div>
+            </Card>
           </div>
-        </div>
-      </footer>
+        </section>
       </div>
-      
+
       {/* Upgrade Dialog */}
       <UpgradeDialog
         open={showUpgradeDialog}
