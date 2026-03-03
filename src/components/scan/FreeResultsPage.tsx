@@ -911,10 +911,16 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             </Card>
             </MobileCollapsible>
 
+            {/* ===== EXPOSURE SUMMARY (lazy-loaded, collapsible on mobile) ===== */}
             <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
+            <MobileCollapsible
+              storageKey="exposure-summary"
+              title="Exposure summary"
+              icon={<Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />}
+            >
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
-                <div className="mb-3">
+                <div className="mb-3 hidden md:block">
                   <div className="flex items-center gap-2 mb-1">
                     <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <h3 className="text-sm font-semibold">Exposure summary</h3>
@@ -923,6 +929,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     Based on public sources, this identifier appears on platforms that commonly expose:
                   </p>
                 </div>
+                <p className="text-xs text-muted-foreground mb-3 md:hidden">
+                  Platforms that commonly expose this identifier:
+                </p>
 
                 <ul className="space-y-1.5 mb-3">
                   <li className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -945,6 +954,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </p>
               </CardContent>
             </Card>
+            </MobileCollapsible>
             </LazySection>
 
             {/* ===== WHAT REQUIRES ATTENTION + BLURRED ACTION PLAN ===== */}
