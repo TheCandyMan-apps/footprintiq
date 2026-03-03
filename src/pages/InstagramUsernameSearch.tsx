@@ -10,6 +10,7 @@ import { Shield, Search, CheckCircle, ArrowRight, Eye, Users, Lock, Camera, Aler
 import { JsonLd } from "@/components/seo/JsonLd";
 import { IntentAlignmentBanner } from "@/components/seo/IntentAlignmentBanner";
 import { AboutFootprintIQBlock } from "@/components/seo/AboutFootprintIQBlock";
+import { EthicalOsintTrustBlock } from "@/components/EthicalOsintTrustBlock";
 
 const PRIVACY_TIPS = [
   "Switch your account to private to control who sees your posts",
@@ -126,6 +127,9 @@ export default function InstagramUsernameSearchPage() {
                 <CheckCircle className="h-4 w-4 text-primary" />
                 Free instant results
               </span>
+            </div>
+            <div className="mt-8">
+              <EthicalOsintTrustBlock />
             </div>
           </div>
         </section>

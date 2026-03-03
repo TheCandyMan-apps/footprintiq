@@ -4,6 +4,7 @@ import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
+import { EthicalOsintTrustBlock } from "@/components/EthicalOsintTrustBlock";
 import { DiscoveryToProofSection } from "@/components/DiscoveryToProofSection";
 import { CategoryComparisonStrip } from "@/components/CategoryComparisonStrip";
 import { Button } from "@/components/ui/button";
@@ -247,9 +248,11 @@ export default function UsernamePage() {
             </div>
 
             {/* Trust line */}
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
               Ethical OSINT for self-protection. No private access. No data resale.
             </p>
+
+            <EthicalOsintTrustBlock />
           </div>
         </section>
 
