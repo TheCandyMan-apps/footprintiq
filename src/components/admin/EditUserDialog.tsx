@@ -52,6 +52,12 @@ export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
   const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
   const [grantingCredits, setGrantingCredits] = useState(false);
 
+  // Re-sync local state when user prop changes (e.g. after data refresh)
+  useEffect(() => {
+    setRole(user.role);
+    setSubscriptionTier(user.subscription_tier);
+  }, [user.role, user.subscription_tier, user.user_id]);
+
   // Fetch user's workspaces when dialog opens
   useEffect(() => {
     if (open && user?.user_id) {
