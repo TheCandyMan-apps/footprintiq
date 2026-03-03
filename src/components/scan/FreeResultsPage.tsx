@@ -799,10 +799,15 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
             <HiddenInsightsTeaser signalsCount={signalsFound} />
 
-            {/* ===== PUBLIC PROFILES FOUND (Pro-style AccountRow for first 10) ===== */}
+            <MobileCollapsible
+              storageKey="public-profiles"
+              title="Public profiles found"
+              icon={<User className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+              badge={<Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{totalProfiles}</Badge>}
+            >
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
-                <div className="mb-4">
+                <div className="mb-4 hidden md:block">
                   <div className="flex items-center gap-2 mb-1">
                     <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-sm font-semibold">Public profiles found</h3>
@@ -813,6 +818,10 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   <p className="text-xs text-muted-foreground">
                     Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings in full detail.
                   </p>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3 md:hidden">
+                  Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings.
+                </p>
                 </div>
 
                 {previewProfiles.length > 0 ? (
