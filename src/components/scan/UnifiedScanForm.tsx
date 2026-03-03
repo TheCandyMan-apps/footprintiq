@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Shield, Mail, Phone, User, UserCircle, Info, AlertCircle } from "lucide-react";
+import { ArrowRight, Shield, Mail, Phone, User, UserCircle, Info, AlertCircle, Search, BarChart3, ListChecks, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { TurnstileWidget, type TurnstileWidgetRef } from "@/components/security/TurnstileWidget";
