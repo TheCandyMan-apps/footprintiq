@@ -146,18 +146,21 @@ export function AccountRow({
         aria-pressed={isSelected}
         aria-expanded={isSelected}
       >
-        {/* LEFT: Platform Icon + Profile Thumbnail */}
+        {/* LEFT: Profile Thumbnail */}
         <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="row" />
 
-        {/* CENTER: Platform + Username + Bio */}
+        {/* CENTER: Platform + Username stacked on mobile, inline on desktop */}
         <div className="flex-1 min-w-0">
+          {/* Mobile: tight stack */}
           <div className="flex items-center gap-1 leading-none mb-0.5">
             <span className="font-semibold text-[12px] text-foreground truncate">{platformName}</span>
-            {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Username not publicly listed</span>}
+            <span className="hidden sm:inline">
+              {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Username not publicly listed</span>}
+            </span>
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="shrink-0 text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60 font-medium leading-none cursor-help" onClick={e => e.stopPropagation()}>
+                  <span className="shrink-0 text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60 font-medium leading-none cursor-help hidden sm:inline-flex" onClick={e => e.stopPropagation()}>
                     {matchType.label}
                   </span>
                 </TooltipTrigger>
@@ -168,8 +171,13 @@ export function AccountRow({
               <span className={cn('w-1 h-1 rounded-full shrink-0', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
             )}
           </div>
+          {/* Mobile-only: username on second line */}
+          <div className="sm:hidden leading-none mb-0.5">
+            {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Not listed</span>}
+          </div>
+          {/* Signal chips — hidden on mobile */}
           {signalChips.length > 0 && (
-            <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60 leading-none">
+            <div className="hidden sm:flex items-center gap-1 text-[9px] text-muted-foreground/60 leading-none">
               {signalChips.map((chip, i) => (
                 <Fragment key={i}>
                   {i > 0 && <span className="text-border">·</span>}
@@ -184,10 +192,12 @@ export function AccountRow({
               ))}
             </div>
           )}
+          {/* Bio — hidden on mobile */}
           {bio ? (
-            <p className="text-[10px] leading-snug truncate text-muted-foreground/70">{bio}</p>
+            <p className="hidden sm:block text-[10px] leading-snug truncate text-muted-foreground/70">{bio}</p>
           ) : null}
-          <div className="flex items-center gap-1">
+          {/* Risk context — hidden on mobile */}
+          <div className="hidden sm:flex items-center gap-1">
             <p className="text-[9px] leading-snug truncate text-muted-foreground/50 italic">
               {generateRiskContext(result, lensScore).split('. ')[0]}.
             </p>
@@ -213,7 +223,7 @@ export function AccountRow({
           {removalGuide && (
             <Link
               to={removalGuide}
-              className="text-[9px] text-accent hover:underline transition-colors"
+              className="hidden sm:inline text-[9px] text-accent hover:underline transition-colors"
               onClick={(e) => e.stopPropagation()}
               target="_blank"
             >
@@ -222,17 +232,17 @@ export function AccountRow({
           )}
         </div>
 
-        {/* RIGHT: Badges + Actions */}
-        <div className="flex items-center gap-1.5 shrink-0 pl-1.5 border-l border-border/15">
+        {/* RIGHT: Confidence badge + actions */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l border-border/15">
           {/* Expand indicator */}
           <ChevronDown className={cn(
             'w-3 h-3 text-muted-foreground/40 transition-transform duration-200',
             isSelected && 'rotate-180'
           )} />
 
-          {/* Exposure Status Selector */}
+          {/* Exposure Status Selector — hidden on mobile */}
           {onExposureStatusChange && (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div className="hidden sm:block" onClick={(e) => e.stopPropagation()}>
               <ExposureStatusSelector
                 currentStatus={exposureStatus || 'active'}
                 onStatusChange={(status) => onExposureStatusChange(result.id, platformName, status)}
@@ -250,7 +260,7 @@ export function AccountRow({
               >
                 <ConfidenceIcon className="w-2.5 h-2.5" />
                 <span className="hidden sm:inline">{confidence.shortLabel}</span>
-                <Info className="w-2 h-2 opacity-50" />
+                <Info className="w-2 h-2 opacity-50 hidden sm:inline" />
               </Badge>
             </PopoverTrigger>
             <PopoverContent side="top" align="end" className="w-auto p-2" onClick={(e) => e.stopPropagation()}>
@@ -258,26 +268,28 @@ export function AccountRow({
             </PopoverContent>
           </Popover>
 
-          {/* LENS Badge */}
+          {/* LENS Badge — hidden on mobile */}
           {verificationResult && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                    <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact={false} />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top"><p className="text-xs">View LENS verification breakdown</p></TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="hidden sm:block">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                      <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact={false} />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top"><p className="text-xs">View LENS verification breakdown</p></TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           )}
           
-          {/* Always-visible: Open link */}
+          {/* Open link */}
           {profileUrl && (
             <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-4.5 w-4.5 rounded text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors" asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-4.5 sm:w-4.5 rounded text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors" asChild onClick={(e) => e.stopPropagation()}>
                     <a href={profileUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-2.5 h-2.5" /></a>
                   </Button>
                 </TooltipTrigger>
@@ -286,8 +298,8 @@ export function AccountRow({
             </TooltipProvider>
           )}
           
-          {/* Hover-reveal: Secondary actions */}
-          <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          {/* Hover-reveal: Secondary actions — hidden on mobile, shown on hover desktop */}
+          <div className="hidden sm:block opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <AccountRowActions
               findingId={result.id}
               url={profileUrl}
