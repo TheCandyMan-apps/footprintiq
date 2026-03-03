@@ -101,6 +101,9 @@ import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { AttentionSection } from './AttentionSection';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
+import { LazySection } from './LazySection';
+import { AccountsListSkeleton } from './skeletons/ProfileCardSkeleton';
+import { ConfidenceBreakdownSkeleton } from './skeletons/ConfidenceBreakdownSkeleton';
 
 // Number of full Pro-style results to show for Free users
 const FREE_PREVIEW_LIMIT = 10;
