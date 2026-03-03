@@ -166,28 +166,36 @@ export function ConfidenceBreakdown({
   return (
     <div className={cn('space-y-3', className)}>
       {/* Summary */}
-      <div className="text-[12px] text-foreground/80 leading-relaxed">
+      <div className="text-[12px] md:text-[12px] text-foreground/80 md:text-foreground/80 leading-relaxed">
         {confidenceExplanation}
       </div>
       
       {/* Signals breakdown */}
-      <div className="space-y-2">
-        {signals.map((signal) => {
+      <div className="space-y-0 md:space-y-2">
+        {signals.map((signal, index) => {
           const { icon: StatusIcon, color } = getSignalIcon(signal.score);
           const SignalIcon = signal.icon;
+          const isLast = index === signals.length - 1;
           
           return (
-            <div key={signal.id} className="space-y-1">
+            <div
+              key={signal.id}
+              className={cn(
+                'space-y-1 py-2.5 md:py-0',
+                // Mobile: subtle divider between groups
+                !isLast && 'border-b border-border/15 md:border-b-0'
+              )}
+            >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <SignalIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-[11px] font-medium text-foreground truncate">
+                  <SignalIcon className="w-4 h-4 md:w-3.5 md:h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-[12px] md:text-[11px] font-medium text-foreground">
                     {signal.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <StatusIcon className={cn('w-3 h-3', color)} />
-                  <span className={cn('text-[10px] font-medium', color)}>
+                  <StatusIcon className={cn('w-3.5 h-3.5 md:w-3 md:h-3', color)} />
+                  <span className={cn('text-[11px] md:text-[10px] font-medium', color)}>
                     {signal.score >= 70 ? 'Confirmed' : signal.score >= 40 ? 'Partial' : 'Not available'}
                   </span>
                 </div>
@@ -195,13 +203,13 @@ export function ConfidenceBreakdown({
               <div className="flex items-center gap-2">
                 <Progress 
                   value={signal.score} 
-                  className="h-1 flex-1" 
+                  className="h-1.5 md:h-1 flex-1" 
                 />
-                <span className="text-[9px] text-muted-foreground/60 w-6 text-right">
+                <span className="text-[10px] md:text-[9px] text-muted-foreground/60 w-6 text-right">
                   {signal.weight}%
                 </span>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-snug pl-5">
+              <p className="text-[11px] md:text-[10px] text-muted-foreground/80 md:text-muted-foreground leading-snug pl-6 md:pl-5">
                 {signal.description}
               </p>
             </div>
@@ -210,7 +218,7 @@ export function ConfidenceBreakdown({
       </div>
       
       {/* Explainer */}
-      <div className="text-[9px] text-muted-foreground/60 pt-1 border-t border-border/20 space-y-1">
+      <div className="text-[10px] md:text-[9px] text-muted-foreground/60 pt-2 md:pt-1 border-t border-border/20 space-y-1">
         <p>Each signal contributes to the overall score based on its weight (shown as %).</p>
         <p>Confidence reflects signal strength, not certainty of identity. A high score does not prove ownership, and a low score does not mean the result is irrelevant. The absence of results does not indicate safety.</p>
       </div>
