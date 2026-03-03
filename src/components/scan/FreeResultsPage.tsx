@@ -978,31 +978,31 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
             {/* LENS Verification is now inline within AccountRow results */}
 
-            {/* ===== CONNECTIONS PREVIEW (Real interactive graph preview) ===== */}
+            {/* ===== CONNECTIONS PREVIEW (lazy-loaded) ===== */}
             {totalConnections > 1 && (
-              <Card className="overflow-hidden border-border/50">
-                <CardContent className="p-4">
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      <h3 className="text-sm font-semibold">Connections graph</h3>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                        Preview
-                      </Badge>
+              <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
+                <Card className="overflow-hidden border-border/50">
+                  <CardContent className="p-4">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <h3 className="text-sm font-semibold">Connections graph</h3>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          Preview
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        See how profiles connect across platforms.
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      See how profiles connect across platforms.
-                    </p>
-                  </div>
-                  
-                  {/* Real graph preview with limited nodes */}
-                  <ConnectionsPreviewGraph
-                    results={displayResults}
-                    username={username}
-                    onUpgradeClick={handleUpgradeClick}
-                  />
-                </CardContent>
-              </Card>
+                    <ConnectionsPreviewGraph
+                      results={displayResults}
+                      username={username}
+                      onUpgradeClick={handleUpgradeClick}
+                    />
+                  </CardContent>
+                </Card>
+              </LazySection>
             )}
 
             {/* ===== TIMELINE PREVIEW (Real data, read-only) ===== */}
