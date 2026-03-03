@@ -101,7 +101,8 @@ export default function TwitterUsernameSearchPage() {
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Search any Twitter/X username to find the profile and discover connected 
-              accounts across social media, gaming, and professional platforms.
+              accounts across social media, gaming, and professional platforms. Use our{" "}
+              <Link to="/usernames" className="text-primary hover:underline font-medium">cross-platform username search</Link> for broader results.
             </p>
             <HeroInputField />
             <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
@@ -151,7 +152,7 @@ export default function TwitterUsernameSearchPage() {
                   <Lock className="h-8 w-8 text-primary mb-4" />
                   <h3 className="font-semibold mb-2">Identity Mapping</h3>
                   <p className="text-sm text-muted-foreground">
-                    Understand how a Twitter handle connects to a person's digital identity across professional and personal platforms.
+                    Understand how a Twitter handle connects to a person's digital identity across professional and personal platforms. Learn about <Link to="/username-reuse-risk" className="text-primary hover:underline">the risks of username reuse</Link>.
                   </p>
                 </CardContent>
               </Card>
@@ -166,7 +167,7 @@ export default function TwitterUsernameSearchPage() {
               Twitter/X Privacy Tips
             </h2>
             <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Want to reduce your Twitter exposure? Follow these privacy recommendations.
+              Want to reduce your Twitter exposure? Follow these privacy recommendations. You can also <Link to="/scan" className="text-primary hover:underline">scan your handle</Link> to see what's visible.
             </p>
             <div className="space-y-4">
               {PRIVACY_TIPS.map((tip, idx) => (

@@ -101,7 +101,8 @@ export default function TikTokUsernameSearchPage() {
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Search any TikTok username to find the profile and discover where else 
-              that username appears across social media and the web.
+              that username appears across social media and the web. Start with our{" "}
+              <Link to="/usernames" className="text-primary hover:underline font-medium">full username scanner</Link> for the broadest coverage.
             </p>
             <HeroInputField />
             <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
@@ -151,7 +152,7 @@ export default function TikTokUsernameSearchPage() {
                   <Lock className="h-8 w-8 text-primary mb-4" />
                   <h3 className="font-semibold mb-2">Privacy Analysis</h3>
                   <p className="text-sm text-muted-foreground">
-                    Understand how username reuse connects online identities. See the digital footprint behind a single handle.
+                    Understand how <Link to="/username-reuse-risk" className="text-primary hover:underline">username reuse</Link> connects online identities. See the digital footprint behind a single handle.
                   </p>
                 </CardContent>
               </Card>
@@ -166,7 +167,7 @@ export default function TikTokUsernameSearchPage() {
               TikTok Privacy Tips
             </h2>
             <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Concerned about your TikTok exposure? Here's how to improve your privacy.
+              Concerned about your TikTok exposure? Here's how to improve your privacy. For a full assessment, <Link to="/scan" className="text-primary hover:underline">run a free scan</Link>.
             </p>
             <div className="space-y-4">
               {PRIVACY_TIPS.map((tip, idx) => (
