@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
+import { EthicalOsintTrustBlock } from "@/components/EthicalOsintTrustBlock";
 
 const PricingPage = () => {
   const { workspace } = useWorkspace();
@@ -242,6 +243,9 @@ const PricingPage = () => {
                 </p>
               )}
             </motion.div>
+            <div className="mt-8">
+              <EthicalOsintTrustBlock />
+            </div>
           </div>
         </section>
 

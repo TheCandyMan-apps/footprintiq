@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { AboutFootprintIQBlock } from "@/components/seo/AboutFootprintIQBlock";
 import { RelatedToolsGrid } from "@/components/seo/RelatedToolsGrid";
 import { SimpleScanForm } from "@/components/maigret/SimpleScanForm";
+import { EthicalOsintTrustBlock } from "@/components/EthicalOsintTrustBlock";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
   Search,
@@ -227,6 +228,9 @@ const ReverseUsernameSearch = () => {
                   <Button asChild variant="outline" size="lg">
                     <Link to="/usernames">Username Search Tool</Link>
                   </Button>
+                </div>
+                <div className="mt-8">
+                  <EthicalOsintTrustBlock />
                 </div>
               </div>
             </div>

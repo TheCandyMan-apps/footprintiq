@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect, lazy, Suspense } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
 import { validatePhone } from "@/lib/phone/phoneUtils";
 import { analytics } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { EthicalOsintTrustBlock } from "@/components/EthicalOsintTrustBlock";
 
 interface UnifiedScanFormProps {
   onSubmit: (config: UnifiedScanConfig) => void;
@@ -346,19 +347,8 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
               </ul>
             </div>
 
-            {/* Privacy-first micro panel */}
-            <Card disableHover className="p-4 flex items-start gap-3 bg-card border-border">
-              <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-              <div className="text-sm">
-                <p className="font-medium text-foreground mb-1">Privacy-first by design</p>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  We only analyse publicly available data. No private databases, no dark web scraping, no data resale.
-                </p>
-                <Link to="/trust-safety" className="text-primary text-xs hover:underline mt-1 inline-block">
-                  Read our Trust &amp; Safety policy →
-                </Link>
-              </div>
-            </Card>
+            {/* Ethical OSINT trust block */}
+            <EthicalOsintTrustBlock />
           </div>
         </section>
       </div>
