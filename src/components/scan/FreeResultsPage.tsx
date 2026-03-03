@@ -723,13 +723,13 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </p>
             </div>
             {/* ===== RISK SNAPSHOT (with emotional context) ===== */}
+            <MobileCollapsible
+              storageKey="risk-snapshot"
+              title="Risk Snapshot"
+              icon={<Shield className="h-4 w-4 text-primary" />}
+            >
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold">Risk Snapshot</h3>
-                </div>
-
                 {/* Enhanced emotional context */}
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-4">
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
@@ -794,6 +794,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </p>
               </CardContent>
             </Card>
+            </MobileCollapsible>
 
             {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
             <HiddenInsightsTeaser signalsCount={signalsFound} />
