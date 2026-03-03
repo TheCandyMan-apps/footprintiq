@@ -20,14 +20,14 @@ export function PostScanInlineUpgrade({ exposureCount, hiddenCount, highConfiden
 
   return (
     <>
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <CardContent className="p-5 sm:p-6">
-          <div className="flex flex-col gap-4">
+      <Card className="overflow-hidden border-primary/10 md:border-primary/20 bg-muted/20 md:bg-gradient-to-br md:from-primary/5 md:via-background md:to-accent/5">
+        <CardContent className="p-3 md:p-5 sm:p-6">
+          <div className="flex flex-col gap-3 md:gap-4">
             {/* Dynamic headline based on scan data */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 md:space-y-2">
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                <h3 className="text-base sm:text-lg font-semibold text-foreground">
+                <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                <h3 className="text-sm md:text-base sm:text-lg font-semibold text-foreground">
                   You found {exposureCount} exposures — Pro reveals the full picture
                 </h3>
               </div>
@@ -56,11 +56,11 @@ export function PostScanInlineUpgrade({ exposureCount, hiddenCount, highConfiden
               ))}
             </div>
 
-            {/* CTA - large touch target for mobile */}
+            {/* CTA - large touch target */}
             <Button
               onClick={() => setShowModal(true)}
               size="lg"
-              className="w-full gap-2 h-12 text-base font-semibold"
+              className="w-full gap-2 h-10 md:h-12 text-sm md:text-base font-semibold"
             >
               Switch to Pro Intelligence
               <ArrowRight className="h-4 w-4" />
