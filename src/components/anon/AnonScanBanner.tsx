@@ -27,26 +27,34 @@ export function AnonScanBanner({ scanId, className }: AnonScanBannerProps) {
   return (
     <div
       className={cn(
-        "relative flex items-center justify-between gap-3 md:gap-4",
+        "relative flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4",
         "px-3 py-2.5 md:px-5 md:py-3.5",
-        "bg-muted/20 md:bg-primary/10 border border-border/40 md:border-primary/30 rounded-lg md:rounded-xl",
+        "bg-muted/15 md:bg-primary/10 border border-border/30 md:border-primary/30 rounded-lg md:rounded-xl",
         "text-xs md:text-sm",
         className
       )}
       role="banner"
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <BookmarkCheck className="h-5 w-5 text-primary shrink-0" />
-        <p className="text-foreground">
-          <span className="font-semibold hidden md:inline">Save this report to your dashboard</span>
-          <span className="font-semibold md:hidden">Want to track changes over time?</span>
-          {" — "}
-          <span className="text-muted-foreground hidden md:inline">create a free account to monitor changes over time.</span>
-          <span className="text-muted-foreground md:hidden">Create a free account to save this report and track changes as new signals appear.</span>
-        </p>
+      <div className="flex items-start md:items-center gap-3 min-w-0">
+        <BookmarkCheck className="h-5 w-5 text-primary shrink-0 mt-0.5 md:mt-0" />
+        <div className="space-y-1.5 md:space-y-0">
+          <p className="text-foreground">
+            <span className="font-semibold hidden md:inline">Save this report to your dashboard</span>
+            <span className="font-semibold md:hidden">Track changes over time.</span>
+            {" "}
+            <span className="text-muted-foreground hidden md:inline">— create a free account to monitor changes over time.</span>
+            <span className="text-muted-foreground md:hidden">Create a free account to save this report and get alerts.</span>
+          </p>
+          {/* Benefit bullets - mobile only */}
+          <ul className="md:hidden space-y-0.5 text-[11px] text-muted-foreground/80">
+            <li>✓ Monitor exposure changes</li>
+            <li>✓ Get notified of new breaches</li>
+            <li>✓ Keep reports organised</li>
+          </ul>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
         <Button
           size="sm"
           onClick={handleSignUp}
@@ -57,10 +65,10 @@ export function AnonScanBanner({ scanId, className }: AnonScanBannerProps) {
         </Button>
         <button
           onClick={() => setDismissed(true)}
-          className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+          className="p-1 rounded text-muted-foreground/50 hover:text-foreground transition-colors"
           aria-label="Dismiss banner"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
