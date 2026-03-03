@@ -163,6 +163,12 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         <ProviderHealthPanel findings={providerHealthFindings} variant="compact" />
       )}
 
+      {/* Search (above filters on mobile) */}
+      <div className="relative md:hidden">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input placeholder="Search accounts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-10 pl-8 text-sm" />
+      </div>
+
       {/* Quick Filters */}
       <AccountFilters activeFilter={quickFilter} onFilterChange={setQuickFilter} counts={filterCounts} />
 
@@ -179,7 +185,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
           )}
         </div>
 
-        <div className="relative flex-1">
+        <div className="relative flex-1 hidden md:block">
           <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-muted-foreground" />
           <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-6 pl-6 text-[11px]" />
         </div>

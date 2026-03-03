@@ -29,7 +29,14 @@ const FILTER_CONFIG: Record<QuickFilterOption, { label: string; icon: typeof Che
 
 export function AccountFilters({ activeFilter, onFilterChange, counts }: AccountFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-1 py-0.5">
+    <div
+      className={cn(
+        // Mobile: horizontal scroll, no wrap, hide scrollbar
+        'flex items-center gap-1.5 py-1 overflow-x-auto scrollbar-hide',
+        // Desktop: wrap normally
+        'md:flex-wrap md:overflow-x-visible md:gap-1 md:py-0.5'
+      )}
+    >
       {(Object.entries(FILTER_CONFIG) as [QuickFilterOption, typeof FILTER_CONFIG['all']][]).map(([key, config]) => {
         const count = counts[key];
         const isActive = activeFilter === key;
@@ -43,18 +50,21 @@ export function AccountFilters({ activeFilter, onFilterChange, counts }: Account
             key={key}
             onClick={() => onFilterChange(key)}
             className={cn(
-              'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-colors',
-              'border hover:bg-accent/40',
+              // Mobile: larger thumb-friendly chips with 44px min-height
+              'inline-flex items-center gap-1 px-3 min-h-[44px] rounded-full text-xs font-medium transition-colors shrink-0',
+              'border whitespace-nowrap',
+              // Desktop: revert to compact size
+              'md:px-1.5 md:min-h-0 md:py-0.5 md:text-[10px] md:gap-0.5',
               isActive 
-                ? 'bg-primary text-primary-foreground border-primary' 
-                : 'bg-background text-muted-foreground border-border/50 hover:text-foreground'
+                ? 'bg-primary/15 text-primary border-primary/40 md:bg-primary md:text-primary-foreground md:border-primary' 
+                : 'bg-background text-muted-foreground border-border/50 hover:bg-accent/40 hover:text-foreground'
             )}
           >
-            <Icon className="w-2.5 h-2.5" />
+            <Icon className="w-3.5 h-3.5 md:w-2.5 md:h-2.5" />
             <span>{config.label}</span>
             <span className={cn(
-              'text-[9px] ml-0.5',
-              isActive ? 'text-primary-foreground/70' : 'text-muted-foreground/60'
+              'text-[10px] ml-0.5 md:text-[9px]',
+              isActive ? 'text-primary/70 md:text-primary-foreground/70' : 'text-muted-foreground/60'
             )}>
               {count}
             </span>
