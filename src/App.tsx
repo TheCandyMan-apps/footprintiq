@@ -58,6 +58,7 @@ const Workflows = lazy(() => import("./pages/Workflows"));
 const WorkflowNew = lazy(() => import("./pages/WorkflowNew"));
 const Security = lazy(() => import("./pages/Security"));
 const PluginMarketplace = lazy(() => import("./pages/PluginMarketplace"));
+const ComparePage = lazy(() => import("./pages/ComparePage"));
 const PredictiveAnalytics = lazy(() => import("./pages/PredictiveAnalytics"));
 const SovereigntyDashboard = lazy(() => import("./pages/SovereigntyDashboard"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
@@ -897,7 +898,8 @@ function RouterContent() {
           <Route path="/playbooks/executive-travel-check" element={<ExecutiveTravelCheck />} />
           <Route path="/playbooks/journalist-risk-audit" element={<JournalistRiskAudit />} />
           <Route path="/playbooks/pre-employment-exposure-review" element={<PreEmploymentExposureReview />} />
-          <Route path="/install" element={<InstallApp />} />
+           <Route path="/install" element={<InstallApp />} />
+           <Route path="/compare" element={<ComparePage />} />
           
               <Route path="/404" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
