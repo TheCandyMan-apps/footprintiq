@@ -710,7 +710,14 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             {/* ===== EXPOSURE SCORE HERO CARD ===== */}
             <ExposureScoreCardSection results={results} onUpgradeClick={handleUpgradeClick} />
 
-
+            {/* ===== MONITORING NUDGE (mobile only, below exposure block) ===== */}
+            <div className="md:hidden flex items-center gap-2 px-1 py-1.5">
+              <Shield className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+              <p className="text-[11px] text-muted-foreground/70">
+                Unlock ongoing monitoring with a{' '}
+                <button onClick={handleUpgradeClick} className="text-primary hover:underline font-medium">free account</button>.
+              </p>
+            </div>
             {/* ===== RISK SNAPSHOT (with emotional context) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">

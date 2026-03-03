@@ -20,7 +20,7 @@ export function PostScanInlineUpgrade({ exposureCount, hiddenCount, highConfiden
 
   return (
     <>
-      <Card className="overflow-hidden border-primary/10 md:border-primary/20 bg-muted/20 md:bg-gradient-to-br md:from-primary/5 md:via-background md:to-accent/5">
+      <Card className="overflow-hidden border-border/20 md:border-primary/20 bg-transparent md:bg-gradient-to-br md:from-primary/5 md:via-background md:to-accent/5">
         <CardContent className="p-3 md:p-5 sm:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             {/* Dynamic headline based on scan data */}
@@ -28,18 +28,28 @@ export function PostScanInlineUpgrade({ exposureCount, hiddenCount, highConfiden
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 <h3 className="text-sm md:text-base sm:text-lg font-semibold text-foreground">
-                  You found {exposureCount} exposures — Pro reveals the full picture
+                  <span className="hidden md:inline">
+                    You found {exposureCount} exposures — Pro reveals the full picture
+                  </span>
+                  <span className="md:hidden">
+                    Go deeper with Pro Intelligence
+                  </span>
                 </h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                {hiddenCount > 0
-                  ? `${hiddenCount} findings are hidden. Pro shows every result with risk scoring, evidence, and removal guidance.`
-                  : `Get risk-ranked results, confidence scoring, and actionable removal steps.`}
+                <span className="hidden md:inline">
+                  {hiddenCount > 0
+                    ? `${hiddenCount} findings are hidden. Pro shows every result with risk scoring, evidence, and removal guidance.`
+                    : `Get risk-ranked results, confidence scoring, and actionable removal steps.`}
+                </span>
+                <span className="md:hidden">
+                  See risk-ranked results, evidence, and removal steps for all {exposureCount} findings.
+                </span>
               </p>
             </div>
 
-            {/* Value props grid - mobile-friendly */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Value props grid - hidden on mobile, replaced by simpler list */}
+            <div className="hidden md:grid grid-cols-2 gap-2">
               {[
                 { icon: TrendingUp, label: 'Risk scoring', desc: 'Know what matters most' },
                 { icon: Eye, label: 'Full evidence', desc: 'See every finding' },
@@ -56,7 +66,7 @@ export function PostScanInlineUpgrade({ exposureCount, hiddenCount, highConfiden
               ))}
             </div>
 
-            {/* CTA - large touch target */}
+            {/* CTA */}
             <Button
               onClick={() => setShowModal(true)}
               size="lg"
@@ -66,7 +76,7 @@ export function PostScanInlineUpgrade({ exposureCount, hiddenCount, highConfiden
               <ArrowRight className="h-4 w-4" />
             </Button>
 
-            <p className="text-[10px] text-muted-foreground/60 text-center">
+            <p className="text-[10px] text-muted-foreground/50 text-center">
               Trusted by privacy-conscious individuals and professionals.
             </p>
           </div>
