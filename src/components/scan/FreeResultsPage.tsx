@@ -910,8 +910,8 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 )}
               </CardContent>
             </Card>
+            </MobileCollapsible>
 
-            {/* ===== EXPOSURE SUMMARY (lazy-loaded on mobile) ===== */}
             <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
