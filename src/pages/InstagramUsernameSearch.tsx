@@ -159,7 +159,7 @@ export default function InstagramUsernameSearchPage() {
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold mb-6">Why Username Reuse Creates Risk</h2>
             <div className="text-muted-foreground leading-relaxed space-y-4 text-[16px]">
-              <p>Using the same Instagram handle across platforms can:</p>
+              <p>Using the same Instagram handle across platforms can increase your exposure. <Link to="/scan" className="text-primary hover:underline">Run a scan</Link> to see exactly where your handle appears.</p>
               <div className="grid sm:grid-cols-2 gap-4 my-6">
                 {[
                   { icon: Users, text: "Connect personal and professional identities" },

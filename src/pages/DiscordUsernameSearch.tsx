@@ -189,14 +189,16 @@ export default function DiscordUsernameSearch() {
             <p>
               Open-source intelligence (OSINT) relies on publicly available data. Usernames are
               powerful OSINT identifiers because they are frequently reused, act as cross-platform
-              anchors, connect fragmented digital identities, and leave searchable traces.
+              anchors, connect fragmented digital identities, and leave searchable traces. Understanding{" "}
+              <Link to="/username-reuse-risk" className="text-primary underline underline-offset-4 hover:text-primary/80">how username reuse creates risk</Link>{" "}
+              is essential for managing your exposure.
             </p>
             <p>
               Cybersecurity professionals, privacy-conscious individuals, and digital investigators
               use username analysis to assess exposure risk. FootprintIQ brings that methodology
-              into an ethical, privacy-first platform through its{" "}
-              <Link to="/usernames" className="text-primary underline underline-offset-4 hover:text-primary/80">username search tool</Link>,
-              which covers hundreds of public sources in a single scan.
+              into an ethical, privacy-first platform — you can{" "}
+              <Link to="/scan" className="text-primary underline underline-offset-4 hover:text-primary/80">run a scan</Link>{" "}
+              to check your Discord handle across hundreds of public sources in seconds.
             </p>
 
             <h2>What You Can Discover</h2>

@@ -296,7 +296,7 @@ export default function UsernamePage() {
             <h2>How to Search Username and Find Accounts Online</h2>
             
             <p>
-              Looking to search username handles and find accounts by username? A username search tool scans 
+              Looking to search username handles and <Link to="/find-social-media-accounts-by-username" className="text-primary underline underline-offset-4 hover:text-primary/80">find accounts by username</Link>? A username search tool scans 
               public profile pages across popular social media platforms, gaming networks, and online communities 
               to show you where a specific handle appears. You can check username availability, find social 
               profiles on Instagram and Facebook, gather information about online identities, or understand 
@@ -305,8 +305,9 @@ export default function UsernamePage() {
             
             <p>
               Most people use the same username across multiple sites. This creates a traceable pattern 
-              that anyone can follow. A username you created years ago on a gaming forum might still be 
-              indexed by search engines—even if you've forgotten about it entirely.
+              that anyone can follow — a concept known as{" "}
+              <Link to="/reverse-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">reverse username search</Link>. A username you created years ago on a gaming forum might still be 
+              indexed by search engines — even if you've forgotten about it entirely.
             </p>
 
             <h3>What Is a Username Search?</h3>

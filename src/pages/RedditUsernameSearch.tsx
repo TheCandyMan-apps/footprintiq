@@ -203,12 +203,17 @@ export default function RedditUsernameSearch() {
               <li>Expose opinions and interests across contexts</li>
             </ul>
             <p>
-              Understanding your digital footprint is the first step toward controlling it.
+              Understanding{" "}
+              <Link to="/username-reuse-risk" className="text-primary underline underline-offset-4 hover:text-primary/80">why username reuse amplifies risk</Link>{" "}
+              is the first step toward controlling your digital footprint.
               FootprintIQ's{" "}
               <Link to="/usernames" className="text-primary underline underline-offset-4 hover:text-primary/80">
                 username search tool
               </Link>{" "}
-              covers hundreds of public sources in a single scan.
+              covers hundreds of public sources in a single scan — or you can{" "}
+              <Link to="/scan" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                check your exposure now
+              </Link>.
             </p>
 
             <h2>What You Can Discover</h2>
