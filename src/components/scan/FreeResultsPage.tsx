@@ -940,11 +940,12 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             {/* ===== WHAT REQUIRES ATTENTION + BLURRED ACTION PLAN ===== */}
             {foundProfiles.length > 0 && (
               <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
-              <AttentionSection
-                profiles={foundProfiles}
-                totalExposures={signalsFound}
-                onUpgradeClick={handleUpgradeClick}
-              />
+                <AttentionSection
+                  profiles={foundProfiles}
+                  totalExposures={signalsFound}
+                  onUpgradeClick={handleUpgradeClick}
+                />
+              </LazySection>
             )}
 
             {/* ===== NOTABLE PATTERN INSIGHT ===== */}
