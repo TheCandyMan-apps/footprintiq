@@ -9,6 +9,7 @@ import { CategoryComparisonStrip } from "@/components/CategoryComparisonStrip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { 
   CheckCircle, 
   XCircle, 
@@ -29,7 +30,11 @@ import {
   FileText,
   HelpCircle,
   BookOpen,
-  Scale
+  Scale,
+  ScanLine,
+  ShieldCheck,
+  BarChart3,
+  Activity
 } from "lucide-react";
 
 import {
@@ -41,25 +46,95 @@ import {
 
 const faqItems = [
   {
-    question: "Is username search free?",
-    answer: "Yes, single username searches are completely free. No account required. You can run unlimited free searches to check where a username appears across 500+ platforms."
+    question: "How does a username search work?",
+    answer: "A username search queries publicly accessible profile URLs across 500+ platforms — social media, gaming networks, forums, and developer sites. It checks whether a profile page exists at URLs like platform.com/username, then applies confidence scoring to filter false positives. Only publicly visible data is accessed; no logins, hacking, or private data retrieval is involved."
   },
   {
-    question: "What platforms do you check?",
-    answer: "We check 500+ platforms including social media (Twitter, Instagram, TikTok, Reddit), gaming networks (Steam, Discord, Xbox, PlayStation), developer tools (GitHub, GitLab, Stack Overflow), professional networks (LinkedIn, Behance, Dribbble), and hundreds of forums and communities."
+    question: "What is a reverse username search?",
+    answer: "A reverse username search starts with a known handle and maps every platform where that handle appears. This reveals cross-platform exposure, forgotten accounts, and username reuse patterns. It's the opposite of searching for a person by name — instead, you search by the unique identifier they use online."
   },
   {
-    question: "Is this legal?",
-    answer: "Yes. We only check publicly accessible profile URLs that anyone can visit. We don't access private accounts, bypass authentication, or use any unauthorised techniques. This is ethical OSINT — open-source intelligence from publicly available data."
+    question: "Can I find all accounts linked to a username?",
+    answer: "You can find accounts on the 500+ platforms FootprintIQ checks. However, no tool covers every website on the internet. Some platforms block automated queries, and private or deactivated accounts won't appear. Results should be treated as a strong indicator, not an exhaustive list."
   },
   {
-    question: "Why do some results show 'suspicious'?",
-    answer: "Suspicious means the platform rate-limited our check or blocked automated requests. It doesn't confirm the username exists — manual verification may be needed. This is common with platforms that have aggressive bot protection."
+    question: "Is username searching legal?",
+    answer: "Yes. Searching publicly accessible profile pages is legal in most jurisdictions. FootprintIQ only queries URLs that anyone can visit without authentication. We don't bypass logins, scrape behind paywalls, or access private data. This is ethical OSINT — open-source intelligence from publicly available sources. Always use results responsibly and in compliance with local laws."
   },
   {
-    question: "Can I check multiple usernames?",
-    answer: "Bulk username checking is available on our Pro plan, allowing up to 100 usernames per batch. This is ideal for security teams, investigators, and researchers who need to check multiple usernames efficiently."
+    question: "How can I reduce my online exposure after a scan?",
+    answer: "Start by deactivating or deleting accounts you no longer use. Change reused usernames to unique ones on each platform. Tighten privacy settings on active accounts. Remove personal information from public profiles. For a structured approach, run a full digital footprint scan at /scan and follow the prioritised remediation steps provided in your results."
   }
+];
+
+const popularSearches = [
+  {
+    title: "Reverse Username Search",
+    description: "Map a single handle across every platform it appears on.",
+    href: "/reverse-username-search",
+  },
+  {
+    title: "Instagram Username Search",
+    description: "Check username exposure on Instagram's public profiles.",
+    href: "/instagram-username-search",
+  },
+  {
+    title: "TikTok Username Search",
+    description: "Find where a TikTok handle appears across 500+ sites.",
+    href: "/tiktok-username-search",
+  },
+  {
+    title: "Twitter / X Username Search",
+    description: "Trace a Twitter handle across social and forum platforms.",
+    href: "/twitter-username-search",
+  },
+  {
+    title: "Discord Username Search",
+    description: "Discover Discord usernames linked across gaming and social sites.",
+    href: "/discord-username-search",
+  },
+  {
+    title: "Reddit Username Search",
+    description: "Check where a Reddit handle surfaces on other platforms.",
+    href: "/reddit-username-search",
+  },
+  {
+    title: "Kik Username Search",
+    description: "Search Kik usernames across messaging and social networks.",
+    href: "/kik-username-search",
+  },
+  {
+    title: "Snapchat Username Search",
+    description: "Find Snapchat handles and cross-platform username reuse.",
+    href: "/snapchat-username-search",
+  },
+];
+
+const howItWorksSteps = [
+  {
+    icon: ScanLine,
+    label: "Scan",
+    title: "Run Your Scan",
+    description: "Enter a username and we query 500+ public platforms in seconds.",
+  },
+  {
+    icon: Activity,
+    label: "Act",
+    title: "Review Findings",
+    description: "See where the handle appears with confidence scores and risk context.",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Verify",
+    title: "Validate Results",
+    description: "Cross-reference matches and filter false positives for accuracy.",
+  },
+  {
+    icon: BarChart3,
+    label: "Measure",
+    title: "Reduce Exposure",
+    description: "Follow prioritised steps to delete, lock, or update exposed accounts.",
+  },
 ];
 
 const platformCategories = [
@@ -131,11 +206,13 @@ export default function UsernamePage() {
           custom: webAppSchema
         }}
       />
+      <JsonLd data={faqSchema} />
       <Header />
       <main className="min-h-screen bg-background">
         {/* Intent Alignment */}
         <IntentAlignmentBanner />
-        {/* Hero Section */}
+
+        {/* A) Hero Section — primary input + trust line */}
         <section className="py-16 md:py-24 px-6 bg-gradient-to-b from-primary/5 to-background">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="secondary" className="mb-4">
@@ -154,12 +231,56 @@ export default function UsernamePage() {
               online identities across multiple platforms.
             </p>
             
-            <Button size="lg" asChild className="text-lg px-8 py-6 mb-8">
-              <Link to="/scan">
-                Run a Free Username Scan
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </Button>
+            <div className="flex flex-wrap justify-center gap-4 mb-4">
+              <Button size="lg" asChild className="text-lg px-8 py-6">
+                <Link to="/scan">
+                  Run a Free Username Scan
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
+                <Link to="/trust-safety">
+                  See Trust & Safety
+                  <Shield className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+            </div>
+
+            {/* Trust line */}
+            <p className="text-sm text-muted-foreground mt-2">
+              Ethical OSINT for self-protection. No private access. No data resale.
+            </p>
+          </div>
+        </section>
+
+        {/* B) Popular Searches Hub */}
+        <section className="py-14 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold mb-3">Popular Username Searches</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Jump straight to a platform-specific search or explore your exposure across multiple networks.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {popularSearches.map((item) => (
+                <Card key={item.href} className="p-5 flex flex-col justify-between">
+                  <div>
+                    <Link to={item.href} className="hover:underline">
+                      <h3 className="font-semibold text-base mb-1">{item.title}</h3>
+                    </Link>
+                    <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
+                  </div>
+                  <Button size="sm" asChild className="w-full">
+                    <Link to="/scan">
+                      Scan this platform
+                      <ArrowRight className="ml-1 w-4 h-4" />
+                    </Link>
+                  </Button>
+                </Card>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -339,22 +460,61 @@ export default function UsernamePage() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* C) How It Works — Scan → Act → Verify → Measure */}
         <section className="py-16 px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-2xl font-bold mb-4">Ready to discover your digital footprint?</h2>
-            <p className="text-muted-foreground mb-6">
-              Start a free scan to see where your username appears across 500+ platforms.
-            </p>
-            <Button size="lg" asChild className="text-lg px-8 py-6">
-              <Link to="/scan">
-                Run a Free Username Scan
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </Button>
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">How It Works</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Four steps from first scan to measurable exposure reduction.
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="relative mb-10">
+              <div className="absolute top-5 left-0 right-0 h-1 bg-secondary/50 rounded-full" />
+              <div className="absolute top-5 left-0 h-1 bg-primary rounded-full" style={{ width: '100%' }} />
+              <div className="relative flex justify-between">
+                {howItWorksSteps.map((step, idx) => (
+                  <div key={idx} className="flex flex-col items-center text-center" style={{ width: '22%' }}>
+                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm mb-3 relative z-10 shadow-md">
+                      {idx + 1}
+                    </div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">{step.label}</span>
+                    <h3 className="font-semibold text-sm mb-1">{step.title}</h3>
+                    <p className="text-xs text-muted-foreground hidden sm:block">{step.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Detailed cards */}
+            <div className="grid sm:grid-cols-2 gap-5">
+              {howItWorksSteps.map((step, idx) => (
+                <Card key={idx} className="p-5 border-l-4 border-l-primary">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <step.icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-1">{step.title}</h3>
+                      <p className="text-sm text-muted-foreground">{step.description}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <div className="text-center mt-8">
+              <Button size="lg" asChild className="text-lg px-8 py-6">
+                <Link to="/scan">
+                  Start Your Scan Now
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
-
 
         {/* Why Username Reuse Matters */}
         <section className="py-12 px-6">
@@ -421,39 +581,32 @@ export default function UsernamePage() {
                   <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-500" /> Public records</span>
                   <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-500" /> Domain/WHOIS</span>
                 </div>
-                <Button asChild size="lg" className="text-lg px-8">
-                  <Link to="/scan">
-                    Run a Full Digital Footprint Scan
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Link>
-                </Button>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Button asChild size="lg" className="text-lg px-8">
+                    <Link to="/scan">
+                      Run a Full Digital Footprint Scan
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline">
+                    <Link to="/trust-safety">
+                      Our Trust & Safety Commitment
+                      <Shield className="ml-2 w-5 h-5" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>
         </section>
 
-        {/* Bridge CTA before FAQ */}
-        <section className="py-8 px-6">
-          <div className="max-w-3xl mx-auto text-center">
-            <p className="text-lg text-muted-foreground mb-4">
-              Want to see how your username connects to email exposure or data brokers?
-            </p>
-            <Button asChild variant="outline" size="lg">
-              <Link to="/scan">
-                Run a Full Digital Footprint Scan
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Link>
-            </Button>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
+        {/* D) FAQ Section — new 5 Qs with FAQPage JSON-LD */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
               <p className="text-muted-foreground">
-                Common questions about username search and digital exposure
+                Common questions about username search, reverse username lookup, and reducing digital exposure.
               </p>
             </div>
 
@@ -479,99 +632,8 @@ export default function UsernamePage() {
           </div>
         </section>
 
-        {/* NEW: How It Works - Step by Step */}
+        {/* Common Misconceptions */}
         <section className="py-16 px-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How Username Search Works: Step by Step</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Understanding the process helps you interpret results correctly and set realistic expectations.
-              </p>
-            </div>
-
-            <div className="grid gap-6">
-              <Card className="p-6 border-l-4 border-l-primary">
-                <div className="flex items-start gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
-                    1
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                      <Search className="w-5 h-5 text-primary" />
-                      You Enter a Username
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Type the exact username you want to check. The tool doesn't require an account, 
-                      payment, or personal information to run a basic scan.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 border-l-4 border-l-primary">
-                <div className="flex items-start gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
-                    2
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-primary" />
-                      We Query Public Profile URLs
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Our system checks publicly accessible profile pages across 500+ platforms. 
-                      We're essentially visiting <code className="bg-muted px-1 rounded">platform.com/username</code> and 
-                      analysing the response — the same thing anyone could do manually, but automated.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 border-l-4 border-l-primary">
-                <div className="flex items-start gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
-                    3
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                      <Filter className="w-5 h-5 text-primary" />
-                      Results Are Filtered for Accuracy
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Raw results often include false positives. Our system applies confidence scoring 
-                      to distinguish likely matches from coincidental ones. Learn more in our{" "}
-                      <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">
-                        username reuse research
-                      </Link>.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 border-l-4 border-l-primary">
-                <div className="flex items-start gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
-                    4
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-primary" />
-                      You Review Contextualised Findings
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Each result includes the platform, profile URL, and confidence level. 
-                      We explain what findings mean — not just whether a username exists, but 
-                      what that might indicate for your digital exposure.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* NEW: Common Misconceptions */}
-        <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-3">
@@ -652,8 +714,8 @@ export default function UsernamePage() {
           </div>
         </section>
 
-        {/* NEW: Accuracy & Ethics */}
-        <section className="py-16 px-6">
+        {/* Accuracy & Ethics */}
+        <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-3">
@@ -741,10 +803,10 @@ export default function UsernamePage() {
                       How Username Tools Work <ArrowRight className="w-3 h-3" />
                     </Link>
                     <Link 
-                      to="/responsible-use" 
+                      to="/trust-safety" 
                       className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-medium"
                     >
-                      Responsible Use Policy <ArrowRight className="w-3 h-3" />
+                      Trust & Safety <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </div>
@@ -753,7 +815,7 @@ export default function UsernamePage() {
           </div>
         </section>
 
-        {/* How to Lookup a Username Section - NEW SEO CONTENT */}
+        {/* How to Lookup a Username Section */}
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-6">How to Lookup a Username</h2>
@@ -771,7 +833,7 @@ export default function UsernamePage() {
           </div>
         </section>
 
-        {/* What a Deep Username Search Reveals - NEW SEO CONTENT */}
+        {/* What a Deep Username Search Reveals */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-6">What a Deep Username Search Reveals</h2>
