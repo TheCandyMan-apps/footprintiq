@@ -60,6 +60,11 @@ export function UnifiedScanProgress({
     setCurrentMessageIndex(0);
   }, []);
 
+  const fakePercent = useMemo(() => {
+    const elapsed = Date.now() - startTimeRef.current;
+    return Math.min(92, Math.round((elapsed / 120000) * 100));
+  }, [currentMessageIndex]);
+
   if (isFailed) {
     return (
       <Card className={cn("p-8 text-center", className)}>
@@ -89,12 +94,6 @@ export function UnifiedScanProgress({
       </Card>
     );
   }
-
-  const fakePercent = useMemo(() => {
-    const elapsed = Date.now() - startTimeRef.current;
-    // Cap at 92% to avoid implying completion
-    return Math.min(92, Math.round((elapsed / 120000) * 100));
-  }, [currentMessageIndex]); // recalc each rotation
 
   return (
     <Card className={cn("p-8 md:p-8 p-5", className)}>
