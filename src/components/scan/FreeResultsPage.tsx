@@ -1005,30 +1005,31 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </LazySection>
             )}
 
-            {/* ===== TIMELINE PREVIEW (Real data, read-only) ===== */}
+            {/* ===== TIMELINE PREVIEW (lazy-loaded) ===== */}
             {foundProfiles.length > 0 && (
-              <Card className="overflow-hidden border-border/50">
-                <CardContent className="p-4">
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <h3 className="text-sm font-semibold">Exposure timeline</h3>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                        Preview
-                      </Badge>
+              <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
+                <Card className="overflow-hidden border-border/50">
+                  <CardContent className="p-4">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <h3 className="text-sm font-semibold">Exposure timeline</h3>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          Preview
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        When this identity appeared across the web.
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      When this identity appeared across the web.
-                    </p>
-                  </div>
-                  
-                  <TimelinePreview
-                    results={displayResults}
-                    username={username}
-                    onUpgradeClick={handleUpgradeClick}
-                  />
-                </CardContent>
-              </Card>
+                    <TimelinePreview
+                      results={displayResults}
+                      username={username}
+                      onUpgradeClick={handleUpgradeClick}
+                    />
+                  </CardContent>
+                </Card>
+              </LazySection>
             )}
 
             {/* ===== TELEGRAM TEASER ===== */}
