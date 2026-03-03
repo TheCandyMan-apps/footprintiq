@@ -69,12 +69,16 @@ export default function ResultsDetail() {
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
         <main className="flex-1">
-          {isAnonymous && scanId && (
-            <div className="max-w-4xl mx-auto px-4 pt-6">
-              <AnonScanBanner scanId={scanId} />
+          <div className="flex flex-col">
+            {isAnonymous && scanId && (
+              <div className="max-w-4xl mx-auto px-4 pt-6 order-2 md:order-1">
+                <AnonScanBanner scanId={scanId} />
+              </div>
+            )}
+            <div className="order-1 md:order-2">
+              <FreeResultsPage jobId={scanId} />
             </div>
-          )}
-          <FreeResultsPage jobId={scanId} />
+          </div>
         </main>
         <Footer />
       </div>

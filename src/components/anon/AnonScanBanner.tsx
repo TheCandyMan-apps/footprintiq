@@ -27,9 +27,9 @@ export function AnonScanBanner({ scanId, className }: AnonScanBannerProps) {
   return (
     <div
       className={cn(
-        "relative flex items-center justify-between gap-4 px-5 py-3.5",
-        "bg-primary/10 border border-primary/30 rounded-xl",
-        "text-sm",
+        "relative flex items-center justify-between gap-3 md:gap-4 px-3 py-2.5 md:px-5 md:py-3.5",
+        "bg-muted/30 md:bg-primary/10 border border-border/50 md:border-primary/30 rounded-lg md:rounded-xl",
+        "text-xs md:text-sm",
         className
       )}
       role="banner"
