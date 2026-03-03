@@ -157,19 +157,19 @@ const ReverseUsernameSearch = () => {
   return (
     <>
       <Helmet>
-        <title>Reverse Username Lookup – Find Accounts by Username (2026) | FootprintIQ</title>
+        <title>Reverse Username Search – Find Linked Accounts Fast | FootprintIQ</title>
         <meta
           name="description"
-          content="Run a free reverse username lookup to find accounts by username across 500+ platforms. Ethical OSINT tool with confidence scoring — no login required."
+          content="Free reverse username search across 500+ platforms. Discover linked accounts, map exposure, and reduce your digital footprint with ethical OSINT — no login required."
         />
         <link rel="canonical" href="https://footprintiq.app/reverse-username-search" />
-        <meta property="og:title" content="Reverse Username Lookup – Find Accounts by Username (2026) | FootprintIQ" />
-        <meta property="og:description" content="Run a free reverse username lookup to find accounts by username across 500+ platforms. Ethical OSINT tool with confidence scoring." />
+        <meta property="og:title" content="Reverse Username Search – Find Linked Accounts Fast | FootprintIQ" />
+        <meta property="og:description" content="Free reverse username search across 500+ platforms. Discover linked accounts, map exposure, and reduce your digital footprint." />
         <meta property="og:url" content="https://footprintiq.app/reverse-username-search" />
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Reverse Username Lookup – Find Accounts by Username (2026) | FootprintIQ" />
-        <meta name="twitter:description" content="Run a free reverse username lookup to find accounts by username across 500+ platforms. Ethical OSINT tool with confidence scoring." />
+        <meta name="twitter:title" content="Reverse Username Search – Find Linked Accounts Fast | FootprintIQ" />
+        <meta name="twitter:description" content="Free reverse username search across 500+ platforms. Discover linked accounts, map exposure, and reduce your digital footprint." />
       </Helmet>
 
       <JsonLd data={faqSchema} />
