@@ -2,13 +2,15 @@ import { Search, Menu, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 
 export const MobileCTABar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [tapped, setTapped] = useState<string | null>(null);
 
   // Hide CTA bar when iOS keyboard is open
   useEffect(() => {
@@ -16,7 +18,6 @@ export const MobileCTABar = () => {
     if (!viewport) return;
 
     const handleResize = () => {
-      // If viewport height is significantly less than window height, keyboard is open
       const isKeyboard = viewport.height < window.innerHeight * 0.75;
       setKeyboardOpen(isKeyboard);
     };
@@ -24,6 +25,15 @@ export const MobileCTABar = () => {
     viewport.addEventListener('resize', handleResize);
     return () => viewport.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleTap = useCallback((id: string, path: string) => {
+    setTapped(id);
+    setTimeout(() => setTapped(null), 150);
+    navigate(path);
+  }, [navigate]);
+
+  // Check if a scan is currently running
+  const isScanRunning = location.pathname.startsWith('/results/');
 
   // Don't show on certain pages or when keyboard is open
   const hideOnPages = ['/scan', '/dashboard'];
@@ -33,36 +43,43 @@ export const MobileCTABar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 pb-safe">
-      <div className="bg-card/95 backdrop-blur-lg backdrop-saturate-150 border-t border-border shadow-elevated">
-        <div className="flex items-center justify-around px-4 py-3 max-w-screen-xl mx-auto">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-4 touch-target min-h-[44px]"
-            onClick={() => navigate('/')}
+      <div className="bg-card/95 backdrop-blur-lg backdrop-saturate-150 border-t border-border shadow-[0_-2px_12px_-2px_hsl(var(--foreground)/0.08)]">
+        <div className="flex items-center justify-around px-4 py-3.5 max-w-screen-xl mx-auto">
+          <button
+            onClick={() => handleTap('search', '/')}
+            className={cn(
+              "flex flex-col items-center gap-1 min-w-[44px] min-h-[44px] justify-center rounded-lg transition-transform duration-100 active:scale-90",
+              tapped === 'search' && "scale-90"
+            )}
           >
-            <Search className="w-5 h-5" />
-            <span className="text-xs">Search</span>
-          </Button>
+            <Search className="w-5 h-5 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">Search</span>
+          </button>
 
-          <Button
-            size="lg"
-            className="rounded-full px-8 touch-target min-h-[44px] shadow-glow"
-            onClick={() => navigate('/scan')}
+          <button
+            onClick={() => handleTap('scan', '/scan')}
+            className={cn(
+              "relative inline-flex items-center gap-2 rounded-full px-8 min-h-[48px] bg-primary text-primary-foreground font-medium shadow-glow transition-transform duration-100 active:scale-95",
+              tapped === 'scan' && "scale-95"
+            )}
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-5 h-5" />
             New Scan
-          </Button>
+            {isScanRunning && (
+              <span className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-accent animate-pulse" />
+            )}
+          </button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex flex-col items-center gap-1 h-auto py-2 px-4 touch-target min-h-[44px]"
-            onClick={() => navigate('/dashboard')}
+          <button
+            onClick={() => handleTap('history', '/dashboard')}
+            className={cn(
+              "flex flex-col items-center gap-1 min-w-[44px] min-h-[44px] justify-center rounded-lg transition-transform duration-100 active:scale-90",
+              tapped === 'history' && "scale-90"
+            )}
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-xs">History</span>
-          </Button>
+            <Menu className="w-5 h-5 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">History</span>
+          </button>
         </div>
       </div>
     </div>
