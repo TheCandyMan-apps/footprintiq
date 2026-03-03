@@ -101,6 +101,9 @@ import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { AttentionSection } from './AttentionSection';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
+import { LazySection } from './LazySection';
+import { AccountsListSkeleton } from './skeletons/ProfileCardSkeleton';
+import { ConfidenceBreakdownSkeleton } from './skeletons/ConfidenceBreakdownSkeleton';
 
 // Number of full Pro-style results to show for Free users
 const FREE_PREVIEW_LIMIT = 10;
@@ -897,7 +900,8 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
-            {/* ===== EXPOSURE SUMMARY ===== */}
+            {/* ===== EXPOSURE SUMMARY (lazy-loaded on mobile) ===== */}
+            <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
                 <div className="mb-3">
@@ -931,14 +935,17 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </p>
               </CardContent>
             </Card>
+            </LazySection>
 
             {/* ===== WHAT REQUIRES ATTENTION + BLURRED ACTION PLAN ===== */}
             {foundProfiles.length > 0 && (
-              <AttentionSection
-                profiles={foundProfiles}
-                totalExposures={signalsFound}
-                onUpgradeClick={handleUpgradeClick}
-              />
+              <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
+                <AttentionSection
+                  profiles={foundProfiles}
+                  totalExposures={signalsFound}
+                  onUpgradeClick={handleUpgradeClick}
+                />
+              </LazySection>
             )}
 
             {/* ===== NOTABLE PATTERN INSIGHT ===== */}
@@ -971,57 +978,58 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
             {/* LENS Verification is now inline within AccountRow results */}
 
-            {/* ===== CONNECTIONS PREVIEW (Real interactive graph preview) ===== */}
+            {/* ===== CONNECTIONS PREVIEW (lazy-loaded) ===== */}
             {totalConnections > 1 && (
-              <Card className="overflow-hidden border-border/50">
-                <CardContent className="p-4">
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      <h3 className="text-sm font-semibold">Connections graph</h3>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                        Preview
-                      </Badge>
+              <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
+                <Card className="overflow-hidden border-border/50">
+                  <CardContent className="p-4">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <h3 className="text-sm font-semibold">Connections graph</h3>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          Preview
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        See how profiles connect across platforms.
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      See how profiles connect across platforms.
-                    </p>
-                  </div>
-                  
-                  {/* Real graph preview with limited nodes */}
-                  <ConnectionsPreviewGraph
-                    results={displayResults}
-                    username={username}
-                    onUpgradeClick={handleUpgradeClick}
-                  />
-                </CardContent>
-              </Card>
+                    <ConnectionsPreviewGraph
+                      results={displayResults}
+                      username={username}
+                      onUpgradeClick={handleUpgradeClick}
+                    />
+                  </CardContent>
+                </Card>
+              </LazySection>
             )}
 
-            {/* ===== TIMELINE PREVIEW (Real data, read-only) ===== */}
+            {/* ===== TIMELINE PREVIEW (lazy-loaded) ===== */}
             {foundProfiles.length > 0 && (
-              <Card className="overflow-hidden border-border/50">
-                <CardContent className="p-4">
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      <h3 className="text-sm font-semibold">Exposure timeline</h3>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                        Preview
-                      </Badge>
+              <LazySection fallback={<ConfidenceBreakdownSkeleton />}>
+                <Card className="overflow-hidden border-border/50">
+                  <CardContent className="p-4">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <h3 className="text-sm font-semibold">Exposure timeline</h3>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          Preview
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        When this identity appeared across the web.
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      When this identity appeared across the web.
-                    </p>
-                  </div>
-                  
-                  <TimelinePreview
-                    results={displayResults}
-                    username={username}
-                    onUpgradeClick={handleUpgradeClick}
-                  />
-                </CardContent>
-              </Card>
+                    <TimelinePreview
+                      results={displayResults}
+                      username={username}
+                      onUpgradeClick={handleUpgradeClick}
+                    />
+                  </CardContent>
+                </Card>
+              </LazySection>
             )}
 
             {/* ===== TELEGRAM TEASER ===== */}
