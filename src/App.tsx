@@ -314,6 +314,7 @@ const FacebookSearchWithoutLoginPage = lazy(() => import("./pages/FacebookSearch
 const EthicalOsintFramework = lazy(() => import("./pages/resources/EthicalOsintFramework"));
 const DoxxingDefenseGuide = lazy(() => import("./pages/resources/DoxxingDefenseGuide"));
 const DigitalFootprintMapping = lazy(() => import("./pages/resources/DigitalFootprintMapping"));
+const ResponsibleOsint = lazy(() => import("./pages/resources/ResponsibleOsint"));
 const CryptoLandingPage = lazy(() => import("./pages/for/Crypto"));
 const JobSeekersLandingPage = lazy(() => import("./pages/for/JobSeekers"));
 const DevelopersLandingPage = lazy(() => import("./pages/for/Developers"));
@@ -890,7 +891,8 @@ function RouterContent() {
            <Route path="/embed/widget" element={<EmbedWidget />} />
            <Route path="/resources/ethical-osint-framework" element={<EthicalOsintFramework />} />
            <Route path="/resources/doxxing-defense" element={<DoxxingDefenseGuide />} />
-           <Route path="/resources/digital-footprint-mapping" element={<DigitalFootprintMapping />} />
+            <Route path="/resources/digital-footprint-mapping" element={<DigitalFootprintMapping />} />
+            <Route path="/resources/responsible-osint" element={<ResponsibleOsint />} />
           <Route path="/playbooks" element={<PlaybooksHub />} />
           <Route path="/playbooks/executive-travel-check" element={<ExecutiveTravelCheck />} />
           <Route path="/playbooks/journalist-risk-audit" element={<JournalistRiskAudit />} />
