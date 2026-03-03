@@ -93,11 +93,10 @@ export function ExecutiveInsightCard({
             body: {
               findings: [
                 {
-                  profileCount,
-                  breachCount,
-                  platformCount,
-                  scanType,
-                  username,
+                  type: scanType || "username",
+                  severity: breachCount > 0 ? "high" : "low",
+                  title: `Scan summary: ${profileCount} profiles across ${platformCount} platforms, ${breachCount} breaches`,
+                  provider: "footprintiq",
                 },
               ],
               redact: true,
