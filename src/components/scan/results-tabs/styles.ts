@@ -1,18 +1,36 @@
 /**
  * Design tokens for results UI - professional intelligence dashboard density
  * Compact, information-dense layout optimized for investigation workflows
+ *
+ * Mobile density: At ≤768px, vertical spacing is reduced ~20% and card padding
+ * is tightened. All touch targets remain ≥44px.
  */
 
-// Spacing tokens - tight for dashboard density
+// Spacing tokens - tight for dashboard density, tighter on mobile
 export const RESULTS_SPACING = {
-  cardPadding: 'p-2',
-  cardPaddingLg: 'p-2.5',
-  sectionGap: 'gap-2',
-  sectionGapSm: 'gap-1.5',
+  cardPadding: 'p-2 md:p-2',
+  cardPaddingLg: 'p-2 md:p-2.5',
+  sectionGap: 'gap-1.5 md:gap-2',
+  sectionGapSm: 'gap-1 md:gap-1.5',
   rowGap: 'gap-1',
   rowPadding: 'py-1 px-2',
-  contentMargin: 'space-y-2',
-  contentMarginSm: 'space-y-1.5',
+  contentMargin: 'space-y-1.5 md:space-y-2',
+  contentMarginSm: 'space-y-1 md:space-y-1.5',
+};
+
+// Mobile-specific layout tokens (apply only at sm / below md)
+export const MOBILE_DENSITY = {
+  /** Reduced section gap for summary page blocks */
+  sectionStack: 'space-y-6 md:space-y-8',
+  sectionStackPro: 'space-y-7 md:space-y-10',
+  /** Tighter card padding on mobile */
+  cardPad: 'p-3 md:p-5',
+  /** Compact header padding */
+  headerPad: 'px-0.5 py-0.5 md:py-1',
+  /** Condensed metrics grid gap */
+  metricsGap: 'gap-2 md:gap-4',
+  /** Touch-safe minimum row height */
+  touchRow: 'min-h-[44px]',
 };
 
 // Typography tokens - professional compact scale
@@ -64,7 +82,7 @@ export const RESULTS_BACKGROUNDS = {
 
 // Common component styles - compact intelligence dashboard
 export const RESULTS_COMPONENTS = {
-  compactRow: 'flex items-center gap-2 py-1 px-2 rounded hover:bg-muted/20 transition-colors',
+  compactRow: 'flex items-center gap-2 py-1 px-2 rounded hover:bg-muted/20 transition-colors min-h-[44px]',
   subtleCard: 'border border-border/20 rounded bg-card',
   sectionHeader: 'flex items-center gap-1 mb-1',
   emptyState: 'flex flex-col items-center justify-center py-6 text-center',

@@ -76,7 +76,7 @@ export default function PhoneResultsPage() {
         
         <Header />
         
-        <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main className="flex-1 container mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
           <div className="max-w-7xl mx-auto">
             {/* Top Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
