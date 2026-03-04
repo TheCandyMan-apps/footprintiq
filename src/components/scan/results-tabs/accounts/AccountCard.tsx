@@ -54,6 +54,7 @@ const getMatchConfidence = (score: number) => {
 
 export function AccountCard({
   result,
+  jobId,
   lensScore,
   isFocused,
   isSelected,
