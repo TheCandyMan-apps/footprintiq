@@ -881,7 +881,152 @@ serve(async (req) => {
       }
     }
 
-    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint', 'numverify', 'viewcaller'];
+    // Provider: Skip Tracing Working API (RapidAPI)
+    if (validatedProviders.includes('skip_tracing')) {
+      const SKIP_TRACING_KEY = Deno.env.get('RAPIDAPI_VIEWCALLER_KEY'); // Same RapidAPI account
+      
+      if (!SKIP_TRACING_KEY) {
+        markNotConfigured('skip_tracing', 'RAPIDAPI_VIEWCALLER_KEY');
+      } else {
+        const startTime = Date.now();
+        try {
+          console.log(`[phone-intel] Skip Tracing lookup for ${normalizedPhone.slice(0, 5)}***`);
+          
+          const response = await fetch(
+            `https://skip-tracing-working-api.p.rapidapi.com/trace%20by%20phone?phone=${encodeURIComponent(normalizedPhone)}`,
+            {
+              method: 'GET',
+              headers: {
+                'x-rapidapi-key': SKIP_TRACING_KEY,
+                'x-rapidapi-host': 'skip-tracing-working-api.p.rapidapi.com',
+              },
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const latency = Date.now() - startTime;
+            
+            console.log(`[phone-intel] Skip Tracing response:`, JSON.stringify(data));
+            
+            // The API may return person details, addresses, emails, names
+            const person = data?.person || data?.result || data || {};
+            const names = person?.names || [];
+            const addresses = person?.addresses || [];
+            const emails = person?.emails || [];
+            const fullName = names?.[0]?.full || person?.name || person?.full_name || null;
+            const age = person?.age || person?.dob || null;
+            const address = addresses?.[0] 
+              ? [addresses[0].street, addresses[0].city, addresses[0].state, addresses[0].zip].filter(Boolean).join(', ')
+              : person?.address || null;
+            const associatedEmails = emails?.map((e: any) => e?.email || e).filter(Boolean) || [];
+
+            const evidenceItems: Array<{key: string; value: string}> = [
+              { key: 'Phone', value: normalizedPhone },
+              { key: 'Name', value: fullName || 'Not found' },
+            ];
+            
+            if (age) evidenceItems.push({ key: 'Age/DOB', value: String(age) });
+            if (address) evidenceItems.push({ key: 'Address', value: address });
+            if (associatedEmails.length > 0) {
+              evidenceItems.push({ key: 'Associated Emails', value: String(associatedEmails.length) });
+            }
+            if (names.length > 1) {
+              evidenceItems.push({ key: 'Alternate Names', value: names.slice(1).map((n: any) => n?.full || n).filter(Boolean).join(', ') });
+            }
+            if (addresses.length > 1) {
+              evidenceItems.push({ key: 'Additional Addresses', value: String(addresses.length - 1) });
+            }
+
+            let findingsCount = 0;
+
+            // Identity finding
+            if (fullName) {
+              findings.push({
+                id: generateFindingId('skip_tracing', 'person_trace', normalizedPhone),
+                kind: 'phone.person_trace',
+                type: 'phone_intelligence',
+                title: `Person Trace: ${fullName}`,
+                description: `Skip tracing identified "${fullName}" as the likely owner.${address ? ` Located at: ${address}.` : ''}${associatedEmails.length > 0 ? ` ${associatedEmails.length} associated email(s) found.` : ''}`,
+                severity: 'medium',
+                confidence: 0.7,
+                provider: 'Skip Tracing API',
+                providerCategory: 'Caller ID',
+                evidence: evidenceItems,
+                impact: 'Personal identity and contact details exposed via public records',
+                remediation: [
+                  'Check if your personal details are publicly accessible',
+                  'Consider opting out of people-search and data broker services',
+                  'Review your digital footprint for linked accounts',
+                ],
+                tags: ['phone', 'skip_trace', 'identity', 'person_search'],
+                observedAt: new Date().toISOString(),
+              });
+              findingsCount++;
+            }
+
+            // Associated emails finding
+            if (associatedEmails.length > 0) {
+              findings.push({
+                id: generateFindingId('skip_tracing', 'associated_emails', normalizedPhone),
+                kind: 'phone.linked_emails',
+                type: 'phone_intelligence',
+                title: `${associatedEmails.length} Linked Email(s) Found`,
+                description: `Skip tracing found ${associatedEmails.length} email address(es) associated with this phone number.`,
+                severity: 'low',
+                confidence: 0.65,
+                provider: 'Skip Tracing API',
+                providerCategory: 'Caller ID',
+                evidence: [
+                  { key: 'Phone', value: normalizedPhone },
+                  { key: 'Emails Found', value: String(associatedEmails.length) },
+                  ...associatedEmails.slice(0, 5).map((email: string, i: number) => ({
+                    key: `Email ${i + 1}`,
+                    value: email,
+                  })),
+                ],
+                impact: 'Linked email addresses expand the digital footprint surface',
+                remediation: [
+                  'Audit linked email addresses for breach exposure',
+                  'Consider running email scans on associated addresses',
+                ],
+                tags: ['phone', 'email', 'linked', 'skip_trace'],
+                observedAt: new Date().toISOString(),
+              });
+              findingsCount++;
+            }
+
+            providerResults['skip_tracing'] = { 
+              status: 'success', 
+              findingsCount, 
+              latencyMs: latency 
+            };
+            await logScanEvent('skip_tracing', 'execution', 'success');
+          } else {
+            const latency = Date.now() - startTime;
+            console.error(`[phone-intel] Skip Tracing API error: HTTP ${response.status}`);
+            providerResults['skip_tracing'] = { 
+              status: 'failed', 
+              findingsCount: 0, 
+              latencyMs: latency, 
+              message: `API returned ${response.status}` 
+            };
+            await logScanEvent('skip_tracing', 'execution', 'failed', `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          console.error('[phone-intel] Skip Tracing error:', error);
+          providerResults['skip_tracing'] = { 
+            status: 'failed', 
+            findingsCount: 0, 
+            latencyMs: Date.now() - startTime, 
+            message: error instanceof Error ? error.message : 'Unknown error' 
+          };
+          await logScanEvent('skip_tracing', 'execution', 'failed', error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+    }
+
+    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint', 'numverify', 'viewcaller', 'skip_tracing'];
     const messagingProviders = ['whatsapp_check', 'telegram_check', 'signal_check'];
     
     for (const providerId of validatedProviders) {
