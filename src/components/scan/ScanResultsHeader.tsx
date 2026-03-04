@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle2, Loader2, XCircle, Timer } from 'lucide-react';
+import { CheckCircle2, Loader2, XCircle, Timer } from 'lucide-react';
 import { formatDistanceStrict } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ScanResultsHeaderProps {
   displayLabel: string;
@@ -10,15 +11,16 @@ interface ScanResultsHeaderProps {
   completedAt?: string | null;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
-  running: { label: 'Running', icon: Loader2, className: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400' },
-  completed: { label: 'Completed', icon: CheckCircle2, className: 'bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400' },
-  failed: { label: 'Failed', icon: XCircle, className: 'bg-destructive/15 text-destructive border-destructive/30' },
+const STATUS_CONFIG: Record<string, { label: string; shortLabel: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
+  running: { label: 'Running', shortLabel: 'Scanning…', icon: Loader2, className: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400' },
+  completed: { label: 'Completed', shortLabel: 'Scan Complete', icon: CheckCircle2, className: 'bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400' },
+  failed: { label: 'Failed', shortLabel: 'Scan Failed', icon: XCircle, className: 'bg-destructive/15 text-destructive border-destructive/30' },
 };
 
 export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, startedAt, completedAt }: ScanResultsHeaderProps) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.completed;
   const StatusIcon = cfg.icon;
+  const isMobile = useIsMobile();
 
   const duration = startedAt
     ? formatDistanceStrict(
@@ -26,6 +28,37 @@ export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, start
         new Date(startedAt)
       )
     : null;
+
+  if (isMobile) {
+    return (
+      <div className="sticky top-0 z-20 border-b border-border/20 bg-background/98 backdrop-blur-md px-4 py-3.5 shadow-[0_1px_4px_0_hsl(var(--foreground)/0.03),0_4px_12px_-4px_hsl(var(--foreground)/0.04)]">
+        <div className="flex items-center justify-between gap-x-4">
+          {/* Left: identifier + inline status */}
+          <div className="min-w-0 flex flex-col gap-1">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground truncate leading-none">
+              {displayLabel}
+            </h1>
+            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 leading-none">
+              <span>{targetTypeLabel}</span>
+              <span className="text-muted-foreground/30">•</span>
+              <span className={`inline-flex items-center gap-1 ${status === 'completed' ? 'text-green-600/70 dark:text-green-400/70' : status === 'failed' ? 'text-destructive/70' : 'text-amber-600/70 dark:text-amber-400/70'}`}>
+                <StatusIcon className={`h-2.5 w-2.5 ${status === 'running' ? 'animate-spin' : ''}`} />
+                {cfg.shortLabel}
+              </span>
+            </p>
+          </div>
+
+          {/* Right: duration only */}
+          {duration && (
+            <span className="flex items-center gap-1 text-[10px] text-muted-foreground/35 tabular-nums leading-tight flex-shrink-0">
+              <Timer className="h-2.5 w-2.5" />
+              {duration}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="sticky top-0 z-20 border-b border-border/20 bg-background/98 backdrop-blur-md px-5 sm:px-8 py-6 shadow-[0_1px_4px_0_hsl(var(--foreground)/0.03),0_4px_12px_-4px_hsl(var(--foreground)/0.04)]">
@@ -35,7 +68,7 @@ export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, start
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/45 leading-none">
             Scan Results
           </p>
-          <h1 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground truncate max-w-[420px] leading-none">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground truncate max-w-[420px] leading-none">
             {displayLabel}
           </h1>
           <p className="text-[11px] text-muted-foreground/50 leading-none">{targetTypeLabel}</p>
@@ -44,7 +77,7 @@ export function ScanResultsHeader({ displayLabel, targetTypeLabel, status, start
         {/* Right: status + meta */}
         <div className="flex items-center gap-5 flex-shrink-0">
           {/* Timestamp cluster */}
-          <div className="hidden sm:flex flex-col items-end gap-0.5">
+          <div className="flex flex-col items-end gap-0.5">
             {startedAt && (
               <span className="text-[10px] text-muted-foreground/40 tabular-nums leading-tight">
                 {new Date(startedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
