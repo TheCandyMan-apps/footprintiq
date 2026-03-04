@@ -68,7 +68,7 @@ export default function ResultsDetail() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
-        <main className="flex-1">
+        <main className="flex-1 pb-[calc(env(safe-area-inset-bottom,0px)+96px)] md:pb-0">
           <div className="flex flex-col">
             {isAnonymous && scanId && (
               <div className="max-w-4xl mx-auto px-4 pt-6 order-2 md:order-1">
@@ -88,7 +88,7 @@ export default function ResultsDetail() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pb-[calc(env(safe-area-inset-bottom,0px)+96px)] md:pb-0">
         <Suspense
           fallback={
             <div className="flex items-center justify-center py-20">

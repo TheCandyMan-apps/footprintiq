@@ -111,16 +111,16 @@ export function AccountPreviewPanel({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="sm:max-w-md w-full overflow-y-auto p-0"
+          className="w-full sm:max-w-md overflow-y-auto p-0"
           aria-label="Account preview panel"
         >
           {/* Header */}
-          <SheetHeader className="px-4 pt-4 pb-3 border-b border-border/20">
+          <SheetHeader className="px-4 sm:px-4 pt-5 pb-4 border-b border-border/20">
             <div className="flex items-center gap-3">
               <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="panel" />
               <div className="min-w-0 flex-1">
-                <SheetTitle className="text-sm font-semibold truncate">{platformName}</SheetTitle>
-                {username ? <p className="text-xs text-muted-foreground truncate">@{username}</p> : <p className="text-xs text-muted-foreground/50 truncate italic">Username not publicly listed</p>}
+                <SheetTitle className="text-base sm:text-sm font-semibold truncate">{platformName}</SheetTitle>
+                {username ? <p className="text-sm sm:text-xs text-muted-foreground truncate">@{username}</p> : <p className="text-sm sm:text-xs text-muted-foreground/60 truncate italic">Username not publicly listed</p>}
                 <div className="flex items-center gap-1.5 mt-1">
                   <Badge variant="outline" className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium', confidence.bg, confidence.text, confidence.border)}>
                     <ConfidenceIcon className="w-2.5 h-2.5" />
@@ -136,10 +136,10 @@ export function AccountPreviewPanel({
             </div>
           </SheetHeader>
 
-          <div className="px-4 py-3 space-y-4">
+          <div className="px-4 py-4 space-y-5">
             {/* Risk context explanation */}
-            <div className="rounded-md bg-muted/30 border border-border/20 px-3 py-2">
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
+            <div className="rounded-md bg-muted/30 border border-border/20 px-3.5 py-3">
+              <p className="text-sm sm:text-[11px] leading-relaxed text-muted-foreground">
                 {generateRiskContext(result, lensScore)}
               </p>
             </div>

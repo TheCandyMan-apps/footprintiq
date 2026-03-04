@@ -34,7 +34,7 @@ DESIGN PHILOSOPHY:
     --secondary-foreground: 220 14% 10%;
 
     --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted-foreground: 220 9% 40%;
 
     /* Soft blue accent */
     --accent: 220 14% 96%;
@@ -85,7 +85,7 @@ DESIGN PHILOSOPHY:
     --secondary-foreground: 213 31% 91%;
 
     --muted: 215 28% 17%;
-    --muted-foreground: 217 10% 64%;
+    --muted-foreground: 217 10% 68%;
 
     --accent: 215 28% 17%;
     --accent-foreground: 213 31% 91%;
