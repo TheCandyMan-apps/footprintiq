@@ -89,6 +89,38 @@ function json(body: unknown, status = 200): Response {
 }
 
 /**
+ * Call the RapidAPI "Telegram User Info API" for supplementary profile data.
+ * Returns parsed JSON or null on failure (non-blocking).
+ */
+async function fetchTelegramUserInfoApi(username: string): Promise<Record<string, any> | null> {
+  const rapidApiKey = Deno.env.get("RAPIDAPI_VIEWCALLER_KEY");
+  if (!rapidApiKey) {
+    console.log("[telegram-proxy] RAPIDAPI_VIEWCALLER_KEY not set – skipping Telegram User Info API");
+    return null;
+  }
+  try {
+    const url = `https://telegram-user-info-api.p.rapidapi.com/user/info?username=${encodeURIComponent(username)}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "x-rapidapi-host": "telegram-user-info-api.p.rapidapi.com",
+        "x-rapidapi-key": rapidApiKey,
+      },
+    });
+    if (!res.ok) {
+      console.warn(`[telegram-proxy] RapidAPI Telegram User Info returned ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    console.log(`[telegram-proxy] RapidAPI Telegram User Info success for @${username}`);
+    return data;
+  } catch (err) {
+    console.warn("[telegram-proxy] RapidAPI Telegram User Info call failed:", err);
+    return null;
+  }
+}
+
+/**
  * Build a Google-signed JWT, exchange it for an ID token, then call Cloud Run.
  *
  * Flow:
@@ -356,7 +388,7 @@ serve(async (req: Request) => {
       return json({ ok: false, error: "GCP authentication failed" }, 500);
     }
 
-    // ── Call Cloud Run ──
+    // ── Call Cloud Run (+ RapidAPI enrichment in parallel for username) ──
     console.log(`[telegram-proxy] Calling ${targetUrl} for scan ${scanId}`);
 
     const workerHeaders: Record<string, string> = {
@@ -367,11 +399,17 @@ serve(async (req: Request) => {
       workerHeaders["X-Worker-Key"] = workerKey;
     }
 
-    const workerRes = await fetch(targetUrl, {
+    // Fire Cloud Run + optional RapidAPI enrichment in parallel
+    const workerFetchPromise = fetch(targetUrl, {
       method: "POST",
       headers: workerHeaders,
       body: JSON.stringify(workerPayload),
     });
+    const rapidApiPromise = typedAction === "username"
+      ? fetchTelegramUserInfoApi(username.trim())
+      : Promise.resolve(null);
+
+    const [workerRes, rapidApiData] = await Promise.all([workerFetchPromise, rapidApiPromise]);
 
     const workerBody = await workerRes.text();
 
@@ -389,53 +427,80 @@ serve(async (req: Request) => {
         /no (such |telegram )?user/i.test(workerBody);
 
       if (isNotFound) {
-        console.log(`[telegram-proxy] Entity not found for scan ${scanId} — writing diagnostic finding`);
-
-        // Write a diagnostic finding so the UI can surface the real reason
-        try {
-          const svcDiag = createClient(
-            Deno.env.get("SUPABASE_URL")!,
-            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-          );
-          // Delete any prior not_found finding first to avoid duplicates, then insert fresh
-          await svcDiag.from("findings")
-            .delete()
-            .eq("scan_id", scanId)
-            .eq("provider", "telegram")
-            .eq("kind", "telegram.not_found");
-
-          const { error: insertErr } = await svcDiag.from("findings").insert({
-            scan_id: scanId,
-            provider: "telegram",
-            kind: "telegram.not_found",
-            severity: "info",
-            confidence: 0,
-            observed_at: new Date().toISOString(),
-            evidence: [{ key: "reason", value: "No Telegram entity resolved for this username" }],
-            meta: {
-              title: "No Telegram Entity Found",
-              description: "The Telegram worker could not resolve this username to any user or channel.",
-              diagnostic: true,
-              source: "telegram",
-              worker_status: workerRes.status,
-            },
-          });
-          if (insertErr) {
-            console.error("[telegram-proxy] Failed to insert not_found diagnostic finding:", insertErr);
-          } else {
-            console.log(`[telegram-proxy] Wrote telegram.not_found diagnostic finding for scan ${scanId}`);
+        // ── RapidAPI fallback: if worker couldn't find user but RapidAPI has data ──
+        if (rapidApiData && typedAction === "username") {
+          console.log(`[telegram-proxy] Worker returned not-found but RapidAPI has data — using as fallback for scan ${scanId}`);
+          // Build a synthetic result from RapidAPI data
+          result = {
+            ok: true,
+            entity_metadata: {},
+          };
+          const em = result.entity_metadata;
+          const rapidFields: Record<string, string> = {
+            first_name: "first_name", last_name: "last_name", username: "username",
+            bio: "about", about: "about", photo: "photo", photo_url: "photo", profile_photo: "photo",
+            is_bot: "is_bot", is_premium: "is_premium", is_verified: "is_verified",
+            is_scam: "is_scam", is_fake: "is_fake", last_seen: "last_seen",
+            phone: "phone", id: "telegram_id", user_id: "telegram_id",
+            status: "status", dc_id: "dc_id",
+          };
+          for (const [rapidKey, emKey] of Object.entries(rapidFields)) {
+            const v = rapidApiData[rapidKey];
+            if (v !== null && v !== undefined && v !== "") {
+              em[emKey] = v;
+            }
           }
-        } catch (diagErr) {
-          console.warn("[telegram-proxy] Failed to write not_found diagnostic finding:", diagErr);
-        }
+          em._rapidapi_enrichment = rapidApiData;
+          em._source = "rapidapi_fallback";
+          // Continue to normal processing below (skip not-found sentinel)
+        } else {
+          console.log(`[telegram-proxy] Entity not found for scan ${scanId} — writing diagnostic finding`);
 
-        return json({
-          ok: true,
-          scanId,
-          findings: [],
-          artifacts_stored: 0,
-          note: "No Telegram entity found for this username",
-        });
+          // Write a diagnostic finding so the UI can surface the real reason
+          try {
+            const svcDiag = createClient(
+              Deno.env.get("SUPABASE_URL")!,
+              Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+            );
+            await svcDiag.from("findings")
+              .delete()
+              .eq("scan_id", scanId)
+              .eq("provider", "telegram")
+              .eq("kind", "telegram.not_found");
+
+            const { error: insertErr } = await svcDiag.from("findings").insert({
+              scan_id: scanId,
+              provider: "telegram",
+              kind: "telegram.not_found",
+              severity: "info",
+              confidence: 0,
+              observed_at: new Date().toISOString(),
+              evidence: [{ key: "reason", value: "No Telegram entity resolved for this username" }],
+              meta: {
+                title: "No Telegram Entity Found",
+                description: "The Telegram worker could not resolve this username to any user or channel.",
+                diagnostic: true,
+                source: "telegram",
+                worker_status: workerRes.status,
+              },
+            });
+            if (insertErr) {
+              console.error("[telegram-proxy] Failed to insert not_found diagnostic finding:", insertErr);
+            } else {
+              console.log(`[telegram-proxy] Wrote telegram.not_found diagnostic finding for scan ${scanId}`);
+            }
+          } catch (diagErr) {
+            console.warn("[telegram-proxy] Failed to write not_found diagnostic finding:", diagErr);
+          }
+
+          return json({
+            ok: true,
+            scanId,
+            findings: [],
+            artifacts_stored: 0,
+            note: "No Telegram entity found for this username",
+          });
+        }
       }
 
       // Genuine errors still return 502
@@ -457,6 +522,49 @@ serve(async (req: Request) => {
     if (result.entity && !result.entity_metadata) {
       result.entity_metadata = result.entity;
     }
+
+    // ── Merge RapidAPI enrichment data into entity_metadata ──
+    if (rapidApiData && typedAction === "username") {
+      console.log(`[telegram-proxy] Merging RapidAPI enrichment data for scan ${scanId}`);
+      if (!result.entity_metadata) {
+        // RapidAPI is our only source — build entity_metadata from it
+        result.entity_metadata = {};
+        result.ok = true;
+      }
+      const em = result.entity_metadata;
+      // Map RapidAPI fields (keys may vary; common: id, first_name, last_name, username, photo, bio/about, is_bot, is_premium, is_verified, is_scam, is_fake, last_seen, phone, status)
+      const rapidFields: Record<string, string> = {
+        first_name: "first_name",
+        last_name: "last_name",
+        username: "username",
+        bio: "about",
+        about: "about",
+        photo: "photo",
+        photo_url: "photo",
+        profile_photo: "photo",
+        is_bot: "is_bot",
+        is_premium: "is_premium",
+        is_verified: "is_verified",
+        is_scam: "is_scam",
+        is_fake: "is_fake",
+        last_seen: "last_seen",
+        phone: "phone",
+        id: "telegram_id",
+        user_id: "telegram_id",
+        status: "status",
+        dc_id: "dc_id",
+        restriction_reason: "restriction_reason",
+      };
+      for (const [rapidKey, emKey] of Object.entries(rapidFields)) {
+        const v = rapidApiData[rapidKey];
+        if (v !== null && v !== undefined && v !== "" && !em[emKey]) {
+          em[emKey] = v;
+        }
+      }
+      // Store the raw RapidAPI response for reference
+      em._rapidapi_enrichment = rapidApiData;
+    }
+
     console.log(`[telegram-proxy] Worker result keys: ${JSON.stringify(Object.keys(result))}, ok=${result.ok}, has entity_metadata=${!!result.entity_metadata}`);
 
     if (!result.ok) {
@@ -583,6 +691,10 @@ serve(async (req: Request) => {
         last_seen: "Last Seen",
         about: "Bio",
         entity_type: "Entity Type",
+        telegram_id: "Telegram ID",
+        dc_id: "Data Center",
+        status: "Status",
+        restriction_reason: "Restriction",
       };
       for (const [k, label] of Object.entries(fieldMap)) {
         const v = em[k];
@@ -592,18 +704,23 @@ serve(async (req: Request) => {
       }
 
       const displayName = [em.first_name, em.last_name].filter(Boolean).join(" ") || em.username || username;
+      const sourceLabel = em._source === "rapidapi_fallback"
+        ? "RapidAPI fallback"
+        : em._rapidapi_enrichment
+          ? "MTProto + RapidAPI enrichment"
+          : "MTProto";
 
       const synthesizedFinding = {
         scan_id: scanId,
         provider: "telegram",
         kind: "telegram_username",
         severity: "info",
-        confidence: 0.9,
+        confidence: em._source === "rapidapi_fallback" ? 0.7 : 0.9,
         observed_at: new Date().toISOString(),
         evidence: evidenceArr,
         meta: {
           title: `Telegram Profile: ${displayName}`,
-          description: `Telegram account resolved via MTProto for @${em.username || username}`,
+          description: `Telegram account resolved via ${sourceLabel} for @${em.username || username}`,
           source: "telegram",
           entity_metadata: em,
         },
