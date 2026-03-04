@@ -118,8 +118,8 @@ export function MobileQuickActions({
             className={cn(
               'flex-1 flex items-center justify-center gap-1.5 min-h-[40px] min-w-[72px]',
               'text-[10px] text-muted-foreground/70 font-medium',
-              'hover:text-foreground hover:bg-muted/15 active:scale-95',
-              'transition-all duration-100'
+              'hover:text-foreground hover:bg-muted/15',
+              'active:scale-[0.97] transition-all duration-[130ms] ease-out'
             )}
           >
             <Icon className="w-3 h-3" />
