@@ -737,7 +737,7 @@ serve(async (req) => {
     }
 
     // Handle other validated providers - distinguish between "not implemented" and "skipped"
-    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint', 'numverify'];
+    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint', 'numverify', 'viewcaller'];
     const messagingProviders = ['whatsapp_check', 'telegram_check', 'signal_check'];
     
     for (const providerId of validatedProviders) {
