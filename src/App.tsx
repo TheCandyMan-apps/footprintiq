@@ -371,6 +371,7 @@ const IsUsernameSearchAccurate = lazy(() => import("./pages/IsUsernameSearchAccu
 const RemovePersonalInformation = lazy(() => import("./pages/RemovePersonalInformation"));
 const CheckMyDigitalFootprint = lazy(() => import("./pages/CheckMyDigitalFootprint"));
 const WhatCanAUsernameReveal = lazy(() => import("./pages/WhatCanAUsernameReveal"));
+const FindSomeoneByUsername = lazy(() => import("./pages/FindSomeoneByUsername"));
 const BestOsintTools = lazy(() => import("./pages/BestOsintTools"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
@@ -745,6 +746,7 @@ function RouterContent() {
               <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
              <Route path="/is-username-search-accurate" element={<IsUsernameSearchAccurate />} />
              <Route path="/what-can-a-username-reveal" element={<WhatCanAUsernameReveal />} />
+             <Route path="/find-someone-by-username" element={<FindSomeoneByUsername />} />
              <Route path="/after-have-i-been-pwned-what-next" element={<AfterHaveIBeenPwned />} />
              <Route path="/data-breach-cleanup-checklist" element={<DataBreachCleanupChecklist />} />
              <Route path="/breach-vs-digital-footprint-risk" element={<BreachVsDigitalFootprintRisk />} />
