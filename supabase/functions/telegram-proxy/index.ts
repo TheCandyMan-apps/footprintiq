@@ -427,53 +427,80 @@ serve(async (req: Request) => {
         /no (such |telegram )?user/i.test(workerBody);
 
       if (isNotFound) {
-        console.log(`[telegram-proxy] Entity not found for scan ${scanId} — writing diagnostic finding`);
-
-        // Write a diagnostic finding so the UI can surface the real reason
-        try {
-          const svcDiag = createClient(
-            Deno.env.get("SUPABASE_URL")!,
-            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-          );
-          // Delete any prior not_found finding first to avoid duplicates, then insert fresh
-          await svcDiag.from("findings")
-            .delete()
-            .eq("scan_id", scanId)
-            .eq("provider", "telegram")
-            .eq("kind", "telegram.not_found");
-
-          const { error: insertErr } = await svcDiag.from("findings").insert({
-            scan_id: scanId,
-            provider: "telegram",
-            kind: "telegram.not_found",
-            severity: "info",
-            confidence: 0,
-            observed_at: new Date().toISOString(),
-            evidence: [{ key: "reason", value: "No Telegram entity resolved for this username" }],
-            meta: {
-              title: "No Telegram Entity Found",
-              description: "The Telegram worker could not resolve this username to any user or channel.",
-              diagnostic: true,
-              source: "telegram",
-              worker_status: workerRes.status,
-            },
-          });
-          if (insertErr) {
-            console.error("[telegram-proxy] Failed to insert not_found diagnostic finding:", insertErr);
-          } else {
-            console.log(`[telegram-proxy] Wrote telegram.not_found diagnostic finding for scan ${scanId}`);
+        // ── RapidAPI fallback: if worker couldn't find user but RapidAPI has data ──
+        if (rapidApiData && typedAction === "username") {
+          console.log(`[telegram-proxy] Worker returned not-found but RapidAPI has data — using as fallback for scan ${scanId}`);
+          // Build a synthetic result from RapidAPI data
+          result = {
+            ok: true,
+            entity_metadata: {},
+          };
+          const em = result.entity_metadata;
+          const rapidFields: Record<string, string> = {
+            first_name: "first_name", last_name: "last_name", username: "username",
+            bio: "about", about: "about", photo: "photo", photo_url: "photo", profile_photo: "photo",
+            is_bot: "is_bot", is_premium: "is_premium", is_verified: "is_verified",
+            is_scam: "is_scam", is_fake: "is_fake", last_seen: "last_seen",
+            phone: "phone", id: "telegram_id", user_id: "telegram_id",
+            status: "status", dc_id: "dc_id",
+          };
+          for (const [rapidKey, emKey] of Object.entries(rapidFields)) {
+            const v = rapidApiData[rapidKey];
+            if (v !== null && v !== undefined && v !== "") {
+              em[emKey] = v;
+            }
           }
-        } catch (diagErr) {
-          console.warn("[telegram-proxy] Failed to write not_found diagnostic finding:", diagErr);
-        }
+          em._rapidapi_enrichment = rapidApiData;
+          em._source = "rapidapi_fallback";
+          // Continue to normal processing below (skip not-found sentinel)
+        } else {
+          console.log(`[telegram-proxy] Entity not found for scan ${scanId} — writing diagnostic finding`);
 
-        return json({
-          ok: true,
-          scanId,
-          findings: [],
-          artifacts_stored: 0,
-          note: "No Telegram entity found for this username",
-        });
+          // Write a diagnostic finding so the UI can surface the real reason
+          try {
+            const svcDiag = createClient(
+              Deno.env.get("SUPABASE_URL")!,
+              Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+            );
+            await svcDiag.from("findings")
+              .delete()
+              .eq("scan_id", scanId)
+              .eq("provider", "telegram")
+              .eq("kind", "telegram.not_found");
+
+            const { error: insertErr } = await svcDiag.from("findings").insert({
+              scan_id: scanId,
+              provider: "telegram",
+              kind: "telegram.not_found",
+              severity: "info",
+              confidence: 0,
+              observed_at: new Date().toISOString(),
+              evidence: [{ key: "reason", value: "No Telegram entity resolved for this username" }],
+              meta: {
+                title: "No Telegram Entity Found",
+                description: "The Telegram worker could not resolve this username to any user or channel.",
+                diagnostic: true,
+                source: "telegram",
+                worker_status: workerRes.status,
+              },
+            });
+            if (insertErr) {
+              console.error("[telegram-proxy] Failed to insert not_found diagnostic finding:", insertErr);
+            } else {
+              console.log(`[telegram-proxy] Wrote telegram.not_found diagnostic finding for scan ${scanId}`);
+            }
+          } catch (diagErr) {
+            console.warn("[telegram-proxy] Failed to write not_found diagnostic finding:", diagErr);
+          }
+
+          return json({
+            ok: true,
+            scanId,
+            findings: [],
+            artifacts_stored: 0,
+            note: "No Telegram entity found for this username",
+          });
+        }
       }
 
       // Genuine errors still return 502
