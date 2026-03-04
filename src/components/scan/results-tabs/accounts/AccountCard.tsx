@@ -92,8 +92,8 @@ export function AccountCard({
         <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="card" />
 
         <div className="flex-1 min-w-0 space-y-0.5">
-          <p className="font-bold text-[12px] text-foreground truncate leading-none">{platformName}</p>
-          {username ? <p className="text-[10px] text-muted-foreground truncate leading-tight">@{username}</p> : <p className="text-[10px] text-muted-foreground/50 truncate leading-tight italic">Username not publicly listed</p>}
+          <p className="font-bold text-[12px] text-foreground truncate leading-normal max-md:leading-relaxed">{platformName}</p>
+          {username ? <p className="text-[10px] text-muted-foreground truncate leading-tight max-md:leading-normal">@{username}</p> : <p className="text-[10px] text-muted-foreground/50 truncate leading-tight max-md:leading-normal italic">Username not publicly listed</p>}
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -154,10 +154,10 @@ export function AccountCard({
         </div>
       </div>
 
-      {/* Mobile-only: single-line risk context */}
-      <div className="md:hidden px-2 pb-1">
-        <p className="text-[9px] text-muted-foreground/60 leading-snug truncate italic">
-          {generateRiskContext(result, lensScore).split('. ')[0]}.
+      {/* Mobile-only: single-line description (bio or short risk context) */}
+      <div className="md:hidden px-2 pb-1.5">
+        <p className="text-[10px] text-muted-foreground/70 leading-relaxed truncate">
+          {bio || `${generateRiskContext(result, lensScore).split('. ')[0]}.`}
         </p>
       </div>
 
