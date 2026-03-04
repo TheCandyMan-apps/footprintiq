@@ -82,18 +82,21 @@ const PROVIDER_PRIORITY: Record<string, Record<string, number>> = {
     twilio_lookup: 90,
     ipqs_phone: 80,
     abstract_phone: 75,
+    viewcaller: 65,
   },
   lineType: {
     numverify: 90,
     twilio_lookup: 95,
     ipqs_phone: 85,
     abstract_phone: 80,
+    viewcaller: 60,
   },
   location: {
     numverify: 95,
     ipqs_phone: 85,
     abstract_phone: 80,
     twilio_lookup: 75,
+    viewcaller: 70,
   },
 };
 
@@ -736,8 +739,149 @@ serve(async (req) => {
       }
     }
 
-    // Handle other validated providers - distinguish between "not implemented" and "skipped"
-    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint', 'numverify'];
+    // Provider: ViewCaller (RapidAPI)
+    if (validatedProviders.includes('viewcaller')) {
+      const VIEWCALLER_KEY = Deno.env.get('RAPIDAPI_VIEWCALLER_KEY');
+      
+      if (!VIEWCALLER_KEY) {
+        markNotConfigured('viewcaller', 'RAPIDAPI_VIEWCALLER_KEY');
+      } else {
+        const startTime = Date.now();
+        try {
+          console.log(`[phone-intel] ViewCaller lookup for ${normalizedPhone.slice(0, 5)}***`);
+          
+          const response = await fetch(
+            `https://viewcaller.p.rapidapi.com/search-contact?phone=${encodeURIComponent(normalizedPhone)}`,
+            {
+              method: 'GET',
+              headers: {
+                'x-rapidapi-key': VIEWCALLER_KEY,
+                'x-rapidapi-host': 'viewcaller.p.rapidapi.com',
+              },
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const latency = Date.now() - startTime;
+            
+            console.log(`[phone-intel] ViewCaller response:`, JSON.stringify(data));
+            
+            const name = data?.name || data?.owner_name || null;
+            const carrier = data?.carrier || null;
+            const lineType = data?.line_type || data?.type || null;
+            const location = data?.location || data?.city || data?.state 
+              ? [data?.city, data?.state, data?.country].filter(Boolean).join(', ')
+              : null;
+            const spamScore = data?.spam_score ?? data?.risk_score ?? null;
+            
+            const evidenceItems = [
+              { key: 'Phone', value: normalizedPhone },
+              { key: 'Name', value: name || 'Not found' },
+              { key: 'Carrier', value: carrier || 'Unknown' },
+              { key: 'Line Type', value: lineType || 'Unknown' },
+              { key: 'Location', value: location || 'Unknown' },
+            ];
+            
+            if (spamScore !== null) {
+              evidenceItems.push({ key: 'Spam Score', value: String(spamScore) });
+            }
+
+            // Caller ID finding
+            if (name) {
+              findings.push({
+                id: generateFindingId('viewcaller', 'caller_id', normalizedPhone),
+                kind: 'phone.caller_id',
+                type: 'phone_intelligence',
+                title: `Caller ID: ${name}`,
+                description: `ViewCaller identified the phone owner as "${name}".${carrier ? ` Carrier: ${carrier}.` : ''}`,
+                severity: 'info',
+                confidence: 0.75,
+                provider: 'ViewCaller',
+                providerCategory: 'Caller ID',
+                evidence: evidenceItems,
+                impact: 'Phone owner identity identified via public caller ID database',
+                remediation: [
+                  'Review if your name is publicly associated with this number',
+                  'Consider opting out of caller ID databases if privacy is a concern',
+                ],
+                tags: ['phone', 'caller_id', 'identity', 'viewcaller'],
+                observedAt: new Date().toISOString(),
+              });
+            }
+
+            // Carrier data for merging
+            if (carrier || lineType) {
+              carrierDataSources.push({
+                carrier: carrier,
+                lineType: lineType,
+                country: data?.country || null,
+                countryCode: data?.country_code || null,
+                location: location,
+                internationalFormat: normalizedPhone,
+                localFormat: null,
+                provider: 'viewcaller',
+                confidence: 0.7,
+                timestamp: new Date().toISOString(),
+              });
+            }
+
+            // Spam/risk finding
+            if (spamScore !== null && spamScore > 30) {
+              const severity = spamScore > 75 ? 'high' : spamScore > 50 ? 'medium' : 'low';
+              findings.push({
+                id: generateFindingId('viewcaller', 'spam_risk', normalizedPhone),
+                kind: 'phone.risk',
+                type: 'phone_intelligence',
+                title: `Spam Risk: ${spamScore}/100`,
+                description: `ViewCaller reports a spam/risk score of ${spamScore}/100 for this number.`,
+                severity,
+                confidence: 0.7,
+                provider: 'ViewCaller',
+                providerCategory: 'Risk Intelligence',
+                evidence: [
+                  { key: 'Phone', value: normalizedPhone },
+                  { key: 'Spam Score', value: String(spamScore) },
+                ],
+                impact: severity === 'high' ? 'High spam risk - likely used for unwanted calls' : 'Some spam risk indicators detected',
+                remediation: [],
+                tags: ['phone', 'spam', 'risk', 'viewcaller'],
+                observedAt: new Date().toISOString(),
+              });
+            }
+
+            const findingsCount = (name ? 1 : 0) + (spamScore !== null && spamScore > 30 ? 1 : 0);
+            providerResults['viewcaller'] = { 
+              status: 'success', 
+              findingsCount, 
+              latencyMs: latency 
+            };
+            await logScanEvent('viewcaller', 'execution', 'success');
+          } else {
+            const latency = Date.now() - startTime;
+            console.error(`[phone-intel] ViewCaller API error: HTTP ${response.status}`);
+            providerResults['viewcaller'] = { 
+              status: 'failed', 
+              findingsCount: 0, 
+              latencyMs: latency, 
+              message: `API returned ${response.status}` 
+            };
+            await logScanEvent('viewcaller', 'execution', 'failed', `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          console.error('[phone-intel] ViewCaller error:', error);
+          providerResults['viewcaller'] = { 
+            status: 'failed', 
+            findingsCount: 0, 
+            latencyMs: Date.now() - startTime, 
+            message: error instanceof Error ? error.message : 'Unknown error' 
+          };
+          await logScanEvent('viewcaller', 'execution', 'failed', error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+    }
+
+    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint', 'numverify', 'viewcaller'];
     const messagingProviders = ['whatsapp_check', 'telegram_check', 'signal_check'];
     
     for (const providerId of validatedProviders) {

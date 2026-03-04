@@ -128,6 +128,15 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     enabled: true,
     creditCost: 2,
   },
+  {
+    id: 'viewcaller',
+    name: 'ViewCaller',
+    minTier: 'pro',
+    requiresKey: 'RAPIDAPI_VIEWCALLER_KEY',
+    category: 'caller_id',
+    enabled: true,
+    creditCost: 2,
+  },
 ];
 
 /**
