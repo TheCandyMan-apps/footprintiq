@@ -108,7 +108,7 @@ export function MobileQuickActions({
   ];
 
   return (
-    <div className="flex flex-wrap items-center border-t border-border/15 bg-muted/5">
+    <div className="flex flex-wrap items-stretch border-t border-border/15 bg-muted/5">
       {actions.map((action) => {
         const Icon = action.icon;
         return (
@@ -116,8 +116,8 @@ export function MobileQuickActions({
             key={action.id}
             onClick={action.onClick}
             className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 min-h-[40px] min-w-[72px]',
-              'text-[10px] text-muted-foreground/70 font-medium',
+              'flex-1 flex items-center justify-center gap-1.5 min-h-[44px] min-w-[72px]',
+              'text-xs text-muted-foreground font-medium',
               'hover:text-foreground hover:bg-muted/15',
               'active:scale-[0.97] transition-all duration-[130ms] ease-out'
             )}

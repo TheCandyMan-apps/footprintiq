@@ -31,8 +31,8 @@ interface ResultsTabBarProps {
 /* ── shared base + mobile-enhanced trigger classes ── */
 const TRIGGER_BASE =
   'flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm ' +
-  /* mobile: taller tap target, wider spacing, subtle active bg */
-  'max-md:min-h-[40px] max-md:px-[14px] max-md:rounded-lg max-md:data-[state=active]:bg-primary/90';
+  /* mobile: 44px min tap target, wider spacing, subtle active bg */
+  'max-md:min-h-[44px] max-md:px-[14px] max-md:rounded-lg max-md:data-[state=active]:bg-primary/90';
 
 /* ~10% larger icons on mobile */
 const ICON_CLASS = 'h-3.5 w-3.5 max-md:h-4 max-md:w-4';

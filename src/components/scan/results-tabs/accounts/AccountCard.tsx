@@ -92,16 +92,16 @@ export function AccountCard({
       aria-pressed={isSelected}
     >
       {/* Header: avatar left, name+handle stacked, confidence right */}
-      <div className="flex items-center gap-2 px-2 py-1.5 md:px-2.5 md:pt-2.5 md:pb-1.5">
+      <div className="flex items-center gap-2.5 px-3 py-2.5 md:px-2.5 md:pt-2.5 md:pb-1.5">
         <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="card" />
 
         <div className="flex-1 min-w-0 space-y-0.5">
-          <p className="font-bold text-[12px] text-foreground truncate leading-normal max-md:leading-relaxed">{platformName}</p>
-          {username ? <p className="text-[10px] text-muted-foreground truncate leading-tight max-md:leading-normal">@{username}</p> : <p className="text-[10px] text-muted-foreground/50 truncate leading-tight max-md:leading-normal italic">Username not publicly listed</p>}
+          <p className="font-bold text-sm md:text-[12px] text-foreground truncate leading-normal max-md:leading-relaxed">{platformName}</p>
+          {username ? <p className="text-xs md:text-[10px] text-muted-foreground truncate leading-normal">@{username}</p> : <p className="text-xs md:text-[10px] text-muted-foreground/60 truncate leading-normal italic">Username not publicly listed</p>}
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/70 font-medium leading-none cursor-help w-fit" onClick={e => e.stopPropagation()}>
+                <span className="text-[9px] md:text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground font-medium leading-none cursor-help w-fit" onClick={e => e.stopPropagation()}>
                   {matchType.label}
                 </span>
               </TooltipTrigger>
@@ -115,9 +115,9 @@ export function AccountCard({
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium shrink-0 cursor-help', confidence.bg, confidence.text, confidence.border)}
+                className={cn('h-6 md:h-5 px-2 md:px-1.5 gap-1 md:gap-0.5 text-[10px] md:text-[9px] font-medium shrink-0 cursor-help', confidence.bg, confidence.text, confidence.border)}
               >
-                <ConfidenceIcon className="w-2.5 h-2.5" />
+                <ConfidenceIcon className="w-3 h-3 md:w-2.5 md:h-2.5" />
                 {confidence.shortLabel}
               </Badge>
             </TooltipTrigger>
@@ -159,8 +159,8 @@ export function AccountCard({
       </div>
 
       {/* Mobile-only: single-line description (bio or short risk context) */}
-      <div className="md:hidden px-2 pb-1.5">
-        <p className="text-[10px] text-muted-foreground/70 leading-relaxed truncate">
+      <div className="md:hidden px-3 pb-2">
+        <p className="text-xs text-muted-foreground leading-relaxed truncate">
           {bio || `${generateRiskContext(result, lensScore).split('. ')[0]}.`}
         </p>
       </div>
