@@ -1,12 +1,11 @@
 /**
- * MessagingExposureSummary – Compact combined risk summary
- * across all active messaging modules (Telegram + WhatsApp).
+ * MessagingExposureSummary – Compact inline summary card
+ * for combined messaging risk score. No progress bars.
  */
 
 import { useMemo } from "react";
 import { Shield, ShieldAlert, ShieldX, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
 import { cn } from "@/lib/utils";
 import { riskBadgeClass, BADGE_SIZE } from "@/lib/badgeStyles";
 import { formatScore, formatConfidence, formatSignals } from "@/lib/formatMetrics";
@@ -16,7 +15,7 @@ export interface MessagingScoreInput {
   riskScore: number;       // 0–100
   confidence: number;      // 0–1
   signalCount: number;
-  weight?: number;         // optional weighting factor (default 1)
+  weight?: number;
 }
 
 interface MessagingExposureSummaryProps {
@@ -52,12 +51,15 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
   const LevelIcon = level.icon;
 
   return (
-    <div className={cn("rounded-xl border px-5 py-5 space-y-3 shadow-card", level.border, level.bg)}>
-      {/* Top row: score + risk badge + stats */}
+    <div className={cn(
+      "rounded-xl border px-4 py-3.5 shadow-card",
+      level.border, level.bg
+    )}>
       <div className="flex items-center gap-3 flex-wrap">
+        {/* Score pill */}
         <div className="flex items-center gap-2">
           <LevelIcon className={cn("h-4 w-4 shrink-0", level.color)} />
-          <span className={cn("text-lg font-bold tabular-nums", level.color)}>
+          <span className={cn("text-lg font-bold tabular-nums leading-none", level.color)}>
             {formatScore(summary.risk)}
           </span>
           <Badge variant="outline" className={cn(BADGE_SIZE, riskBadgeClass(level.key))}>
@@ -67,23 +69,21 @@ export function MessagingExposureSummary({ scores }: MessagingExposureSummaryPro
 
         <div className="h-4 w-px bg-border/60 hidden sm:block" />
 
-        <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground">
+        {/* Stats */}
+        <div className="flex items-center gap-2.5 flex-wrap text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Activity className="h-3 w-3" />
             {formatSignals(summary.signalCount)}
           </span>
-          <span>
-            {formatConfidence(summary.confidence / 100)}
-          </span>
-          {/* Platform badges */}
+          <span>{formatConfidence(summary.confidence / 100)}</span>
+          {/* Platform chips */}
           {summary.sources.map((src) => (
-            <Badge key={src} variant="secondary" className="text-[9px] h-4 px-1.5 font-medium">
+            <Badge key={src} variant="secondary" className="text-[10px] h-5 px-2 font-medium">
               {src}
             </Badge>
           ))}
         </div>
       </div>
-
     </div>
   );
 }
