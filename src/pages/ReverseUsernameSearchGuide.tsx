@@ -452,7 +452,7 @@ export default function ReverseUsernameSearchGuide() {
         </section>
 
         <EthicalOsintTrustBlock />
-        <RelatedToolsGrid />
+        <RelatedToolsGrid currentPath="/reverse-username-search-guide" />
         <AboutFootprintIQBlock />
       </main>
 
