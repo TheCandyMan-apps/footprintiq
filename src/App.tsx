@@ -386,6 +386,7 @@ const BestPeopleLookupSites = lazy(() => import("./pages/BestPeopleLookupSites")
 const SearchDatingSitesByEmail = lazy(() => import("./pages/SearchDatingSitesByEmail"));
 const BestPersonSearchEngine = lazy(() => import("./pages/BestPersonSearchEngine"));
 const BestReverseUsernameSearchTools = lazy(() => import("./pages/BestReverseUsernameSearchTools"));
+const ReverseUsernameSearchGuide = lazy(() => import("./pages/ReverseUsernameSearchGuide"));
 const BestSearchEngineForFindingPeople = lazy(() => import("./pages/BestSearchEngineForFindingPeople"));
 const SearchEnginesToFindPeople = lazy(() => import("./pages/SearchEnginesToFindPeople"));
 const HowToDeleteInstagramAccount = lazy(() => import("./pages/HowToDeleteInstagramAccount"));
@@ -795,6 +796,7 @@ function RouterContent() {
                  <Route path="/how-to-delete-google-account" element={<HowToDeleteGoogleAccount />} />
                  <Route path="/best-person-search-engine" element={<BestPersonSearchEngine />} />
                  <Route path="/best-reverse-username-search-tools" element={<BestReverseUsernameSearchTools />} />
+                 <Route path="/reverse-username-search-guide" element={<ReverseUsernameSearchGuide />} />
                  <Route path="/best-search-engine-for-finding-people" element={<BestSearchEngineForFindingPeople />} />
                  <Route path="/search-engines-to-find-people" element={<SearchEnginesToFindPeople />} />
                  <Route path="/verify-someone-online" element={<VerifySomeoneOnline />} />
