@@ -495,6 +495,49 @@ serve(async (req: Request) => {
     if (result.entity && !result.entity_metadata) {
       result.entity_metadata = result.entity;
     }
+
+    // ── Merge RapidAPI enrichment data into entity_metadata ──
+    if (rapidApiData && typedAction === "username") {
+      console.log(`[telegram-proxy] Merging RapidAPI enrichment data for scan ${scanId}`);
+      if (!result.entity_metadata) {
+        // RapidAPI is our only source — build entity_metadata from it
+        result.entity_metadata = {};
+        result.ok = true;
+      }
+      const em = result.entity_metadata;
+      // Map RapidAPI fields (keys may vary; common: id, first_name, last_name, username, photo, bio/about, is_bot, is_premium, is_verified, is_scam, is_fake, last_seen, phone, status)
+      const rapidFields: Record<string, string> = {
+        first_name: "first_name",
+        last_name: "last_name",
+        username: "username",
+        bio: "about",
+        about: "about",
+        photo: "photo",
+        photo_url: "photo",
+        profile_photo: "photo",
+        is_bot: "is_bot",
+        is_premium: "is_premium",
+        is_verified: "is_verified",
+        is_scam: "is_scam",
+        is_fake: "is_fake",
+        last_seen: "last_seen",
+        phone: "phone",
+        id: "telegram_id",
+        user_id: "telegram_id",
+        status: "status",
+        dc_id: "dc_id",
+        restriction_reason: "restriction_reason",
+      };
+      for (const [rapidKey, emKey] of Object.entries(rapidFields)) {
+        const v = rapidApiData[rapidKey];
+        if (v !== null && v !== undefined && v !== "" && !em[emKey]) {
+          em[emKey] = v;
+        }
+      }
+      // Store the raw RapidAPI response for reference
+      em._rapidapi_enrichment = rapidApiData;
+    }
+
     console.log(`[telegram-proxy] Worker result keys: ${JSON.stringify(Object.keys(result))}, ok=${result.ok}, has entity_metadata=${!!result.entity_metadata}`);
 
     if (!result.ok) {
