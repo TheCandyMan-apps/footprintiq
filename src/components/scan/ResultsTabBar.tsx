@@ -28,6 +28,15 @@ interface ResultsTabBarProps {
   actionsDisabled?: boolean;
 }
 
+/* ── shared base + mobile-enhanced trigger classes ── */
+const TRIGGER_BASE =
+  'flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm ' +
+  /* mobile: taller tap target, wider spacing, subtle active bg */
+  'max-md:min-h-[40px] max-md:px-[14px] max-md:rounded-lg max-md:data-[state=active]:bg-primary/90';
+
+/* ~10% larger icons on mobile */
+const ICON_CLASS = 'h-3.5 w-3.5 max-md:h-4 max-md:w-4';
+
 export function ResultsTabBar({ 
   tabCounts, 
   hasGeoData, 
@@ -45,21 +54,15 @@ export function ResultsTabBar({
   return (
     <div className="sticky top-0 z-40 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-2 bg-background/95 backdrop-blur-sm border-b shadow-sm">
       <div className="flex items-center justify-between gap-2">
-        {/* Tabs */}
-        <TabsList className="h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
-          <TabsTrigger 
-            value="summary" 
-            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-          >
-            <LayoutDashboard className="h-3.5 w-3.5" />
+        {/* Tabs – extra horizontal gap on mobile */}
+        <TabsList className="h-auto flex-wrap justify-start gap-1 max-md:gap-2 bg-transparent p-0">
+          <TabsTrigger value="summary" className={TRIGGER_BASE}>
+            <LayoutDashboard className={ICON_CLASS} />
             <span className="hidden sm:inline">Summary</span>
           </TabsTrigger>
 
-          <TabsTrigger 
-            value="accounts" 
-            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-          >
-            <Users className="h-3.5 w-3.5" />
+          <TabsTrigger value="accounts" className={TRIGGER_BASE}>
+            <Users className={ICON_CLASS} />
             <span className="hidden sm:inline">Accounts</span>
             {tabCounts.accounts > 0 && (
               <Badge variant="secondary" className="ml-0.5 h-4 px-1 text-[10px]">
@@ -68,29 +71,20 @@ export function ResultsTabBar({
             )}
           </TabsTrigger>
 
-          <TabsTrigger 
-            value="connections" 
-            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-          >
-            <Network className="h-3.5 w-3.5" />
+          <TabsTrigger value="connections" className={TRIGGER_BASE}>
+            <Network className={ICON_CLASS} />
             <span className="hidden sm:inline">Connections</span>
           </TabsTrigger>
 
           {showTimeline && (
-            <TabsTrigger 
-              value="timeline" 
-              className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-            >
-              <Clock className="h-3.5 w-3.5" />
+            <TabsTrigger value="timeline" className={TRIGGER_BASE}>
+              <Clock className={ICON_CLASS} />
               <span className="hidden sm:inline">Timeline</span>
             </TabsTrigger>
           )}
 
-          <TabsTrigger 
-            value="breaches" 
-            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-          >
-            <ShieldAlert className="h-3.5 w-3.5" />
+          <TabsTrigger value="breaches" className={TRIGGER_BASE}>
+            <ShieldAlert className={ICON_CLASS} />
             <span className="hidden sm:inline">Breaches</span>
             {tabCounts.breaches > 0 && (
               <Badge variant="destructive" className="ml-0.5 h-4 px-1 text-[10px]">
@@ -100,11 +94,8 @@ export function ResultsTabBar({
           </TabsTrigger>
 
           {hasGeoData && (
-            <TabsTrigger 
-              value="map" 
-              className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-            >
-              <MapPin className="h-3.5 w-3.5" />
+            <TabsTrigger value="map" className={TRIGGER_BASE}>
+              <MapPin className={ICON_CLASS} />
               <span className="hidden sm:inline">Map</span>
               {tabCounts.map > 0 && (
                 <Badge variant="secondary" className="ml-0.5 h-4 px-1 text-[10px]">
@@ -114,11 +105,8 @@ export function ResultsTabBar({
             </TabsTrigger>
           )}
 
-          <TabsTrigger 
-            value="messaging" 
-            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
+          <TabsTrigger value="messaging" className={TRIGGER_BASE}>
+            <MessageCircle className={ICON_CLASS} />
             <span className="hidden sm:inline">Messaging</span>
             {messagingCount > 0 && (
               <Badge
@@ -136,19 +124,13 @@ export function ResultsTabBar({
             )}
           </TabsTrigger>
 
-          <TabsTrigger
-            value="remediation" 
-            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
+          <TabsTrigger value="remediation" className={TRIGGER_BASE}>
+            <ClipboardList className={ICON_CLASS} />
             <span className="hidden sm:inline">Remediation Plan</span>
           </TabsTrigger>
 
-          <TabsTrigger 
-            value="privacy" 
-            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
-          >
-            <Shield className="h-3.5 w-3.5" />
+          <TabsTrigger value="privacy" className={TRIGGER_BASE}>
+            <Shield className={ICON_CLASS} />
             <span className="hidden sm:inline">Privacy Center</span>
           </TabsTrigger>
         </TabsList>
