@@ -97,6 +97,7 @@ export const INDEXNOW_URLS = [
   "/ai-answers/instagram-username-osint",
   "/discord-username-search",
   "/onlyfans-username-search",
+  "/tinder-username-search",
   "/kik-username-search",
   "/snapchat-username-search",
   "/reddit-username-search",
