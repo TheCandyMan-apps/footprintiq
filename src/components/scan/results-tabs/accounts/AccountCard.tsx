@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, Info, ChevronDown } from 'lucide-react';
+import { MobileQuickActions } from './MobileQuickActions';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { PlatformExpandedDetail } from './PlatformExpandedDetail';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
