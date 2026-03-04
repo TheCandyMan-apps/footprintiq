@@ -89,6 +89,38 @@ function json(body: unknown, status = 200): Response {
 }
 
 /**
+ * Call the RapidAPI "Telegram User Info API" for supplementary profile data.
+ * Returns parsed JSON or null on failure (non-blocking).
+ */
+async function fetchTelegramUserInfoApi(username: string): Promise<Record<string, any> | null> {
+  const rapidApiKey = Deno.env.get("RAPIDAPI_VIEWCALLER_KEY");
+  if (!rapidApiKey) {
+    console.log("[telegram-proxy] RAPIDAPI_VIEWCALLER_KEY not set – skipping Telegram User Info API");
+    return null;
+  }
+  try {
+    const url = `https://telegram-user-info-api.p.rapidapi.com/user/info?username=${encodeURIComponent(username)}`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "x-rapidapi-host": "telegram-user-info-api.p.rapidapi.com",
+        "x-rapidapi-key": rapidApiKey,
+      },
+    });
+    if (!res.ok) {
+      console.warn(`[telegram-proxy] RapidAPI Telegram User Info returned ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    console.log(`[telegram-proxy] RapidAPI Telegram User Info success for @${username}`);
+    return data;
+  } catch (err) {
+    console.warn("[telegram-proxy] RapidAPI Telegram User Info call failed:", err);
+    return null;
+  }
+}
+
+/**
  * Build a Google-signed JWT, exchange it for an ID token, then call Cloud Run.
  *
  * Flow:
