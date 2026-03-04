@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { ChevronRight, Search, Info, AlertTriangle, Shield } from "lucide-react";
+import { ChevronRight, Search, Info, AlertTriangle, Shield, Users, ArrowRight } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
@@ -107,49 +107,63 @@ const WhatIsUsernameOsintScan = () => {
               What Is a Username OSINT Scan?
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Understanding how username scans work, what they reveal, and where their boundaries lie.
+              Understanding how investigators analyse usernames across online platforms.
             </p>
           </header>
 
-          {/* Definition */}
+          {/* What is OSINT? */}
           <section className="mb-12 p-8 bg-primary/5 rounded-lg border border-primary/20">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
               <Info className="h-6 w-6 text-primary" />
-              Definition
+              What Is OSINT?
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                <strong className="text-foreground">A username OSINT scan is an automated process that searches publicly accessible platforms for the presence of a specific username.</strong> OSINT stands for open-source intelligence, meaning only publicly available data is queried.
+                <strong className="text-foreground">OSINT stands for open-source intelligence</strong> — the practice of collecting and analysing information from publicly available sources. This includes social media profiles, public records, news articles, forums, and any other data accessible without authentication or special access.
               </p>
               <p>
-                The scan checks whether a given handle appears as a registered account across social media sites, forums, developer platforms, and other public services. It does not access private data, bypass login screens, or interact with account owners.
-              </p>
-              <p>
-                A username OSINT scan checks where a username appears publicly; it does not verify identity.
+                OSINT is used by security researchers, journalists, law enforcement, and individuals to understand what information is publicly visible about a person, organisation, or topic. It is legal when conducted ethically and limited to publicly accessible data.
               </p>
             </div>
           </section>
 
-          {/* How It Works */}
+          {/* What is a Username OSINT Scan? */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
               <Search className="h-6 w-6 text-primary" />
-              How It Works
+              What Is a Username OSINT Scan?
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                Username OSINT scans typically work by sending requests to the public profile pages of websites. If a profile page returns content rather than a "not found" response, the username is recorded as present on that platform.
+                <strong className="text-foreground">A username OSINT scan is an automated process that searches publicly accessible platforms for the presence of a specific username.</strong> It checks whether a given handle appears as a registered account across social media sites, forums, developer platforms, and other public services.
               </p>
               <p>
-                Different tools may check hundreds of platforms simultaneously. The output is a list of platforms where the username appears to be registered, sometimes including profile URLs.
+                The scan works by sending requests to the public profile pages of websites. If a profile page returns content rather than a "not found" response, the username is recorded as present on that platform. Different tools may check hundreds of platforms simultaneously, producing a list of matches with profile URLs.
               </p>
+              <p>
+                Crucially, a username OSINT scan checks where a username appears publicly — it does not access private data, bypass login screens, or verify identity.
+              </p>
+            </div>
+          </section>
 
-              <h3 className="text-xl font-semibold text-foreground mt-6">Common Use Cases</h3>
+          {/* How Investigators Use Username Scans */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Users className="h-6 w-6 text-primary" />
+              How Investigators Use Username Scans
+            </h2>
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                Username scans are used for several purposes. Individuals may <Link to="/usernames" className="text-primary hover:underline">search for their own usernames</Link> to understand their public visibility. Security researchers use them to assess exposure during authorised assessments. Journalists may verify whether a public figure maintains accounts on specific platforms.
+                Investigators use username scans as a starting point for <strong className="text-foreground">identity correlation</strong> — the process of linking separate online accounts to determine whether they belong to the same individual. When the same username appears on multiple platforms, it creates a hypothesis that can be tested against additional signals.
               </p>
               <p>
-                In each case, the scan only surfaces information that is already publicly visible.
+                Common investigative workflows include cross-referencing profile photos, comparing account creation dates, analysing writing patterns, and checking bio information for consistency. A username match alone is never proof of identity — it is a lead that requires verification.
+              </p>
+              <p>
+                Security researchers use scans to assess an organisation's digital exposure during authorised penetration tests. Journalists may verify whether a public figure maintains accounts on specific platforms. Individuals can <Link to="/usernames" className="text-primary hover:underline">search for their own usernames</Link> to understand their public visibility.
+              </p>
+              <p>
+                According to FootprintIQ's <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">2026 research</Link>, the median reused username links to 4.2 distinct public profiles — providing a substantial correlation surface for investigators working within ethical boundaries.
               </p>
             </div>
           </section>
@@ -200,6 +214,24 @@ const WhatIsUsernameOsintScan = () => {
               </p>
             </div>
           </section>
+          {/* Try a Username Scan CTA */}
+          <section className="mb-12 p-8 rounded-2xl bg-primary/5 border border-primary/20 text-center">
+            <h2 className="text-2xl font-bold text-foreground mb-3">Try a Username Scan</h2>
+            <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+              See where your username appears across 500+ platforms. FootprintIQ provides an actionable exposure report with confidence scoring — free, private, and ethical.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/scan" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+                <Search className="w-4 h-4" />
+                Run Your Free Scan
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link to="/check-my-digital-footprint" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-foreground font-medium hover:bg-muted/50 transition-colors">
+                Check My Digital Footprint
+              </Link>
+            </div>
+          </section>
+
           <SeeAlsoSection links={[
             { title: "Are Username Search Tools Accurate?", href: "/ai-answers/are-username-search-tools-accurate" },
             { title: "Does OSINT Include Dark Web Data?", href: "/ai-answers/does-osint-include-dark-web-data" },
