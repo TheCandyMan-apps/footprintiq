@@ -53,7 +53,8 @@ const sections = [
           This is known as <strong className="text-foreground">cross-platform identity correlation</strong>. When a username like <em>alex_designs</em> appears on Instagram, GitHub, Reddit, and a personal blog, each profile contributes data points — real names, photos, locations, interests, and social connections — that together form a detailed identity profile.
         </p>
         <p className="mt-3">
-          Username reuse is one of the most common OSINT (Open Source Intelligence) entry points for investigators, journalists, and cybersecurity professionals. It's also a significant privacy risk for everyday users who don't realise how much their handle reveals.
+          Username reuse is one of the most common OSINT (Open Source Intelligence) entry points for investigators, journalists, and cybersecurity professionals. It's also a significant privacy risk for everyday users who don't realise how much their handle reveals. A{" "}
+          <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username search</Link> can quickly surface these connected accounts.
         </p>
       </>
     ),
@@ -124,6 +125,11 @@ const sections = [
           <li><strong className="text-foreground">SpiderFoot</strong> — Broader OSINT automation platform that includes username search alongside email, IP, and domain reconnaissance.</li>
           <li><strong className="text-foreground">Holehe</strong> — Checks if an email address is registered on various platforms, useful for correlating email and username identities.</li>
         </ul>
+        <p className="mt-3">
+          For a detailed comparison of these tools, see our{" "}
+          <Link to="/best-reverse-username-search-tools" className="text-primary hover:underline">best reverse username search tools</Link> guide. You can also explore common questions in the{" "}
+          <Link to="/ai-answers-hub" className="text-primary hover:underline">AI Answers Hub</Link>.
+        </p>
         <p className="mt-3">
           <Link to="/scan" className="text-primary hover:underline">FootprintIQ</Link> combines multiple tools in a single pipeline, applies false-positive filtering, and presents results in a clean, actionable dashboard — no technical setup required.
         </p>
