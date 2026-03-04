@@ -327,6 +327,7 @@ const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsername
 const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
 const DiscordUsernameSearchPage = lazy(() => import("./pages/DiscordUsernameSearch"));
 const OnlyFansUsernameSearchPage = lazy(() => import("./pages/OnlyFansUsernameSearch"));
+const TinderUsernameSearchPage = lazy(() => import("./pages/TinderUsernameSearch"));
 const KikUsernameSearchPage = lazy(() => import("./pages/KikUsernameSearch"));
 const SnapchatUsernameSearchPage = lazy(() => import("./pages/SnapchatUsernameSearch"));
 const RedditUsernameSearchPage = lazy(() => import("./pages/RedditUsernameSearch"));
