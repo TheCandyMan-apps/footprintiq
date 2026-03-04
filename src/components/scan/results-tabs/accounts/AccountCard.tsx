@@ -92,20 +92,20 @@ export function AccountCard({
       aria-pressed={isSelected}
     >
       {/* Header: avatar left, name+handle stacked, confidence right */}
-      <div className="flex items-center gap-2.5 px-3 py-2.5 md:px-2.5 md:pt-2.5 md:pb-1.5">
+      <div className="flex items-center gap-2.5 px-3 py-2.5 md:px-3 md:pt-3 md:pb-2">
         <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="card" />
 
-        <div className="flex-1 min-w-0 space-y-0.5">
-          <p className="font-bold text-sm md:text-[12px] text-foreground truncate leading-normal max-md:leading-relaxed">{platformName}</p>
-          {username ? <p className="text-xs md:text-[10px] text-muted-foreground truncate leading-normal">@{username}</p> : <p className="text-xs md:text-[10px] text-muted-foreground/60 truncate leading-normal italic">Username not publicly listed</p>}
+        <div className="flex-1 min-w-0 space-y-0.5 md:space-y-1">
+          <p className="font-bold text-sm md:text-sm text-foreground truncate leading-normal max-md:leading-relaxed">{platformName}</p>
+          {username ? <p className="text-xs md:text-xs text-muted-foreground truncate leading-normal">@{username}</p> : <p className="text-xs md:text-xs text-muted-foreground/60 truncate leading-normal italic">Username not publicly listed</p>}
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-[9px] md:text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground font-medium leading-none cursor-help w-fit" onClick={e => e.stopPropagation()}>
+                <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground font-medium leading-none cursor-help w-fit" onClick={e => e.stopPropagation()}>
                   {matchType.label}
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[220px] text-[10px] leading-snug">{matchType.tooltip}</TooltipContent>
+              <TooltipContent side="top" className="max-w-[220px] text-xs leading-snug">{matchType.tooltip}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -115,13 +115,13 @@ export function AccountCard({
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className={cn('h-6 md:h-5 px-2 md:px-1.5 gap-1 md:gap-0.5 text-[10px] md:text-[9px] font-medium shrink-0 cursor-help', confidence.bg, confidence.text, confidence.border)}
+                className={cn('h-6 md:h-6 px-2 md:px-2 gap-1 md:gap-1 text-[10px] md:text-[11px] font-medium shrink-0 cursor-help', confidence.bg, confidence.text, confidence.border)}
               >
-                <ConfidenceIcon className="w-3 h-3 md:w-2.5 md:h-2.5" />
+                <ConfidenceIcon className="w-3 h-3" />
                 {confidence.shortLabel}
               </Badge>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[220px] text-[10px] leading-snug">
+            <TooltipContent side="top" className="max-w-[220px] text-xs leading-snug">
               {confidence.tooltip}
             </TooltipContent>
           </Tooltip>
@@ -129,12 +129,12 @@ export function AccountCard({
       </div>
 
       {/* Bio / risk context — hidden on mobile to save space, visible md+ */}
-      <div className="hidden md:block px-2.5 pt-1 pb-1.5">
+      <div className="hidden md:block px-3 pt-1 pb-2">
         {bio ? (
-          <p className="text-[10px] text-muted-foreground/80 leading-snug line-clamp-2">{bio}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{bio}</p>
         ) : null}
-        <div className="flex items-center gap-1 mt-1">
-          <p className="text-[9px] text-muted-foreground/60 leading-snug line-clamp-2 italic flex-1">
+        <div className="flex items-center gap-1 mt-1.5">
+          <p className="text-[11px] text-muted-foreground/70 leading-relaxed line-clamp-2 italic flex-1">
             {generateRiskContext(result, lensScore).split('. ')[0]}.
           </p>
           <TooltipProvider delayDuration={200}>
@@ -142,14 +142,14 @@ export function AccountCard({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors mt-0.5"
+                  className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors mt-0.5"
                   onClick={e => e.stopPropagation()}
                   aria-label="Why am I seeing this?"
                 >
-                  <Info className="w-3 h-3" />
+                  <Info className="w-3.5 h-3.5" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[260px] text-[10px] leading-snug">
+              <TooltipContent side="top" className="max-w-[260px] text-xs leading-snug">
                 <p className="font-medium mb-1">Why am I seeing this?</p>
                 <p>{generateRiskContext(result, lensScore)}</p>
               </TooltipContent>
@@ -167,10 +167,10 @@ export function AccountCard({
 
       {/* Broker removal guide link */}
       {removalGuide && (
-        <div className="px-2 md:px-2.5 pb-1">
+        <div className="px-2 md:px-3 pb-1.5">
           <Link
             to={removalGuide}
-            className="text-[9px] text-accent hover:underline transition-colors"
+            className="text-[10px] md:text-[11px] text-accent hover:underline transition-colors"
             onClick={(e) => e.stopPropagation()}
             target="_blank"
           >
@@ -181,15 +181,15 @@ export function AccountCard({
 
       {/* LENS badge if verified */}
       {verificationResult && (
-        <div className="px-2 md:px-2.5 pb-1">
+        <div className="px-2 md:px-3 pb-1.5">
           <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact />
         </div>
       )}
 
       {/* Claim dot */}
       {claimStatus && (
-        <div className="px-2 md:px-2.5 pb-1">
-          <span className={cn('inline-flex items-center gap-1 text-[9px]', claimStatus === 'me' ? 'text-green-600' : 'text-red-500')}>
+        <div className="px-2 md:px-3 pb-1.5">
+          <span className={cn('inline-flex items-center gap-1 text-[10px] md:text-[11px]', claimStatus === 'me' ? 'text-green-600' : 'text-red-500')}>
             <span className={cn('w-1.5 h-1.5 rounded-full', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
             {claimStatus === 'me' ? 'Claimed' : 'Not me'}
           </span>
@@ -213,28 +213,28 @@ export function AccountCard({
               href={profileUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-primary hover:bg-muted/10 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/10 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="w-3.5 h-3.5" />
               Visit profile
             </a>
           )}
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(); }}
-            className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
           >
-            <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', isSelected && 'rotate-180')} />
+            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', isSelected && 'rotate-180')} />
             Details
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onFocus(); }}
             className={cn(
-              'flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] transition-colors',
+              'flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-1 text-xs transition-colors',
               isFocused ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-foreground hover:bg-muted/10'
             )}
           >
-            <Crosshair className="w-3 h-3" />
+            <Crosshair className="w-3.5 h-3.5" />
             Focus
           </button>
         </div>
