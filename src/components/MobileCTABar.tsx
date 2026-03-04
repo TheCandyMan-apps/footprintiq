@@ -43,8 +43,8 @@ export const MobileCTABar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 pb-safe">
-      <div className="bg-card/95 backdrop-blur-lg backdrop-saturate-150 border-t border-border shadow-[0_-2px_12px_-2px_hsl(var(--foreground)/0.08)]">
-        <div className="flex items-center justify-around px-4 py-3.5 max-w-screen-xl mx-auto">
+      <div className="bg-card/95 backdrop-blur-md backdrop-saturate-150 border-t border-border/60 shadow-[0_-1px_3px_0_hsl(var(--foreground)/0.04),0_-4px_16px_-4px_hsl(var(--foreground)/0.06)]">
+        <div className="flex items-center justify-around px-4 py-4 max-w-screen-xl mx-auto">
           <button
             onClick={() => handleTap('search', '/')}
             className={cn(
@@ -59,7 +59,7 @@ export const MobileCTABar = () => {
           <button
             onClick={() => handleTap('scan', '/scan')}
             className={cn(
-              "relative inline-flex items-center gap-2 rounded-full px-8 min-h-[48px] bg-primary text-primary-foreground font-medium shadow-glow transition-transform duration-100 active:scale-95",
+              "relative inline-flex items-center gap-2 rounded-full px-8 min-h-[48px] bg-primary text-primary-foreground font-medium shadow-md transition-transform duration-100 active:scale-95",
               tapped === 'scan' && "scale-95"
             )}
           >
