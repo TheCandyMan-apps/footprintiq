@@ -137,6 +137,15 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     enabled: true,
     creditCost: 2,
   },
+  {
+    id: 'skip_tracing',
+    name: 'Skip Tracing',
+    minTier: 'pro',
+    requiresKey: 'RAPIDAPI_VIEWCALLER_KEY', // Same RapidAPI account key
+    category: 'caller_id',
+    enabled: true,
+    creditCost: 3,
+  },
 ];
 
 /**
