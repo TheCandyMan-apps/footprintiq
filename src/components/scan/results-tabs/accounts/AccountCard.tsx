@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, Info, ChevronDown } from 'lucide-react';
+import { MobileQuickActions } from './MobileQuickActions';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { PlatformExpandedDetail } from './PlatformExpandedDetail';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
@@ -52,6 +54,7 @@ const getMatchConfidence = (score: number) => {
 
 export function AccountCard({
   result,
+  jobId,
   lensScore,
   isFocused,
   isSelected,
@@ -61,6 +64,7 @@ export function AccountCard({
   onSelect,
   isDetailLocked = false,
 }: AccountCardProps) {
+  const isMobile = useIsMobile();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
   const profileUrl = useMemo(() => extractUrl(result), [result]);
@@ -192,39 +196,49 @@ export function AccountCard({
         </div>
       )}
 
-      {/* Action row — compact touch targets (min-h 44px) */}
-      <div className="flex items-center border-t border-border/15 divide-x divide-border/15">
-        {profileUrl && (
-          <a
-            href={profileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-primary hover:bg-muted/10 transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ExternalLink className="w-3 h-3" />
-            <span className="hidden sm:inline">Visit profile</span>
-            <span className="sm:hidden">Open</span>
-          </a>
-        )}
-        <button
-          onClick={(e) => { e.stopPropagation(); onSelect(); }}
-          className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
-        >
-          <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', isSelected && 'rotate-180')} />
-          Details
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); onFocus(); }}
-          className={cn(
-            'flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] transition-colors',
-            isFocused ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-foreground hover:bg-muted/10'
+      {/* Action row */}
+      {isMobile ? (
+        <MobileQuickActions
+          profileUrl={profileUrl}
+          username={username}
+          resultId={result.id}
+          scanId={jobId}
+          platformName={platformName}
+          onInvestigate={onSelect}
+        />
+      ) : (
+        <div className="flex items-center border-t border-border/15 divide-x divide-border/15">
+          {profileUrl && (
+            <a
+              href={profileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-primary hover:bg-muted/10 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-3 h-3" />
+              Visit profile
+            </a>
           )}
-        >
-          <Crosshair className="w-3 h-3" />
-          Focus
-        </button>
-      </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onSelect(); }}
+            className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/10 transition-colors"
+          >
+            <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', isSelected && 'rotate-180')} />
+            Details
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onFocus(); }}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-1 min-h-[44px] py-1 text-[10px] transition-colors',
+              isFocused ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-foreground hover:bg-muted/10'
+            )}
+          >
+            <Crosshair className="w-3 h-3" />
+            Focus
+          </button>
+        </div>
+      )}
 
       {/* Expandable Detail Panel */}
       <div
