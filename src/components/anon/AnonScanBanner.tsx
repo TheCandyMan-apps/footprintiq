@@ -1,12 +1,34 @@
 /**
  * Banner shown at the top of results for anonymous scans.
  * Prompts user to create a free account to save the report.
+ * Dismissal persists for 7 days via localStorage.
  */
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookmarkCheck, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const DISMISS_KEY = "dismiss_save_report_banner";
+const DISMISS_DAYS = 7;
+
+function isDismissed(): boolean {
+  try {
+    const raw = localStorage.getItem(DISMISS_KEY);
+    if (!raw) return false;
+    const expiry = Number(raw);
+    if (Number.isNaN(expiry)) return false;
+    return Date.now() < expiry;
+  } catch {
+    return false;
+  }
+}
+
+function persistDismiss() {
+  try {
+    localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DAYS * 86_400_000));
+  } catch { /* noop */ }
+}
 
 interface AnonScanBannerProps {
   scanId: string;
@@ -14,61 +36,67 @@ interface AnonScanBannerProps {
 }
 
 export function AnonScanBanner({ scanId, className }: AnonScanBannerProps) {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(isDismissed);
   const navigate = useNavigate();
+
+  const handleDismiss = useCallback(() => {
+    persistDismiss();
+    setDismissed(true);
+  }, []);
 
   if (dismissed) return null;
 
   const handleSignUp = () => {
-    // Pass scan ID so Auth page can claim it after signup
     navigate(`/auth?tab=signup&claim=${scanId}`);
   };
 
   return (
     <div
       className={cn(
-        "relative flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4",
-        "px-3 py-2.5 md:px-5 md:py-3.5",
-        "bg-muted/15 md:bg-primary/10 border border-border/30 md:border-primary/30 rounded-lg md:rounded-xl",
-        "text-xs md:text-sm",
+        "relative w-full",
+        "px-4 py-3 md:px-5 md:py-3.5",
+        "bg-muted/20 md:bg-primary/10 border border-border/30 md:border-primary/30 rounded-lg md:rounded-xl",
         className
       )}
       role="banner"
     >
-      <div className="flex items-start md:items-center gap-3 min-w-0">
-        <BookmarkCheck className="h-5 w-5 text-primary shrink-0 mt-0.5 md:mt-0" />
-        <div className="space-y-1.5 md:space-y-0">
-          <p className="text-foreground">
-            <span className="font-semibold hidden md:inline">Save this report to your dashboard</span>
-            <span className="font-semibold md:hidden">Track changes over time.</span>
-            {" "}
-            <span className="text-muted-foreground hidden md:inline">— create a free account to monitor changes over time.</span>
-            <span className="text-muted-foreground md:hidden">Create a free account to save this report and get alerts.</span>
+      {/* Close button — always top-right, large tap target */}
+      <button
+        onClick={handleDismiss}
+        className="absolute top-2 right-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-muted-foreground/60 hover:text-foreground transition-colors"
+        aria-label="Dismiss banner"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      {/* Content */}
+      <div className="pr-10 flex items-start gap-3">
+        <BookmarkCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <div className="space-y-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground leading-snug">
+            Want to track changes over time?
           </p>
-          {/* Benefit bullets - mobile only */}
-          <ul className="md:hidden space-y-0.5 text-[11px] text-muted-foreground/80">
-            <li>✓ Monitor exposure changes</li>
-            <li>✓ Get notified of new breaches</li>
-            <li>✓ Keep reports organised</li>
-          </ul>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Create a free account to save this report and get alerts when your exposure changes.
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+      {/* Buttons — stacked on mobile, inline on desktop */}
+      <div className="mt-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-3 md:pl-8">
         <Button
           size="sm"
           onClick={handleSignUp}
-          className="h-8 px-4 text-xs font-medium"
+          className="w-full md:w-auto h-11 md:h-9 px-5 text-sm font-medium"
         >
           Create free account
-          <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+          <ArrowRight className="h-4 w-4 ml-1.5" />
         </Button>
         <button
-          onClick={() => setDismissed(true)}
-          className="p-1 rounded text-muted-foreground/50 hover:text-foreground transition-colors"
-          aria-label="Dismiss banner"
+          onClick={handleDismiss}
+          className="w-full md:w-auto text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2 md:py-0"
         >
-          <X className="h-3.5 w-3.5" />
+          Not now
         </button>
       </div>
     </div>
