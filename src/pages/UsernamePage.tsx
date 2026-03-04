@@ -65,6 +65,10 @@ const faqItems = [
   {
     question: "How can I reduce my online exposure after a scan?",
     answer: "Start by deactivating or deleting accounts you no longer use. Change reused usernames to unique ones on each platform. Tighten privacy settings on active accounts. Remove personal information from public profiles. For a structured approach, run a full digital footprint scan at /scan and follow the prioritised remediation steps provided in your results."
+  },
+  {
+    question: "What is a social media user search?",
+    answer: "A social media user search lets you search user names across platforms like Instagram, TikTok, Twitter, Reddit, and Facebook to find linked accounts. Unlike manual searching, FootprintIQ checks 500+ platforms simultaneously with AI-powered confidence scoring, so you get accurate results without false positives. It's the fastest way to see where a username appears across social media."
   }
 ];
 
@@ -185,14 +189,14 @@ export default function UsernamePage() {
       ratingCount: "587",
       bestRating: "5",
     },
-    description: "Free username search tool to find people by username across 500+ social media platforms. Search usernames, lookup accounts, and find social profiles.",
+    description: "Free social media user search tool. Search user names across 500+ platforms, find accounts by username, and discover social profiles. The best user search engine for digital exposure.",
   };
 
   return (
     <>
       <SEO
-        title="Username Search – Check Accounts Across 500+ Sites | FootprintIQ"
-        description="Free username search across 500+ platforms. Find where a handle appears, assess your exposure, and take control of your digital footprint. Ethical OSINT — no login required."
+        title="User Search – Find Accounts Across 500+ Sites Free | FootprintIQ"
+        description="Free social media user search across 500+ platforms. Search user names, find accounts by username, and assess your digital exposure. Ethical OSINT — no login required."
         canonical="https://footprintiq.app/usernames"
         schema={{
           breadcrumbs: {
@@ -222,13 +226,14 @@ export default function UsernamePage() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Username Search
+              User Search
+              <span className="block text-2xl md:text-3xl font-semibold text-muted-foreground mt-2">Social Media User Search Across 500+ Platforms</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              Search username across 500+ platforms to find accounts by username — including 
-              Instagram, Facebook, TikTok, Twitter, and gaming networks. The best free username 
-              search tool for checking usernames, finding social profiles, and discovering 
+              Search user names across 500+ platforms to find accounts — including 
+              Instagram, Facebook, TikTok, Twitter, and gaming networks. The best free user search 
+              tool for checking usernames, finding social media profiles, and discovering 
               online identities across multiple platforms.
             </p>
             
@@ -822,10 +827,10 @@ export default function UsernamePage() {
         {/* How to Lookup a Username Section */}
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6">How to Lookup a Username</h2>
+            <h2 className="text-3xl font-bold mb-6">How to Search User Names Online</h2>
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <p className="text-muted-foreground mb-4">
-                Looking up a username across the internet is a common OSINT (open source intelligence) technique used to find social media accounts and online presence. Here's how to perform a deep user search:
+                A social media user search is a common OSINT (open source intelligence) technique used to find accounts and online presence. Here's how to perform a deep user search across platforms:
               </p>
               <ol className="space-y-4 text-muted-foreground">
                 <li><strong>Enter the username:</strong> Type the exact username you want to search. Our tool checks social media platforms, gaming networks, forums, and professional sites.</li>
