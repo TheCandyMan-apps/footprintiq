@@ -35,6 +35,18 @@ import {
 /* ────────────── FAQ data ────────────── */
 const faqs = [
   {
+    q: "What is a digital footprint?",
+    a: "A digital footprint is the trail of data you leave behind when you use the internet — including social media profiles, forum posts, app registrations, breach records, and data broker listings. Even inactive accounts contribute to your footprint because they remain indexed and searchable indefinitely.",
+  },
+  {
+    q: "How do I check my digital footprint?",
+    a: "The fastest way to check your digital footprint is to run a username or email scan using an OSINT tool like FootprintIQ. It queries 500+ public platforms simultaneously, identifies accounts linked to your identity, and produces an exposure report with confidence scores and remediation guidance.",
+  },
+  {
+    q: "Can someone identify me from my username?",
+    a: "Yes. When the same username is reused across multiple platforms, investigators and attackers can correlate profiles to build a composite identity. FootprintIQ research shows that 41% of usernames appear on three or more platforms, making cross-platform identification a realistic risk.",
+  },
+  {
     q: "What does a digital footprint scan actually check?",
     a: "A digital footprint scan queries publicly accessible data sources — including social media platforms, forums, data broker databases, breach records, and people-search engines — to identify accounts, profiles, and personal information linked to a given username, email, or phone number. FootprintIQ correlates these signals across 500+ sources to build a unified exposure map.",
   },
