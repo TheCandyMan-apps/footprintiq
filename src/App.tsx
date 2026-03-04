@@ -414,6 +414,7 @@ const SearchTikTokWithoutAccount = lazy(() => import("./pages/guides/SearchTikTo
 const AIUsernameSearchPage = lazy(() => import("./pages/AIUsernameSearch"));
 const TrustSafety = lazy(() => import("./pages/TrustSafety"));
 const DataLifecycle = lazy(() => import("./pages/DataLifecycle"));
+const OsintPlayground = lazy(() => import("./pages/OsintPlayground"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -909,6 +910,7 @@ function RouterContent() {
           <Route path="/playbooks/journalist-risk-audit" element={<JournalistRiskAudit />} />
           <Route path="/playbooks/pre-employment-exposure-review" element={<PreEmploymentExposureReview />} />
            <Route path="/install" element={<InstallApp />} />
+           <Route path="/osint-playground" element={<OsintPlayground />} />
            <Route path="/compare" element={<ComparePage />} />
           
               <Route path="/404" element={<NotFound />} />
