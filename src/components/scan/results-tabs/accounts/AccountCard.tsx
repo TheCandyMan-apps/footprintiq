@@ -63,6 +63,7 @@ export function AccountCard({
   onSelect,
   isDetailLocked = false,
 }: AccountCardProps) {
+  const isMobile = useIsMobile();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
   const profileUrl = useMemo(() => extractUrl(result), [result]);
