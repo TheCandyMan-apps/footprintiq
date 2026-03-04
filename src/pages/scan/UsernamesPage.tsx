@@ -1,16 +1,30 @@
+import { lazy, Suspense } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { UsernameScanForm } from '@/components/scan/UsernameScanForm';
-import { ScanJobList } from '@/components/scan/ScanJobList';
-import { WorkerHealth } from '@/components/scan/WorkerHealth';
-import { UsernameScanComparison } from '@/components/scan/UsernameScanComparison';
 import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Search, ShieldCheck, ListChecks, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { UsernamesProBanner } from '@/components/conversion/UsernamesProBanner';
 import { JsonLd } from '@/components/seo/JsonLd';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Lazy load below-fold / non-critical components to reduce LCP
+const ScanJobList = lazy(() => import('@/components/scan/ScanJobList').then(m => ({ default: m.ScanJobList })));
+const WorkerHealth = lazy(() => import('@/components/scan/WorkerHealth').then(m => ({ default: m.WorkerHealth })));
+const UsernameScanComparison = lazy(() => import('@/components/scan/UsernameScanComparison').then(m => ({ default: m.UsernameScanComparison })));
+const UsernamesProBanner = lazy(() => import('@/components/conversion/UsernamesProBanner').then(m => ({ default: m.UsernamesProBanner })));
+
+function ListSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-8 w-40" />
+      <Skeleton className="h-24 w-full rounded-lg" />
+      <Skeleton className="h-24 w-full rounded-lg" />
+    </div>
+  );
+}
 
 const webApplicationSchema = {
   "@context": "https://schema.org",
@@ -84,11 +98,15 @@ export default function UsernamesPage() {
                 Find where a username appears across 500+ platforms — social media, forums, dating sites, and more
               </p>
             </div>
-            <WorkerHealth />
+            <Suspense fallback={null}>
+              <WorkerHealth />
+            </Suspense>
           </div>
 
-          {/* Pro conversion banner */}
-          <UsernamesProBanner />
+          {/* Pro conversion banner - deferred */}
+          <Suspense fallback={null}>
+            <UsernamesProBanner />
+          </Suspense>
 
           <Alert className="bg-muted/50">
             <Info className="h-4 w-4" />
@@ -112,12 +130,16 @@ export default function UsernamesPage() {
             <TabsContent value="scan" className="space-y-6 mt-6">
               <div className="grid lg:grid-cols-2 gap-6">
                 <UsernameScanForm />
-                <ScanJobList />
+                <Suspense fallback={<ListSkeleton />}>
+                  <ScanJobList />
+                </Suspense>
               </div>
             </TabsContent>
 
             <TabsContent value="compare" className="mt-6">
-              <UsernameScanComparison />
+              <Suspense fallback={<ListSkeleton />}>
+                <UsernameScanComparison />
+              </Suspense>
             </TabsContent>
           </Tabs>
 
@@ -188,4 +210,3 @@ export default function UsernamesPage() {
     </div>
   );
 }
-
