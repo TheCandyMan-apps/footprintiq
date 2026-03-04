@@ -134,6 +134,26 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     enabled: true,
     requiresKey: 'CALLERHINT_API_KEY',
   },
+  {
+    id: 'viewcaller',
+    name: 'ViewCaller',
+    description: 'Caller ID & spam risk via RapidAPI',
+    creditCost: 2,
+    tier: 'medium',
+    category: 'osint',
+    enabled: true,
+    requiresKey: 'RAPIDAPI_VIEWCALLER_KEY',
+  },
+  {
+    id: 'skip_tracing',
+    name: 'Skip Tracing',
+    description: 'Identity & contact correlation lookup',
+    creditCost: 3,
+    tier: 'medium',
+    category: 'osint',
+    enabled: true,
+    requiresKey: 'RAPIDAPI_VIEWCALLER_KEY',
+  },
 ];
 
 /**

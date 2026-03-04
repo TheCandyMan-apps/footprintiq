@@ -24,6 +24,8 @@ const PHONE_PROVIDER_IDS = new Set([
   'truecaller',
   'phone_reputation',
   'callerhint',
+  'viewcaller',
+  'skip_tracing',
   // Legacy names that might appear
   'phone-intel',
   'phone_intel',
