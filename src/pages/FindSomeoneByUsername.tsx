@@ -15,6 +15,7 @@ import {
 import {
   Search,
   ArrowRight,
+  ChevronRight,
   UserSearch,
   RefreshCw,
   Fingerprint,
