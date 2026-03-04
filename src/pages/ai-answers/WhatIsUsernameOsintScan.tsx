@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { ChevronRight, Search, Info, AlertTriangle, Shield } from "lucide-react";
+import { ChevronRight, Search, Info, AlertTriangle, Shield, Users, ArrowRight } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
