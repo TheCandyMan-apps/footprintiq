@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Check, Database, Shield, AlertTriangle, Loader2, Link2, Timer, Activity, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { NarrativeItem } from '@/hooks/useScanNarrative';
 
 interface ScanNarrativeFeedProps {
@@ -31,6 +32,7 @@ export function ScanNarrativeFeed({
   variant = 'default'
 }: ScanNarrativeFeedProps) {
   const isCompact = variant === 'compact';
+  const isMobile = useIsMobile();
 
   if (isLoading && items.length === 0) {
     return (
@@ -55,10 +57,20 @@ export function ScanNarrativeFeed({
       "rounded-md border overflow-hidden",
       isCompact ? "border-border/20" : "border-border/30"
     )}>
+      {/* Mobile label above header */}
+      {isMobile && (
+        <div className="px-2.5 pt-1.5 pb-0">
+          <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/40 leading-none">
+            Analysis Process
+          </span>
+        </div>
+      )}
+
       {/* Header bar */}
       <div className={cn(
-        "flex items-center justify-between bg-muted/20 border-b border-border/20",
-        isCompact ? "px-2 py-1" : "px-2.5 py-1.5"
+        "flex items-center justify-between border-b border-border/20",
+        isCompact ? "px-2 py-1" : "px-2.5 py-1.5",
+        isMobile ? "bg-muted/7" : "bg-muted/20"
       )}>
         <h4 className={cn(
           "font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1",
@@ -102,6 +114,7 @@ export function ScanNarrativeFeed({
           const Icon = iconMap[item.icon] || Check;
           const isActive = item.isActive;
           const isLast = index === items.length - 1 && isComplete;
+          const isCompleted = !isActive && !isLast;
 
           return (
             <div
@@ -110,8 +123,10 @@ export function ScanNarrativeFeed({
                 'flex items-center gap-2 rounded transition-all duration-200',
                 isCompact ? "py-0.5 px-1 -mx-1" : "py-1 px-1.5 -mx-1.5",
                 isActive && 'bg-primary/5',
-                !isActive && !isLast && 'opacity-70',
-                isLast && 'opacity-100'
+                /* Mobile: reduce completed step opacity */
+                isCompleted && isMobile && 'opacity-50',
+                isCompleted && !isMobile && 'opacity-70',
+                (isLast || isActive) && 'opacity-100'
               )}
             >
               {/* Icon with status indicator */}
@@ -122,10 +137,15 @@ export function ScanNarrativeFeed({
                 isLast ? 'bg-green-500/15 text-green-600 dark:text-green-400' :
                 'bg-muted/40 text-muted-foreground'
               )}>
-                <Icon className={cn(
-                  isCompact ? 'w-2 h-2' : 'w-2.5 h-2.5',
-                  isActive && item.icon === 'loader' && 'animate-spin'
-                )} />
+                {/* Mobile: show check icon for completed steps */}
+                {isCompleted && isMobile ? (
+                  <Check className={cn(isCompact ? 'w-2 h-2' : 'w-2.5 h-2.5', 'text-green-600/60 dark:text-green-400/60')} />
+                ) : (
+                  <Icon className={cn(
+                    isCompact ? 'w-2 h-2' : 'w-2.5 h-2.5',
+                    isActive && item.icon === 'loader' && 'animate-spin'
+                  )} />
+                )}
               </div>
 
               {/* Text */}
