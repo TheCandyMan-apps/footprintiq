@@ -296,6 +296,7 @@ const UsernameReuseReport2026 = lazy(() => import("./pages/research/UsernameReus
 const UsernameReuseReportDownload = lazy(() => import("./pages/research/UsernameReuseReportDownload"));
 const MediaKit = lazy(() => import("./pages/research/MediaKit"));
 const FactSheet = lazy(() => import("./pages/research/FactSheet"));
+const UsernameReuseStatistics = lazy(() => import("./pages/research/UsernameReuseStatistics"));
 const HowUsernameSearchToolsWork = lazy(() => import("./pages/guides/HowUsernameSearchToolsWork"));
 const InterpretOsintResults = lazy(() => import("./pages/guides/InterpretOsintResults"));
 const WhatOsintResultsMean = lazy(() => import("./pages/guides/WhatOsintResultsMean"));
@@ -717,6 +718,7 @@ function RouterContent() {
           <Route path="/research/username-reuse-report-2026-download" element={<UsernameReuseReportDownload />} />
           <Route path="/research/media-kit" element={<MediaKit />} />
           <Route path="/research/fact-sheet" element={<FactSheet />} />
+          <Route path="/research/username-reuse-statistics" element={<UsernameReuseStatistics />} />
           <Route path="/guides" element={<GuidesIndex />} />
           <Route path="/guides/how-username-search-tools-work" element={<HowUsernameSearchToolsWork />} />
             <Route path="/guides/interpret-osint-results" element={<InterpretOsintResults />} />
