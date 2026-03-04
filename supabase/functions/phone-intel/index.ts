@@ -82,18 +82,21 @@ const PROVIDER_PRIORITY: Record<string, Record<string, number>> = {
     twilio_lookup: 90,
     ipqs_phone: 80,
     abstract_phone: 75,
+    viewcaller: 65,
   },
   lineType: {
     numverify: 90,
     twilio_lookup: 95,
     ipqs_phone: 85,
     abstract_phone: 80,
+    viewcaller: 60,
   },
   location: {
     numverify: 95,
     ipqs_phone: 85,
     abstract_phone: 80,
     twilio_lookup: 75,
+    viewcaller: 70,
   },
 };
 
