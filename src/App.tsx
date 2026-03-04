@@ -883,6 +883,7 @@ function RouterContent() {
            <Route path="/instagram-user-search" element={<InstagramUserSearchPage />} />
            <Route path="/instagram-username-checker" element={<InstagramUsernameCheckerPage />} />
           <Route path="/onlyfans-username-search" element={<OnlyFansUsernameSearchPage />} />
+           <Route path="/tinder-username-search" element={<TinderUsernameSearchPage />} />
           <Route path="/kik-username-search" element={<KikUsernameSearchPage />} />
           <Route path="/snapchat-username-search" element={<SnapchatUsernameSearchPage />} />
           <Route path="/reddit-username-search" element={<RedditUsernameSearchPage />} />
