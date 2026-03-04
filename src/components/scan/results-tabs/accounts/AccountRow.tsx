@@ -134,7 +134,7 @@ export function AccountRow({
     <div className="border-b border-border/15 last:border-b-0">
       <div 
         className={cn(
-          'flex items-center gap-2 px-2 py-1 min-h-[44px] border-l-2 transition-all duration-75 cursor-pointer group',
+          'flex items-center gap-2.5 px-2.5 py-1.5 min-h-[44px] border-l-2 transition-all duration-75 cursor-pointer group',
           !isFocused && !isSelected && 'border-l-transparent hover:border-l-primary/20 hover:bg-muted/8',
           isSelected && !isFocused && 'bg-muted/10 border-l-primary/40',
           isFocused && 'bg-primary/4 border-l-primary'
@@ -152,41 +152,41 @@ export function AccountRow({
         {/* CENTER: Platform + Username stacked on mobile, inline on desktop */}
         <div className="flex-1 min-w-0">
           {/* Mobile: tight stack */}
-          <div className="flex items-center gap-1 leading-none mb-0.5">
-            <span className="font-semibold text-[12px] text-foreground truncate">{platformName}</span>
+          <div className="flex items-center gap-1.5 leading-none mb-0.5 md:mb-1">
+            <span className="font-semibold text-[12px] md:text-sm text-foreground truncate">{platformName}</span>
             <span className="hidden sm:inline">
-              {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Username not publicly listed</span>}
+              {username ? <span className="text-muted-foreground text-[10px] md:text-xs truncate">@{username}</span> : <span className="text-muted-foreground/50 text-[10px] md:text-xs truncate italic">Username not publicly listed</span>}
             </span>
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="shrink-0 text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60 font-medium leading-none cursor-help hidden sm:inline-flex" onClick={e => e.stopPropagation()}>
+                  <span className="shrink-0 text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground font-medium leading-none cursor-help hidden sm:inline-flex" onClick={e => e.stopPropagation()}>
                     {matchType.label}
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[240px] text-[10px] leading-snug">{matchType.tooltip}</TooltipContent>
+                <TooltipContent side="top" className="max-w-[240px] text-xs leading-snug">{matchType.tooltip}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             {claimStatus && (
-              <span className={cn('w-1 h-1 rounded-full shrink-0', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
+              <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
             )}
           </div>
           {/* Mobile-only: username on second line */}
           <div className="sm:hidden leading-none mb-0.5">
-            {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Not listed</span>}
+            {username ? <span className="text-muted-foreground text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/50 text-[10px] truncate italic">Not listed</span>}
           </div>
           {/* Signal chips — hidden on mobile */}
           {signalChips.length > 0 && (
-            <div className="hidden sm:flex items-center gap-1 text-[9px] text-muted-foreground/60 leading-none">
+            <div className="hidden sm:flex items-center gap-1.5 text-[10px] md:text-[11px] text-muted-foreground/70 leading-none mt-0.5">
               {signalChips.map((chip, i) => (
                 <Fragment key={i}>
                   {i > 0 && <span className="text-border">·</span>}
                   {chip.href ? (
                     <a href={chip.href} target="_blank" rel="noopener noreferrer"
-                       className="hover:text-primary truncate max-w-[120px]"
+                       className="hover:text-primary truncate max-w-[140px]"
                        onClick={e => e.stopPropagation()}>{chip.label}</a>
                   ) : (
-                    <span className="truncate max-w-[120px]">{chip.label}</span>
+                    <span className="truncate max-w-[140px]">{chip.label}</span>
                   )}
                 </Fragment>
               ))}
@@ -194,11 +194,11 @@ export function AccountRow({
           )}
           {/* Bio — hidden on mobile */}
           {bio ? (
-            <p className="hidden sm:block text-[10px] leading-snug truncate text-muted-foreground/70">{bio}</p>
+            <p className="hidden sm:block text-[11px] md:text-xs leading-relaxed truncate text-muted-foreground mt-0.5">{bio}</p>
           ) : null}
           {/* Risk context — hidden on mobile */}
-          <div className="hidden sm:flex items-center gap-1">
-            <p className="text-[9px] leading-snug truncate text-muted-foreground/50 italic">
+          <div className="hidden sm:flex items-center gap-1 mt-0.5">
+            <p className="text-[10px] md:text-[11px] leading-relaxed truncate text-muted-foreground/60 italic">
               {generateRiskContext(result, lensScore).split('. ')[0]}.
             </p>
             <TooltipProvider delayDuration={200}>
@@ -206,14 +206,14 @@ export function AccountRow({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+                    className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
                     onClick={e => e.stopPropagation()}
                     aria-label="Why am I seeing this?"
                   >
-                    <Info className="w-3 h-3" />
+                    <Info className="w-3.5 h-3.5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[260px] text-[10px] leading-snug">
+                <TooltipContent side="top" className="max-w-[260px] text-xs leading-snug">
                   <p className="font-medium mb-1">Why am I seeing this?</p>
                   <p>{generateRiskContext(result, lensScore)}</p>
                 </TooltipContent>
@@ -223,7 +223,7 @@ export function AccountRow({
           {removalGuide && (
             <Link
               to={removalGuide}
-              className="hidden sm:inline text-[9px] text-accent hover:underline transition-colors"
+              className="hidden sm:inline text-[10px] md:text-[11px] text-accent hover:underline transition-colors"
               onClick={(e) => e.stopPropagation()}
               target="_blank"
             >
@@ -233,10 +233,10 @@ export function AccountRow({
         </div>
 
         {/* RIGHT: Confidence badge + actions */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l border-border/15">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 pl-1.5 sm:pl-2 border-l border-border/15">
           {/* Expand indicator */}
           <ChevronDown className={cn(
-            'w-3 h-3 text-muted-foreground/40 transition-transform duration-200',
+            'w-3.5 h-3.5 text-muted-foreground/50 transition-transform duration-200',
             isSelected && 'rotate-180'
           )} />
 
@@ -255,15 +255,15 @@ export function AccountRow({
             <PopoverTrigger asChild>
               <Badge 
                 variant="outline" 
-                className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium cursor-pointer hover:opacity-80 transition-opacity', confidence.bg, confidence.text, confidence.border)}
+                className={cn('h-6 px-2 gap-1 text-[10px] md:text-[11px] font-medium cursor-pointer hover:opacity-80 transition-opacity', confidence.bg, confidence.text, confidence.border)}
                 onClick={(e) => e.stopPropagation()}
               >
-                <ConfidenceIcon className="w-2.5 h-2.5" />
+                <ConfidenceIcon className="w-3 h-3" />
                 <span className="hidden sm:inline">{confidence.shortLabel}</span>
-                <Info className="w-2 h-2 opacity-50 hidden sm:inline" />
+                <Info className="w-2.5 h-2.5 opacity-50 hidden sm:inline" />
               </Badge>
             </PopoverTrigger>
-            <PopoverContent side="top" align="end" className="w-auto p-2" onClick={(e) => e.stopPropagation()}>
+            <PopoverContent side="top" align="end" className="w-auto p-2.5" onClick={(e) => e.stopPropagation()}>
               <ConfidenceTooltipContent score={lensScore} username={username} platformName={platformName} meta={meta} hasProfileImage={!!profileImage} />
             </PopoverContent>
           </Popover>
@@ -289,11 +289,11 @@ export function AccountRow({
             <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-4.5 sm:w-4.5 rounded text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors" asChild onClick={(e) => e.stopPropagation()}>
-                    <a href={profileUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-2.5 h-2.5" /></a>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors" asChild onClick={(e) => e.stopPropagation()}>
+                    <a href={profileUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3 h-3" /></a>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="text-[10px]">Visit profile on {platformName}</TooltipContent>
+                <TooltipContent className="text-xs">Visit profile on {platformName}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
