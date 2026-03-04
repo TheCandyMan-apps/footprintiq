@@ -388,7 +388,7 @@ serve(async (req: Request) => {
       return json({ ok: false, error: "GCP authentication failed" }, 500);
     }
 
-    // ── Call Cloud Run ──
+    // ── Call Cloud Run (+ RapidAPI enrichment in parallel for username) ──
     console.log(`[telegram-proxy] Calling ${targetUrl} for scan ${scanId}`);
 
     const workerHeaders: Record<string, string> = {
@@ -399,11 +399,17 @@ serve(async (req: Request) => {
       workerHeaders["X-Worker-Key"] = workerKey;
     }
 
-    const workerRes = await fetch(targetUrl, {
+    // Fire Cloud Run + optional RapidAPI enrichment in parallel
+    const workerFetchPromise = fetch(targetUrl, {
       method: "POST",
       headers: workerHeaders,
       body: JSON.stringify(workerPayload),
     });
+    const rapidApiPromise = typedAction === "username"
+      ? fetchTelegramUserInfoApi(username.trim())
+      : Promise.resolve(null);
+
+    const [workerRes, rapidApiData] = await Promise.all([workerFetchPromise, rapidApiPromise]);
 
     const workerBody = await workerRes.text();
 
