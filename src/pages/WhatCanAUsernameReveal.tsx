@@ -332,7 +332,7 @@ export default function WhatCanAUsernameReveal() {
         {/* About + Related */}
         <div className="max-w-3xl mx-auto px-6 py-12 space-y-12">
           <AboutFootprintIQBlock />
-          <RelatedToolsGrid />
+          <RelatedToolsGrid currentPath="/what-can-a-username-reveal" />
         </div>
       </main>
 
