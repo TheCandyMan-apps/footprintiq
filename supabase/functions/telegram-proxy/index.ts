@@ -691,6 +691,10 @@ serve(async (req: Request) => {
         last_seen: "Last Seen",
         about: "Bio",
         entity_type: "Entity Type",
+        telegram_id: "Telegram ID",
+        dc_id: "Data Center",
+        status: "Status",
+        restriction_reason: "Restriction",
       };
       for (const [k, label] of Object.entries(fieldMap)) {
         const v = em[k];
@@ -700,18 +704,23 @@ serve(async (req: Request) => {
       }
 
       const displayName = [em.first_name, em.last_name].filter(Boolean).join(" ") || em.username || username;
+      const sourceLabel = em._source === "rapidapi_fallback"
+        ? "RapidAPI fallback"
+        : em._rapidapi_enrichment
+          ? "MTProto + RapidAPI enrichment"
+          : "MTProto";
 
       const synthesizedFinding = {
         scan_id: scanId,
         provider: "telegram",
         kind: "telegram_username",
         severity: "info",
-        confidence: 0.9,
+        confidence: em._source === "rapidapi_fallback" ? 0.7 : 0.9,
         observed_at: new Date().toISOString(),
         evidence: evidenceArr,
         meta: {
           title: `Telegram Profile: ${displayName}`,
-          description: `Telegram account resolved via MTProto for @${em.username || username}`,
+          description: `Telegram account resolved via ${sourceLabel} for @${em.username || username}`,
           source: "telegram",
           entity_metadata: em,
         },
