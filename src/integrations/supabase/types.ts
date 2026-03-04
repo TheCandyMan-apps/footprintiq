@@ -10630,9 +10630,9 @@ export type Database = {
       cleanup_stuck_scans: {
         Args: { timeout_minutes?: number }
         Returns: {
+          cleaned_scan_id: string
           new_status: string
           old_status: string
-          scan_id: string
         }[]
       }
       generate_case_number: { Args: never; Returns: string }
