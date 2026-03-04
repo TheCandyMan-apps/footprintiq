@@ -33,7 +33,9 @@ const PLATFORMS = [
   { name: 'Mastodon', category: 'Social', icon: '🐘', risk: 'low' },
   { name: 'Keybase', category: 'Identity', icon: '🔑', risk: 'low' },
   { name: 'HackerNews', category: 'Tech', icon: '📰', risk: 'low' },
-] as const;
+];
+
+type Platform = { name: string; category: string; icon: string; risk: string };
 
 const RISK_COLORS: Record<string, string> = {
   low: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30',
@@ -122,7 +124,7 @@ const Section = ({ children, className }: { children: React.ReactNode; className
 export default function OsintPlayground() {
   const [username, setUsername] = useState('');
   const [simulating, setSimulating] = useState(false);
-  const [simResults, setSimResults] = useState<typeof PLATFORMS | null>(null);
+  const [simResults, setSimResults] = useState<Platform[] | null>(null);
 
   const handleSimulate = useCallback(() => {
     if (!username.trim()) return;
