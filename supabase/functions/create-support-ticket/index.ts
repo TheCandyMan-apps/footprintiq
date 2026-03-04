@@ -97,6 +97,32 @@ serve(async (req) => {
 
     console.log(`[create-support-ticket] Created ticket ${ticket.id} for user ${userId}`);
 
+    // Send Telegram notification (fire-and-forget)
+    const tgToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+    const tgChatId = Deno.env.get("TELEGRAM_CHAT_ID");
+    if (tgToken && tgChatId) {
+      const tgMessage = [
+        `🎫 *New Support Ticket*`,
+        ``,
+        `*Ticket:* \`${ticket.ticket_number || ticket.id}\``,
+        `*Category:* ${category}`,
+        `*Subject:* ${sanitizedSubject}`,
+        `*Priority:* ${ticket.priority}`,
+        ``,
+        `_User: ${userId}_`,
+      ].join('\n');
+
+      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: tgChatId,
+          text: tgMessage,
+          parse_mode: 'Markdown',
+        }),
+      }).catch((err) => console.error('[create-support-ticket] TG notify failed:', err));
+    }
+
     return new Response(JSON.stringify({ ticket }), {
       status: 200,
       headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
