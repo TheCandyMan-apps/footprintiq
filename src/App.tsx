@@ -327,6 +327,7 @@ const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsername
 const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
 const DiscordUsernameSearchPage = lazy(() => import("./pages/DiscordUsernameSearch"));
 const OnlyFansUsernameSearchPage = lazy(() => import("./pages/OnlyFansUsernameSearch"));
+const TinderUsernameSearchPage = lazy(() => import("./pages/TinderUsernameSearch"));
 const KikUsernameSearchPage = lazy(() => import("./pages/KikUsernameSearch"));
 const SnapchatUsernameSearchPage = lazy(() => import("./pages/SnapchatUsernameSearch"));
 const RedditUsernameSearchPage = lazy(() => import("./pages/RedditUsernameSearch"));
@@ -882,6 +883,7 @@ function RouterContent() {
            <Route path="/instagram-user-search" element={<InstagramUserSearchPage />} />
            <Route path="/instagram-username-checker" element={<InstagramUsernameCheckerPage />} />
           <Route path="/onlyfans-username-search" element={<OnlyFansUsernameSearchPage />} />
+           <Route path="/tinder-username-search" element={<TinderUsernameSearchPage />} />
           <Route path="/kik-username-search" element={<KikUsernameSearchPage />} />
           <Route path="/snapchat-username-search" element={<SnapchatUsernameSearchPage />} />
           <Route path="/reddit-username-search" element={<RedditUsernameSearchPage />} />
