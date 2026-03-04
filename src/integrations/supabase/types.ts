@@ -7786,6 +7786,7 @@ export type Database = {
           status: string | null
           telegram_triggered_at: string | null
           total_sources_found: number | null
+          updated_at: string | null
           used_free_any_credit: boolean | null
           user_id: string | null
           username: string | null
@@ -7825,6 +7826,7 @@ export type Database = {
           status?: string | null
           telegram_triggered_at?: string | null
           total_sources_found?: number | null
+          updated_at?: string | null
           used_free_any_credit?: boolean | null
           user_id?: string | null
           username?: string | null
@@ -7864,6 +7866,7 @@ export type Database = {
           status?: string | null
           telegram_triggered_at?: string | null
           total_sources_found?: number | null
+          updated_at?: string | null
           used_free_any_credit?: boolean | null
           user_id?: string | null
           username?: string | null
