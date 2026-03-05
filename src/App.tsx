@@ -913,21 +913,21 @@ function RouterContent() {
           
           {/* Platform-Specific Username Search Pages */}
           <Route path="/search-username" element={<SearchUsernamePage />} />
-          <Route path="/tiktok-username-search" element={<TikTokUsernameSearchPage />} />
-          <Route path="/instagram-username-search" element={<InstagramUsernameSearchPage />} />
-          <Route path="/instagram-username-search-tool" element={<Navigate to="/instagram-username-search" replace />} />
+          <Route path="/tiktok-username-search" element={<Navigate to="/platforms/tiktok/username-search" replace />} />
+          <Route path="/instagram-username-search" element={<Navigate to="/platforms/instagram/username-search" replace />} />
+          <Route path="/instagram-username-search-tool" element={<Navigate to="/platforms/instagram/username-search" replace />} />
           <Route path="/ai-answers/instagram-username-osint" element={<AIAnswersInstagramUsernameOsint />} />
           <Route path="/how-username-reuse-exposes-you-online" element={<HowUsernameReuseExposesYouOnline />} />
-          <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
-           <Route path="/discord-username-search" element={<DiscordUsernameSearchPage />} />
+          <Route path="/twitter-username-search" element={<Navigate to="/platforms/x-twitter/username-search" replace />} />
+           <Route path="/discord-username-search" element={<Navigate to="/platforms/discord/username-search" replace />} />
            <Route path="/discord-lookup" element={<DiscordLookupPage />} />
            <Route path="/instagram-user-search" element={<InstagramUserSearchPage />} />
            <Route path="/instagram-username-checker" element={<InstagramUsernameCheckerPage />} />
           <Route path="/onlyfans-username-search" element={<OnlyFansUsernameSearchPage />} />
            <Route path="/tinder-username-search" element={<TinderUsernameSearchPage />} />
           <Route path="/kik-username-search" element={<KikUsernameSearchPage />} />
-          <Route path="/snapchat-username-search" element={<SnapchatUsernameSearchPage />} />
-          <Route path="/reddit-username-search" element={<RedditUsernameSearchPage />} />
+          <Route path="/snapchat-username-search" element={<Navigate to="/platforms/snapchat/username-search" replace />} />
+          <Route path="/reddit-username-search" element={<Navigate to="/platforms/reddit/username-search" replace />} />
            <Route path="/digital-footprint-scan" element={<DigitalFootprintScanPage />} />
            <Route path="/ai-username-search" element={<AIUsernameSearchPage />} />
           
