@@ -847,10 +847,10 @@ function RouterContent() {
                  <Route path="/remove-yourself-from-data-broker-sites" element={<RemoveYourselfFromDataBrokerSites />} />
                  <Route path="/instagram-search-without-account" element={<InstagramSearchWithoutAccount />} />
                  <Route path="/dating-profile-lookup" element={<DatingProfileLookup />} />
-                 <Route path="/linkedin-username-search" element={<LinkedInUsernameSearch />} />
-                 <Route path="/telegram-username-search" element={<TelegramUsernameSearch2 />} />
-                 <Route path="/youtube-username-search" element={<YouTubeUsernameSearch />} />
-                 <Route path="/facebook-search-without-login" element={<FacebookSearchWithoutLoginPage />} />
+                 <Route path="/linkedin-username-search" element={<Navigate to="/platforms/linkedin/username-search" replace />} />
+                 <Route path="/telegram-username-search" element={<Navigate to="/platforms/telegram/username-search" replace />} />
+                 <Route path="/youtube-username-search" element={<Navigate to="/platforms/youtube/username-search" replace />} />
+                 <Route path="/facebook-search-without-login" element={<Navigate to="/platforms/facebook/username-search" replace />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
