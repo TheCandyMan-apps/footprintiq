@@ -9,6 +9,10 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildSoftwareApplicationSchema, buildFAQSchema, buildBreadcrumbListSchema } from "@/lib/seo/schema";
 import { CANONICAL_BASE } from "@/lib/seo/sitemapRoutes";
 import type { ComparisonEntry } from "@/lib/seo/comparisonRegistry";
+import { AccuracyCallout } from "@/components/seo/AccuracyCallout";
+import { FeaturedCollections } from "@/components/seo/FeaturedCollections";
+
+const BUILD_DATE = new Date().toISOString().slice(0, 10);
 
 interface Props {
   entry: ComparisonEntry;
@@ -67,6 +71,13 @@ export function ComparisonTemplate({ entry }: Props) {
               {entry.description}
             </p>
           </section>
+
+          {/* Author / date block */}
+          <div className="flex items-center gap-3 text-sm text-muted-foreground mb-8">
+            <span className="font-medium text-foreground">FootprintIQ Research Team</span>
+            <span>·</span>
+            <time dateTime={BUILD_DATE}>Last updated {BUILD_DATE}</time>
+          </div>
 
           {/* Intro */}
           <section className="mb-16">
@@ -144,6 +155,8 @@ export function ComparisonTemplate({ entry }: Props) {
             </div>
           </section>
 
+          <AccuracyCallout context="comparison" />
+
           {/* FAQs */}
           {entry.faqs.length > 0 && (
             <section className="mb-16">
@@ -162,7 +175,9 @@ export function ComparisonTemplate({ entry }: Props) {
             </section>
           )}
 
-          <RelatedLinks paths={[...entry.relatedTools, ...entry.relatedGuides]} />
+          <RelatedLinks paths={["/compare", ...entry.relatedTools, ...entry.relatedGuides]} />
+
+          <FeaturedCollections />
         </div>
       </main>
 

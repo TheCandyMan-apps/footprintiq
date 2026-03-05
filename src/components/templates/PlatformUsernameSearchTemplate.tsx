@@ -12,6 +12,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildSoftwareApplicationSchema, buildFAQSchema, buildBreadcrumbListSchema } from "@/lib/seo/schema";
 import { CANONICAL_BASE } from "@/lib/seo/sitemapRoutes";
 import type { PlatformEntry } from "@/lib/seo/platformRegistry";
+import { AccuracyCallout } from "@/components/seo/AccuracyCallout";
+import { FeaturedCollections } from "@/components/seo/FeaturedCollections";
 
 interface Props {
   entry: PlatformEntry;
@@ -183,6 +185,8 @@ export function PlatformUsernameSearchTemplate({ entry }: Props) {
             </div>
           </section>
 
+          <AccuracyCallout context="platform" />
+
           {/* FAQs */}
           {entry.faqs.length > 0 && (
             <section className="mb-16">
@@ -201,7 +205,9 @@ export function PlatformUsernameSearchTemplate({ entry }: Props) {
             </section>
           )}
 
-          <RelatedLinks paths={[...entry.relatedTools, ...entry.relatedGuides]} />
+          <RelatedLinks paths={["/username-search", "/platforms", ...entry.relatedTools, ...entry.relatedGuides]} />
+
+          <FeaturedCollections />
         </div>
       </main>
 
