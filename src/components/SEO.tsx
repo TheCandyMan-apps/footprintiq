@@ -151,10 +151,13 @@ export const SEO = ({
   canonical = "https://footprintiq.app/",
   ogImage = "https://footprintiq.app/og-image.jpg",
   ogType = "website",
+  noindex = false,
   article,
   schema,
   structuredData,
 }: SEOProps) => {
+  // Always strip query params from canonical URLs
+  const cleanCanonical = stripQueryParams(canonical);
   // Default structured data - only used if no schema or structuredData is provided
   const defaultStructuredData = {
     "@context": "https://schema.org",
