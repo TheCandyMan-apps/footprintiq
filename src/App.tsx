@@ -961,7 +961,30 @@ function RouterContent() {
            <Route path="/datasets/username-reuse" element={<DatasetUsernameReuse />} />
            <Route path="/ai-answers/how-investigators-trace-usernames" element={<AIAnswersHowInvestigatorsTraceUsernames />} />
 
-              <Route path="/404" element={<NotFound />} />
+           {/* Platform Pages (programmatic) */}
+           <Route path="/platforms" element={<PlatformHub />} />
+           <Route path="/platforms/:slug/username-search" element={<PlatformPage />} />
+
+           {/* Comparison Pages (programmatic) */}
+           <Route path="/comparisons/:slug" element={<ComparisonDetailPage />} />
+
+           {/* Legacy platform redirects → canonical platform paths */}
+           <Route path="/instagram-username-search" element={<Navigate to="/platforms/instagram/username-search" replace />} />
+           <Route path="/tiktok-username-search" element={<Navigate to="/platforms/tiktok/username-search" replace />} />
+           <Route path="/twitter-username-search" element={<Navigate to="/platforms/x-twitter/username-search" replace />} />
+           <Route path="/discord-username-search" element={<Navigate to="/platforms/discord/username-search" replace />} />
+           <Route path="/snapchat-username-search" element={<Navigate to="/platforms/snapchat/username-search" replace />} />
+           <Route path="/reddit-username-search" element={<Navigate to="/platforms/reddit/username-search" replace />} />
+           <Route path="/linkedin-username-search" element={<Navigate to="/platforms/linkedin/username-search" replace />} />
+           <Route path="/telegram-username-search" element={<Navigate to="/platforms/telegram/username-search" replace />} />
+           <Route path="/youtube-username-search" element={<Navigate to="/platforms/youtube/username-search" replace />} />
+           <Route path="/facebook-search-without-login" element={<Navigate to="/platforms/facebook/username-search" replace />} />
+
+           {/* Legacy comparison redirects */}
+           <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
+           <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
+
+               <Route path="/404" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PageTransition>
