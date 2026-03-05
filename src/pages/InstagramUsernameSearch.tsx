@@ -75,17 +75,17 @@ export default function InstagramUsernameSearchPage() {
     operatingSystem: "Web",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     aggregateRating: { "@type": "AggregateRating", ratingValue: "4.7", ratingCount: "312", bestRating: "5" },
-    description: "Find Instagram usernames and user profiles across 500+ platforms. Free Instagram user search and account finder tool.",
+    description: "Find Instagram usernames, look up Instagram accounts, and discover Instagram user profiles across 500+ platforms. Free Instagram user search, account finder, and username checker tool.",
   };
 
   return (
     <>
       <Helmet>
-        <title>Instagram Username Search – Find Linked Profiles Free | FootprintIQ</title>
-        <meta name="description" content="Free Instagram username search across 500+ platforms. Check where a handle appears, assess exposure, and discover linked profiles — ethical OSINT, no login required." />
+        <title>Instagram Username Search – Find Instagram Accounts &amp; Profiles Free | FootprintIQ</title>
+        <meta name="description" content="Free Instagram username search and account finder. Look up Instagram accounts, find Instagram user profiles, check if a username exists, and discover linked accounts across 500+ platforms." />
         <link rel="canonical" href="https://footprintiq.app/instagram-username-search" />
-        <meta property="og:title" content="Instagram Username Search – Find Linked Profiles Free | FootprintIQ" />
-        <meta property="og:description" content="Free Instagram username search across 500+ platforms. Check exposure and discover linked profiles with ethical OSINT." />
+        <meta property="og:title" content="Instagram Username Search – Find Instagram Accounts & Profiles Free | FootprintIQ" />
+        <meta property="og:description" content="Free Instagram user search. Find Instagram accounts by username, check profiles, and discover linked accounts across 500+ platforms." />
       </Helmet>
       <JsonLd data={faqSchema} />
       <JsonLd data={breadcrumbSchema} />
@@ -105,13 +105,13 @@ export default function InstagramUsernameSearchPage() {
             </Badge>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               Instagram Username Search
-              <span className="block text-primary mt-2">Check Linked Accounts &amp; Public Exposure</span>
+              <span className="block text-primary mt-2">Find Instagram Accounts, Check Linked Profiles &amp; User ID Details</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
-              Instagram usernames are often reused across multiple platforms. If you use the same handle on Discord, Reddit, TikTok, or forums, it may create visible links between accounts.
+              Instagram usernames are often reused across multiple platforms. If you use the same Instagram handle on Discord, Reddit, TikTok, or forums, it may create visible links between accounts. Enter a username to search Instagram profiles and discover cross-platform exposure.
             </p>
             <p className="text-base text-muted-foreground mb-8 max-w-2xl mx-auto">
-              An Instagram username search helps identify publicly indexed profiles and potential digital footprint exposure.
+              This Instagram user search and account finder helps identify publicly indexed Instagram profiles, check if an Instagram account exists, and map potential digital footprint exposure — all using ethical OSINT methods.
             </p>
             <HeroInputField />
             <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
@@ -139,16 +139,18 @@ export default function InstagramUsernameSearchPage() {
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold mb-6">What Is an Instagram Username Search?</h2>
             <div className="text-muted-foreground leading-relaxed space-y-4 text-[16px]">
-              <p>An Instagram username search checks whether a handle appears:</p>
+              <p>An Instagram username search — also known as an Instagram user lookup or Instagram account finder — checks whether an Instagram handle appears:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li>On other social media platforms</li>
-                <li>In public forum posts</li>
-                <li>In archived content</li>
-                <li>In breach-related datasets</li>
-                <li>In indexed search results</li>
+                <li>On other social media profiles (TikTok, Twitter, Reddit, etc.)</li>
+                <li>In public forum posts and archived content</li>
+                <li>In breach-related datasets linked to Instagram accounts</li>
+                <li>In indexed search results across search engines</li>
               </ul>
               <p>
-                Because usernames are frequently reused, they can act as identity anchors — connecting disparate accounts into a single discoverable profile. FootprintIQ checks a username across <Link to="/usernames" className="text-primary hover:underline font-medium">500+ platforms</Link> simultaneously.
+                Because Instagram usernames are frequently reused, they can act as identity anchors — connecting disparate accounts into a single discoverable profile. An Instagram username checker like FootprintIQ checks a username across <Link to="/usernames" className="text-primary hover:underline font-medium">500+ platforms</Link> simultaneously, helping you find Instagram user details and discover where the same handle appears.
+              </p>
+              <p>
+                You can also use our tool to search Instagram by name, look up Instagram accounts, and check if an Instagram account exists — without needing to log in. For a broader search across all platforms, try our <Link to="/reverse-username-search" className="text-primary hover:underline font-medium">reverse username search</Link>.
               </p>
             </div>
           </div>
