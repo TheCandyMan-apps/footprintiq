@@ -74,6 +74,36 @@ const allTools = [
     desc: "Get answers to OSINT and digital privacy questions",
     icon: BookOpen,
   },
+  {
+    to: "/find-dating-profiles",
+    title: "Find Dating Profiles",
+    desc: "Search for dating profiles by username or email",
+    icon: Search,
+  },
+  {
+    to: "/audit-your-digital-footprint",
+    title: "Audit Your Digital Footprint",
+    desc: "Step-by-step digital footprint audit guide",
+    icon: Shield,
+  },
+  {
+    to: "/how-to-delete-facebook-account",
+    title: "Delete Facebook Account",
+    desc: "Complete guide to removing your Facebook profile",
+    icon: Trash2,
+  },
+  {
+    to: "/how-to-delete-tiktok-account",
+    title: "Delete TikTok Account",
+    desc: "Step-by-step TikTok account deletion guide",
+    icon: Trash2,
+  },
+  {
+    to: "/best-people-lookup-sites",
+    title: "Best People Lookup Sites",
+    desc: "Compare ethical people-search alternatives",
+    icon: Globe,
+  },
 ];
 
 interface RelatedToolsGridProps {

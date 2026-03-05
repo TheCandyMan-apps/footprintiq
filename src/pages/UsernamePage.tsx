@@ -143,11 +143,11 @@ const howItWorksSteps = [
 ];
 
 const platformCategories = [
-  { icon: Globe, label: "Social Media Platforms", description: "Find social accounts on Twitter, Instagram, TikTok, Reddit, and more" },
+  { icon: Globe, label: "Social Media Platforms", description: "Discover social media profiles on Twitter, Instagram, LinkedIn, TikTok, Reddit, and more" },
   { icon: Gamepad2, label: "Gaming Networks", description: "Steam, Discord, Xbox, PlayStation gaming profiles" },
   { icon: Code, label: "Developer Platforms", description: "GitHub, GitLab, Stack Overflow developer accounts" },
   { icon: Briefcase, label: "Professional Networks", description: "LinkedIn, Behance, Dribbble professional profiles" },
-  { icon: Users, label: "Forums & Communities", description: "500+ forums to map your complete online presence" }
+  { icon: Users, label: "Forums & Communities", description: "Dozens of platforms and 500+ forums to map your complete online presence" }
 ];
 
 const differentiators = [
@@ -195,8 +195,8 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="User Search – Find Accounts Across 500+ Sites Free | FootprintIQ"
-        description="Free social media user search across 500+ platforms. Search user names, find accounts by username, and assess your digital exposure. Ethical OSINT — no login required."
+        title="Username Search – Free Social Media Finder Across 500+ Sites | FootprintIQ"
+        description="Free username search across 500+ platforms. Find social media profiles by username, search user names, lookup accounts by nickname, and discover your digital exposure."
         canonical="https://footprintiq.app/usernames"
         schema={{
           breadcrumbs: {
@@ -226,15 +226,15 @@ export default function UsernamePage() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              User Search
-              <span className="block text-2xl md:text-3xl font-semibold text-muted-foreground mt-2">Social Media User Search Across 500+ Platforms</span>
+              Username Search &amp; Social Media Finder
+              <span className="block text-2xl md:text-3xl font-semibold text-muted-foreground mt-2">Find Usernames, Lookup Accounts &amp; Search User Names Across 500+ Platforms</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
               Search user names across 500+ platforms to find accounts — including 
-              Instagram, Facebook, TikTok, Twitter, and gaming networks. The best free user search 
-              tool for checking usernames, finding social media profiles, and discovering 
-              online identities across multiple platforms.
+              Instagram, LinkedIn, Facebook, TikTok, Twitter, and gaming networks. The best free social media 
+              finder and user search engine for checking usernames, discovering social media profiles, 
+              and finding people by username or nickname across dozens of platforms.
             </p>
             
             <div className="flex flex-wrap justify-center gap-4 mb-4">
@@ -301,36 +301,51 @@ export default function UsernamePage() {
             <h2>How to Search Username and Find Accounts Online</h2>
             
             <p>
-              Looking to search username handles and <Link to="/find-social-media-accounts-by-username" className="text-primary underline underline-offset-4 hover:text-primary/80">find accounts by username</Link>? A username search tool scans 
+              Looking to search username handles and <Link to="/find-social-media-accounts-by-username" className="text-primary underline underline-offset-4 hover:text-primary/80">find accounts by username</Link>? A username search tool — sometimes called a social media finder — scans 
               public profile pages across popular social media platforms, gaming networks, and online communities 
-              to show you where a specific handle appears. You can check username availability, find social 
-              profiles on Instagram and Facebook, gather information about online identities, or understand 
-              username reuse patterns across multiple platforms.
+              to show you where a specific handle appears. You can check username availability, discover social media profiles 
+              on Instagram and Facebook, gather information about online identities, or understand 
+              username reuse patterns across dozens of platforms.
             </p>
             
             <p>
-              Most people use the same username across multiple sites. This creates a traceable pattern 
-              that anyone can follow — a concept known as{" "}
-              <Link to="/reverse-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">reverse username search</Link>. A username you created years ago on a gaming forum might still be 
-              indexed by search engines — even if you've forgotten about it entirely.
+              Most people use the same username — or nickname — across multiple sites. This creates a traceable pattern 
+              that anyone can follow using a search engine or specialised tool — a concept known as{" "}
+              <Link to="/reverse-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">reverse username search</Link>. A username you created years ago on a gaming forum might still appear in search results 
+              — even if you've forgotten about it entirely.
             </p>
 
             <h3>What Is a Username Search?</h3>
             
             <p>
               A username search is a lookup that checks whether a specific handle exists on various 
-              websites. When you run a username search, the tool visits public profile URLs like 
+              websites. When you run a username scan, the tool visits public profile URLs like 
               <code>twitter.com/username</code> or <code>github.com/username</code> and checks if the 
-              page exists. This is the same information anyone could find manually, but automated to 
+              page exists. This is the same information anyone could find using a search engine manually, but automated to 
               save hours of work.
             </p>
 
             <p>
               Free social media username search tools like FootprintIQ check over 500 platforms 
-              simultaneously. We search major social networks like Twitter, Instagram, and TikTok. 
+              simultaneously. We search major social networks like Twitter, Instagram, LinkedIn, and TikTok. 
               We also check gaming platforms like Steam and Discord, developer sites like GitHub and 
-              Stack Overflow, and hundreds of forums and niche communities. For platform-specific analysis, try our{" "}
+              Stack Overflow, and hundreds of forums and niche communities. The search results show you exactly where a username appears with confidence scoring. For platform-specific analysis, try our{" "}
               <Link to="/instagram-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Instagram username search</Link> to check exposure on one of the most widely indexed social networks.
+            </p>
+
+            <h3>Find Someone by Username or Nickname</h3>
+            
+            <p>
+              Whether you're looking to <Link to="/find-someone-by-username" className="text-primary underline underline-offset-4 hover:text-primary/80">find someone by username</Link> or search by nickname, 
+              the process is the same. Enter the handle, and our social search tool queries public records and social media profiles 
+              across 500+ platforms. Many people don't realise that their online nickname connects to dozens of accounts — 
+              from <Link to="/find-dating-profiles" className="text-primary underline underline-offset-4 hover:text-primary/80">dating profiles</Link> to professional networks.
+            </p>
+            
+            <p>
+              For a structured approach to understanding your own exposure, try a{" "}
+              <Link to="/audit-your-digital-footprint" className="text-primary underline underline-offset-4 hover:text-primary/80">digital footprint audit</Link> or{" "}
+              <Link to="/check-my-digital-footprint" className="text-primary underline underline-offset-4 hover:text-primary/80">check your digital footprint</Link> to see everything that's publicly visible about you online.
             </p>
 
             <h3>Why Find People by Username?</h3>
@@ -408,12 +423,13 @@ export default function UsernamePage() {
         {/* Ethical OSINT Explanation */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
+             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">How Our Deep Username Search Works</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Our free social media username search checks public profile pages across 500+ platforms 
+                Our free social media finder checks public profile pages across 500+ platforms 
                 to find people by username. This deep username search uses ethical OSINT techniques — 
-                only querying publicly accessible URLs that anyone can visit.
+                only querying publicly accessible URLs that anyone can visit. Think of it as a social search 
+                engine designed specifically for discovering social media profiles and user accounts.
               </p>
             </div>
 
@@ -555,8 +571,8 @@ export default function UsernamePage() {
               <h2 className="text-3xl font-bold mb-4">Beyond Basic Username Search Tools</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                 Most free username search tools simply tell you "found" or "not found" — they don't explain 
-                what that means for your online presence or digital exposure. FootprintIQ uses open source 
-                intelligence methods to find social accounts and provide actionable context.
+                what that means for your online presence or digital exposure. FootprintIQ is the best username search tool because it goes beyond basic lookups: 
+                we use open source intelligence methods to discover social media profiles, correlate search results across platforms, and provide actionable context.
               </p>
             </div>
 
@@ -581,8 +597,11 @@ export default function UsernamePage() {
               <div className="text-center">
                 <h2 className="text-3xl font-bold mb-4">Want the Full Picture?</h2>
                 <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-                  Username search is just the beginning. A full digital footprint scan checks email breach exposure, 
-                  data broker listings, public records, domain/WHOIS exposure, and more.
+                  Username search is just the beginning. A full <Link to="/check-my-digital-footprint" className="text-primary hover:underline">digital footprint scan</Link> checks email breach exposure, 
+                  data broker listings, public records, domain/WHOIS exposure, and more. You can also{" "}
+                  <Link to="/best-people-lookup-sites" className="text-primary hover:underline">compare people lookup sites</Link> or learn{" "}
+                  <Link to="/how-to-delete-facebook-account" className="text-primary hover:underline">how to delete your Facebook account</Link> and{" "}
+                  <Link to="/how-to-delete-tiktok-account" className="text-primary hover:underline">how to delete your TikTok account</Link> to reduce exposure.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 mb-8 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-green-500" /> Email breaches</span>
@@ -830,13 +849,13 @@ export default function UsernamePage() {
             <h2 className="text-3xl font-bold mb-6">How to Search User Names Online</h2>
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <p className="text-muted-foreground mb-4">
-                A social media user search is a common OSINT (open source intelligence) technique used to find accounts and online presence. Here's how to perform a deep user search across platforms:
+                A social media user search is a common OSINT (open source intelligence) technique used to find user accounts and map online presence. Here's how to perform a deep user search across dozens of platforms:
               </p>
               <ol className="space-y-4 text-muted-foreground">
-                <li><strong>Enter the username:</strong> Type the exact username you want to search. Our tool checks social media platforms, gaming networks, forums, and professional sites.</li>
-                <li><strong>Wait for results:</strong> Our search tool queries 500+ platforms simultaneously to find where the username is registered.</li>
-                <li><strong>Review findings:</strong> Each result includes the platform name, profile URL, and confidence level. This helps you find people by username effectively.</li>
-                <li><strong>Analyse your online presence:</strong> See which accounts are linked together through username reuse — a key part of understanding digital exposure.</li>
+                <li><strong>Enter the username or nickname:</strong> Type the exact username you want to look up. Our social search tool checks social media platforms like Instagram, LinkedIn, and Facebook, plus gaming networks, forums, and professional sites.</li>
+                <li><strong>Wait for search results:</strong> Our search engine queries 500+ platforms simultaneously to find where the username is registered.</li>
+                <li><strong>Review findings:</strong> Each result includes the platform name, profile URL, and confidence level. This helps you find user profiles by username effectively.</li>
+                <li><strong>Analyse your online presence:</strong> See which social media profiles are linked together through username reuse — a key part of understanding digital exposure.</li>
               </ol>
             </div>
           </div>
@@ -853,20 +872,20 @@ export default function UsernamePage() {
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="p-6">
-                <h3 className="font-semibold mb-2">Social Media Accounts</h3>
-                <p className="text-sm text-muted-foreground">Find social profiles across Twitter, Instagram, TikTok, Reddit, and 100+ other social media platforms.</p>
+                <h3 className="font-semibold mb-2">Social Media Profiles</h3>
+                <p className="text-sm text-muted-foreground">Discover social media profiles across Twitter, Instagram, LinkedIn, TikTok, Reddit, and 100+ other social media platforms. Our social search covers the most popular networks.</p>
               </Card>
               <Card className="p-6">
                 <h3 className="font-semibold mb-2">Gaming Profiles</h3>
-                <p className="text-sm text-muted-foreground">Discover accounts on Steam, Discord, Xbox, PlayStation, and gaming communities.</p>
+                <p className="text-sm text-muted-foreground">Discover accounts on Steam, Discord, Xbox, PlayStation, and gaming communities where username reuse is common.</p>
               </Card>
               <Card className="p-6">
                 <h3 className="font-semibold mb-2">Professional Presence</h3>
-                <p className="text-sm text-muted-foreground">Locate professional profiles on LinkedIn, GitHub, Behance, and developer platforms.</p>
+                <p className="text-sm text-muted-foreground">Locate professional profiles on LinkedIn, GitHub, Behance, and developer platforms. Find user accounts across professional networks.</p>
               </Card>
               <Card className="p-6">
                 <h3 className="font-semibold mb-2">Online Presence Patterns</h3>
-                <p className="text-sm text-muted-foreground">Understand how accounts link together through shared usernames, revealing digital footprint exposure.</p>
+                <p className="text-sm text-muted-foreground">Understand how social media profiles link together through shared usernames. See search results that reveal digital footprint exposure across dozens of platforms.</p>
               </Card>
             </div>
           </div>
