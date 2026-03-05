@@ -436,6 +436,11 @@ const GlossaryDataBroker = lazy(() => import("./pages/glossary/DataBroker"));
 const DatasetUsernameReuse = lazy(() => import("./pages/datasets/UsernameReuse"));
 const AIAnswersHowInvestigatorsTraceUsernames = lazy(() => import("./pages/ai-answers/HowInvestigatorsTraceUsernames"));
 
+// Platform + Comparison programmatic pages
+const PlatformHub = lazy(() => import("./pages/platforms/PlatformHub"));
+const PlatformPage = lazy(() => import("./pages/platforms/PlatformPage"));
+const ComparisonDetailPage = lazy(() => import("./pages/comparisons/ComparisonPage"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -810,10 +815,10 @@ function RouterContent() {
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
              <Route path="/best-osint-tools" element={<BestOsintTools />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
-              <Route path="/comparisons/pimeyes-alternative" element={<PimeyesAlternative />} />
+              <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
               <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
-              <Route path="/comparisons/sherlock-vs-footprintiq" element={<SherlockVsFootprintiq />} />
+              <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
                <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
                <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
                <Route path="/best-online-privacy-scanner" element={<BestOnlinePrivacyScanner />} />
@@ -842,10 +847,10 @@ function RouterContent() {
                  <Route path="/remove-yourself-from-data-broker-sites" element={<RemoveYourselfFromDataBrokerSites />} />
                  <Route path="/instagram-search-without-account" element={<InstagramSearchWithoutAccount />} />
                  <Route path="/dating-profile-lookup" element={<DatingProfileLookup />} />
-                 <Route path="/linkedin-username-search" element={<LinkedInUsernameSearch />} />
-                 <Route path="/telegram-username-search" element={<TelegramUsernameSearch2 />} />
-                 <Route path="/youtube-username-search" element={<YouTubeUsernameSearch />} />
-                 <Route path="/facebook-search-without-login" element={<FacebookSearchWithoutLoginPage />} />
+                 <Route path="/linkedin-username-search" element={<Navigate to="/platforms/linkedin/username-search" replace />} />
+                 <Route path="/telegram-username-search" element={<Navigate to="/platforms/telegram/username-search" replace />} />
+                 <Route path="/youtube-username-search" element={<Navigate to="/platforms/youtube/username-search" replace />} />
+                 <Route path="/facebook-search-without-login" element={<Navigate to="/platforms/facebook/username-search" replace />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
@@ -908,21 +913,21 @@ function RouterContent() {
           
           {/* Platform-Specific Username Search Pages */}
           <Route path="/search-username" element={<SearchUsernamePage />} />
-          <Route path="/tiktok-username-search" element={<TikTokUsernameSearchPage />} />
-          <Route path="/instagram-username-search" element={<InstagramUsernameSearchPage />} />
-          <Route path="/instagram-username-search-tool" element={<Navigate to="/instagram-username-search" replace />} />
+          <Route path="/tiktok-username-search" element={<Navigate to="/platforms/tiktok/username-search" replace />} />
+          <Route path="/instagram-username-search" element={<Navigate to="/platforms/instagram/username-search" replace />} />
+          <Route path="/instagram-username-search-tool" element={<Navigate to="/platforms/instagram/username-search" replace />} />
           <Route path="/ai-answers/instagram-username-osint" element={<AIAnswersInstagramUsernameOsint />} />
           <Route path="/how-username-reuse-exposes-you-online" element={<HowUsernameReuseExposesYouOnline />} />
-          <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
-           <Route path="/discord-username-search" element={<DiscordUsernameSearchPage />} />
+          <Route path="/twitter-username-search" element={<Navigate to="/platforms/x-twitter/username-search" replace />} />
+           <Route path="/discord-username-search" element={<Navigate to="/platforms/discord/username-search" replace />} />
            <Route path="/discord-lookup" element={<DiscordLookupPage />} />
            <Route path="/instagram-user-search" element={<InstagramUserSearchPage />} />
            <Route path="/instagram-username-checker" element={<InstagramUsernameCheckerPage />} />
           <Route path="/onlyfans-username-search" element={<OnlyFansUsernameSearchPage />} />
            <Route path="/tinder-username-search" element={<TinderUsernameSearchPage />} />
           <Route path="/kik-username-search" element={<KikUsernameSearchPage />} />
-          <Route path="/snapchat-username-search" element={<SnapchatUsernameSearchPage />} />
-          <Route path="/reddit-username-search" element={<RedditUsernameSearchPage />} />
+          <Route path="/snapchat-username-search" element={<Navigate to="/platforms/snapchat/username-search" replace />} />
+          <Route path="/reddit-username-search" element={<Navigate to="/platforms/reddit/username-search" replace />} />
            <Route path="/digital-footprint-scan" element={<DigitalFootprintScanPage />} />
            <Route path="/ai-username-search" element={<AIUsernameSearchPage />} />
           
@@ -956,7 +961,18 @@ function RouterContent() {
            <Route path="/datasets/username-reuse" element={<DatasetUsernameReuse />} />
            <Route path="/ai-answers/how-investigators-trace-usernames" element={<AIAnswersHowInvestigatorsTraceUsernames />} />
 
-              <Route path="/404" element={<NotFound />} />
+           {/* Platform Pages (programmatic) */}
+           <Route path="/platforms" element={<PlatformHub />} />
+           <Route path="/platforms/:slug/username-search" element={<PlatformPage />} />
+
+           {/* Comparison Pages (programmatic) */}
+           <Route path="/comparisons/:slug" element={<ComparisonDetailPage />} />
+
+           {/* Legacy comparison redirects */}
+           <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
+           <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
+
+               <Route path="/404" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PageTransition>
