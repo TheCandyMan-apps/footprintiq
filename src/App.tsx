@@ -109,6 +109,7 @@ const PublicVsPrivateDataOsint = lazy(() => import("./pages/blog/PublicVsPrivate
 const RemoveFromDataBrokersGuide = lazy(() => import("./pages/blog/RemoveFromDataBrokersGuide"));
 const IsFootprintiqDataBroker = lazy(() => import("./pages/blog/IsFootprintiqDataBroker"));
 const AfterHaveIBeenPwned = lazy(() => import("./pages/AfterHaveIBeenPwned"));
+const Tools = lazy(() => import("./pages/Tools"));
 const HowToDeleteFacebookAccount = lazy(() => import("./pages/HowToDeleteFacebookAccount"));
 const DeleteSocialMediaAccounts = lazy(() => import("./pages/DeleteSocialMediaAccounts"));
 const DataBreachCleanupChecklist = lazy(() => import("./pages/DataBreachCleanupChecklist"));
