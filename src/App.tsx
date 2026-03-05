@@ -440,6 +440,8 @@ const AIAnswersHowInvestigatorsTraceUsernames = lazy(() => import("./pages/ai-an
 const PlatformHub = lazy(() => import("./pages/platforms/PlatformHub"));
 const PlatformPage = lazy(() => import("./pages/platforms/PlatformPage"));
 const ComparisonDetailPage = lazy(() => import("./pages/comparisons/ComparisonPage"));
+const TopicPage = lazy(() => import("./pages/topics/TopicPage"));
+const FAQPage = lazy(() => import("./pages/faq/FAQPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -967,6 +969,12 @@ function RouterContent() {
 
            {/* Comparison Pages (programmatic) */}
            <Route path="/comparisons/:slug" element={<ComparisonDetailPage />} />
+
+           {/* Topic Hub Pages */}
+           <Route path="/topics/:slug" element={<TopicPage />} />
+
+           {/* FAQ Hub Pages */}
+           <Route path="/faq/:slug" element={<FAQPage />} />
 
            {/* Legacy comparison redirects */}
            <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
