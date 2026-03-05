@@ -60,6 +60,12 @@ export const toolRoutes: SitemapEntry[] = [
   { path: "/digital-footprint-scan", lastmod: BUILD_DATE },
   { path: "/ai-username-search", lastmod: BUILD_DATE },
   { path: "/osint-playground", lastmod: BUILD_DATE },
+  // Authority cluster tool pages
+  { path: "/where-is-this-username-used", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/search-username-online", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/username-availability-checker", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/social-media-account-finder", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/digital-footprint-checker", lastmod: BUILD_DATE, priority: 0.8 },
   // Platform-specific
   { path: "/tiktok-username-search", lastmod: BUILD_DATE },
   { path: "/instagram-username-search", lastmod: BUILD_DATE },
@@ -98,6 +104,11 @@ export const toolRoutes: SitemapEntry[] = [
 // ── Guides ─────────────────────────────────────────────
 export const guideRoutes: SitemapEntry[] = [
   { path: "/guides", lastmod: BUILD_DATE, priority: 0.8 },
+  // Authority cluster guide pages
+  { path: "/guides/what-is-username-osint", lastmod: BUILD_DATE },
+  { path: "/guides/how-to-trace-a-username", lastmod: BUILD_DATE },
+  { path: "/guides/why-username-reuse-is-risky", lastmod: BUILD_DATE },
+  { path: "/guides/how-to-remove-old-accounts", lastmod: BUILD_DATE },
   { path: "/guides/how-username-search-tools-work", lastmod: BUILD_DATE },
   { path: "/guides/interpret-osint-results", lastmod: BUILD_DATE },
   { path: "/guides/what-osint-results-mean", lastmod: BUILD_DATE },
@@ -171,6 +182,10 @@ export const guideRoutes: SitemapEntry[] = [
 // ── Glossary / Educational ─────────────────────────────
 export const glossaryRoutes: SitemapEntry[] = [
   { path: "/digital-privacy-glossary", lastmod: BUILD_DATE, priority: 0.7 },
+  // Authority cluster glossary pages
+  { path: "/glossary/username-osint", lastmod: BUILD_DATE },
+  { path: "/glossary/digital-footprint", lastmod: BUILD_DATE },
+  { path: "/glossary/data-broker", lastmod: BUILD_DATE },
   { path: "/what-is-a-digital-footprint", lastmod: BUILD_DATE },
   { path: "/what-is-osint", lastmod: BUILD_DATE },
   { path: "/digital-exposure-risk-explained", lastmod: BUILD_DATE },
@@ -219,6 +234,8 @@ export const researchRoutes: SitemapEntry[] = [
 
 // ── Datasets / Blog ───────────────────────────────────
 export const datasetRoutes: SitemapEntry[] = [
+  // Authority cluster dataset
+  { path: "/datasets/username-reuse", lastmod: BUILD_DATE },
   { path: "/blog", lastmod: BUILD_DATE, priority: 0.7 },
   { path: "/blog/ai-in-osint-2025", lastmod: BUILD_DATE },
   { path: "/blog/osint-ai-era-2026", lastmod: BUILD_DATE },
@@ -279,6 +296,7 @@ export const aiAnswerRoutes: SitemapEntry[] = [
   { path: "/ai-answers/what-is-an-identity-risk-score", lastmod: BUILD_DATE },
   { path: "/ai-answers/does-osint-include-dark-web-data", lastmod: BUILD_DATE },
   { path: "/ai-answers/instagram-username-osint", lastmod: BUILD_DATE },
+  { path: "/ai-answers/how-investigators-trace-usernames", lastmod: BUILD_DATE },
   { path: "/ai", lastmod: BUILD_DATE },
   { path: "/ai/digital-exposure", lastmod: BUILD_DATE },
   { path: "/ai/digital-footprint", lastmod: BUILD_DATE },
