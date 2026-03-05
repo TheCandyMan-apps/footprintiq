@@ -18,9 +18,10 @@ export interface ExposureScoreResult {
 
 // Category definitions (unchanged shape)
 const CATEGORY_DEFINITIONS = [
-  { id: 'public_profiles', label: 'Public profile discoverability' },
-  { id: 'identifier_reuse', label: 'Identifier reuse' },
-  { id: 'data_broker', label: 'Data broker–linked exposure' },
+  { id: 'public_profiles', label: 'Detected profiles' },
+  { id: 'identifier_reuse', label: 'Username reuse patterns' },
+  { id: 'cross_platform', label: 'Cross-platform correlations' },
+  { id: 'public_identity', label: 'Public identity indicators' },
   { id: 'breach_association', label: 'Breach association' },
   { id: 'metadata_signals', label: 'Metadata & infrastructure signals' },
 ] as const;
