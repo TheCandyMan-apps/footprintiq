@@ -45,6 +45,7 @@ const IntelligenceDashboard = lazy(() => import("./pages/IntelligenceDashboard")
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const UsernamePage = lazy(() => import("./pages/UsernamePage"));
+const UsernameSearchSEOPage = lazy(() => import("./pages/UsernameSearchPage"));
 const EmailBreachCheckPage = lazy(() => import("./pages/EmailBreachCheckPage"));
 const UsernameSearchToolsPage = lazy(() => import("./pages/UsernameSearchToolsPage"));
 const EmailBreachToolsPage = lazy(() => import("./pages/EmailBreachToolsPage"));
@@ -579,7 +580,7 @@ function RouterContent() {
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
-          <Route path="/username-search" element={<UsernamePage />} />
+          <Route path="/username-search" element={<UsernameSearchSEOPage />} />
           <Route path="/email-breach-check" element={<EmailBreachCheckPage />} />
           <Route path="/email-exposure" element={<EmailBreachCheckPage />} />
           <Route path="/username-search-tools" element={<UsernameSearchToolsPage />} />
