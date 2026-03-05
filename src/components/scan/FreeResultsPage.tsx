@@ -76,7 +76,7 @@ import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
 import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
 import { ExposureReducedBadge } from '@/components/results/ExposureStatusSelector';
-import { calculateExposureScore } from '@/lib/exposureScore';
+import { calculateExposureScore, type ExposureLevel } from '@/lib/exposureScore';
 import { calculateExposureReductionScore } from '@/lib/exposureReductionScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import type { Finding } from '@/lib/ufm';
