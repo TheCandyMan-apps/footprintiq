@@ -81,12 +81,31 @@ interface ArticleSchema {
   keywords?: string;
 }
 
+/**
+ * Strip query parameters from a URL to produce a clean canonical.
+ * Keeps protocol + host + pathname only.
+ */
+function stripQueryParams(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`.replace(/\/$/, "") || u.origin;
+  } catch {
+    // If it's a relative path, just strip ?…
+    return url.split("?")[0].split("#")[0];
+  }
+}
+
 interface SEOProps {
   title?: string;
   description?: string;
   canonical?: string;
   ogImage?: string;
   ogType?: string;
+  /**
+   * When true, adds <meta name="robots" content="noindex,nofollow" />.
+   * Use for private, user-specific, or scan-result pages.
+   */
+  noindex?: boolean;
   article?: {
     publishedTime?: string;
     modifiedTime?: string;
