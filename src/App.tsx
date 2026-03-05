@@ -434,11 +434,15 @@ const queryClient = new QueryClient({
 function AppContent() {
   return (
     <ActiveScanProvider>
-      <Toaster />
-      <Sonner />
+      <Suspense fallback={null}>
+        <Toaster />
+        <Sonner />
+      </Suspense>
       <BrowserRouter>
         <RouterContent />
-        <FloatingProgressTracker />
+        <Suspense fallback={null}>
+          <FloatingProgressTracker />
+        </Suspense>
       </BrowserRouter>
     </ActiveScanProvider>
   );
@@ -494,10 +498,12 @@ function RouterContent() {
   return (
     <>
       <SkipLink />
-      <GlobalSearch />
-      <PWAInstallPrompt />
-      <MobileCTABar />
-      <ProUnlockWrapper />
+      <Suspense fallback={null}>
+        <GlobalSearch />
+        <PWAInstallPrompt />
+        <MobileCTABar />
+        <ProUnlockWrapper />
+      </Suspense>
       <Suspense fallback={<LoadingState />}>
         <PageTransition>
           <Routes>
@@ -923,7 +929,9 @@ function RouterContent() {
               </Routes>
             </PageTransition>
             </Suspense>
-            <CookieConsent />
+            <Suspense fallback={null}>
+              <CookieConsent />
+            </Suspense>
           </>
   );
 }
