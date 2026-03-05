@@ -234,6 +234,8 @@ export const researchRoutes: SitemapEntry[] = [
 
 // ── Datasets / Blog ───────────────────────────────────
 export const datasetRoutes: SitemapEntry[] = [
+  // Authority cluster dataset
+  { path: "/datasets/username-reuse", lastmod: BUILD_DATE },
   { path: "/blog", lastmod: BUILD_DATE, priority: 0.7 },
   { path: "/blog/ai-in-osint-2025", lastmod: BUILD_DATE },
   { path: "/blog/osint-ai-era-2026", lastmod: BUILD_DATE },
@@ -294,6 +296,7 @@ export const aiAnswerRoutes: SitemapEntry[] = [
   { path: "/ai-answers/what-is-an-identity-risk-score", lastmod: BUILD_DATE },
   { path: "/ai-answers/does-osint-include-dark-web-data", lastmod: BUILD_DATE },
   { path: "/ai-answers/instagram-username-osint", lastmod: BUILD_DATE },
+  { path: "/ai-answers/how-investigators-trace-usernames", lastmod: BUILD_DATE },
   { path: "/ai", lastmod: BUILD_DATE },
   { path: "/ai/digital-exposure", lastmod: BUILD_DATE },
   { path: "/ai/digital-footprint", lastmod: BUILD_DATE },
