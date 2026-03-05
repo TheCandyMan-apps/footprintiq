@@ -6,6 +6,9 @@ import { PLATFORM_SCHEMA_DESCRIPTION, PLATFORM_META_DESCRIPTION } from "@/lib/pl
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
+import { HomepageResultPreview } from "@/components/HomepageResultPreview";
+import { HomepageEducational } from "@/components/HomepageEducational";
+import { HomepageSEOLinks } from "@/components/HomepageSEOLinks";
 import { TrustSignals } from "@/components/TrustSignals";
 import { WhatYouCanDiscover } from "@/components/WhatYouCanDiscover";
 import { WhatWeDoSection } from "@/components/WhatWeDoSection";
