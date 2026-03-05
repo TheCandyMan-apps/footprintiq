@@ -182,6 +182,10 @@ export const guideRoutes: SitemapEntry[] = [
 // ── Glossary / Educational ─────────────────────────────
 export const glossaryRoutes: SitemapEntry[] = [
   { path: "/digital-privacy-glossary", lastmod: BUILD_DATE, priority: 0.7 },
+  // Authority cluster glossary pages
+  { path: "/glossary/username-osint", lastmod: BUILD_DATE },
+  { path: "/glossary/digital-footprint", lastmod: BUILD_DATE },
+  { path: "/glossary/data-broker", lastmod: BUILD_DATE },
   { path: "/what-is-a-digital-footprint", lastmod: BUILD_DATE },
   { path: "/what-is-osint", lastmod: BUILD_DATE },
   { path: "/digital-exposure-risk-explained", lastmod: BUILD_DATE },
