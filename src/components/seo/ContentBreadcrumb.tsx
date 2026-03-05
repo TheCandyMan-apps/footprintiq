@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { JsonLd } from "./JsonLd";
+import { CANONICAL_BASE } from "@/lib/seo/sitemapRoutes";
 
 export interface BreadcrumbItem {
   label: string;
@@ -14,6 +15,8 @@ interface ContentBreadcrumbProps {
 
 /**
  * Breadcrumb UI + BreadcrumbList JSON-LD for content pages.
+ * Uses CANONICAL_BASE for absolute URLs in JSON-LD (no window.location dependency).
+ *
  * Usage:
  *   <ContentBreadcrumb items={[
  *     { label: "Home", href: "/" },
@@ -22,8 +25,6 @@ interface ContentBreadcrumbProps {
  *   ]} />
  */
 export function ContentBreadcrumb({ items }: ContentBreadcrumbProps) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://footprintiq.app";
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -31,7 +32,7 @@ export function ContentBreadcrumb({ items }: ContentBreadcrumbProps) {
       "@type": "ListItem",
       position: i + 1,
       name: item.label,
-      ...(item.href ? { item: `${origin}${item.href}` } : {}),
+      ...(item.href ? { item: `${CANONICAL_BASE}${item.href}` } : {}),
     })),
   };
 

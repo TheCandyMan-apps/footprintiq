@@ -159,6 +159,7 @@ export const SEO = ({
 }: SEOProps) => {
   // Always strip query params from canonical URLs
   const cleanCanonical = stripQueryParams(canonical);
+
   // Default structured data - only used if no schema or structuredData is provided
   const defaultStructuredData = {
     "@context": "https://schema.org",

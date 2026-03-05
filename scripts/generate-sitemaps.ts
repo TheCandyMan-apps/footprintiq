@@ -2,9 +2,13 @@
  * Build-time sitemap generator.
  * Run: npx tsx scripts/generate-sitemaps.ts
  * Outputs static XML files to public/ so they're served at root.
+ *
+ * Hooked into the build via package.json "prebuild" script.
  */
-import { writeFileSync } from "fs";
-import { resolve } from "path";
+import { writeFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
   buildSitemapXml,
   buildSitemapIndexXml,
@@ -15,7 +19,10 @@ import {
   datasetRoutes,
   aiAnswerRoutes,
   staticRoutes,
-} from "../src/lib/seo/sitemapRoutes";
+} from "../src/lib/seo/sitemapRoutes.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const out = (name: string, content: string) => {
   const p = resolve(__dirname, "../public", name);

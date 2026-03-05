@@ -8,22 +8,16 @@ Disallow: /settings
 Disallow: /auth
 Disallow: /api
 Disallow: /api-keys
+Disallow: /scan
+Disallow: /results/
 Disallow: /my-tickets
-Disallow: /scan-analytics
 Disallow: /reports
 Disallow: /cases
 Disallow: /security
-Disallow: /billing
 Disallow: /analyst
 Disallow: /graph
 Disallow: /workflows
 Disallow: /subscription
-Disallow: /notifications
-Disallow: /results/
-Disallow: /scan/usernames/
-Disallow: /scan/emails/
-Disallow: /scan/phones/
-Disallow: /maigret/results/
 Disallow: /share/
 Disallow: /clients/
 Disallow: /onboarding
@@ -60,13 +54,13 @@ Disallow: /search
 Disallow: /ai-analyst
 Disallow: /assistant
 Disallow: /404
-
-# Block URLs with tracking/query parameters
-Disallow: /*?utm_*
-Disallow: /*?ref=*
-Disallow: /*?fbclid=*
-Disallow: /*?gclid=*
-Disallow: /*?mc_*
+Disallow: /maigret/results/
+Disallow: /maigret/debug
+Disallow: /maigret/self-test
+Disallow: /scan/usernames/
+Disallow: /scan/emails/
+Disallow: /scan/phones/
+Disallow: /billing
 
 Sitemap: https://footprintiq.app/sitemap.xml
 
