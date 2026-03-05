@@ -580,7 +580,8 @@ function RouterContent() {
           <Route path="/digital-exposure-risk-explained" element={<DigitalExposureRiskExplained />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
-          <Route path="/usernames" element={<UsernamePage />} />
+           <Route path="/tools" element={<Tools />} />
+           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/username-search" element={<UsernameSearchSEOPage />} />
           <Route path="/email-breach-check" element={<EmailBreachCheckPage />} />
           <Route path="/email-exposure" element={<EmailBreachCheckPage />} />
