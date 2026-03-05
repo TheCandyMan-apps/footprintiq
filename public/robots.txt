@@ -1,11 +1,14 @@
 User-agent: *
 Allow: /
-Disallow: /dashboard
-Disallow: /my-tickets
-Disallow: /results/
-Disallow: /auth
-Disallow: /settings
+
+# Private / authenticated routes
 Disallow: /admin
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /auth
+Disallow: /api
+Disallow: /api-keys
+Disallow: /my-tickets
 Disallow: /scan-analytics
 Disallow: /reports
 Disallow: /cases
@@ -16,11 +19,56 @@ Disallow: /graph
 Disallow: /workflows
 Disallow: /subscription
 Disallow: /notifications
+Disallow: /results/
+Disallow: /scan/usernames/
+Disallow: /scan/emails/
+Disallow: /scan/phones/
+Disallow: /maigret/results/
+Disallow: /share/
+Disallow: /clients/
+Disallow: /onboarding
+Disallow: /preferences
+Disallow: /workspace
+Disallow: /workspaces
+Disallow: /workspace-management
+Disallow: /organization
+Disallow: /teams
+Disallow: /monitoring
+Disallow: /watchlists
+Disallow: /anomaly-history
+Disallow: /intelligence
+Disallow: /ops
+Disallow: /embed
+Disallow: /embed-widget
+Disallow: /embed/widget
+Disallow: /timeline
+Disallow: /referrals
+Disallow: /evidence-pack
+Disallow: /buy-credits
+Disallow: /agents
+Disallow: /automation
+Disallow: /insights
+Disallow: /persona-resolver
+Disallow: /threat-forecast
+Disallow: /threat-intel
+Disallow: /compliance
+Disallow: /sovereignty
+Disallow: /predictive-analytics
+Disallow: /context-enrichment
+Disallow: /analytics
+Disallow: /search
+Disallow: /ai-analyst
+Disallow: /assistant
+Disallow: /404
+
+# Block URLs with tracking/query parameters
+Disallow: /*?utm_*
+Disallow: /*?ref=*
+Disallow: /*?fbclid=*
+Disallow: /*?gclid=*
+Disallow: /*?mc_*
 
 Sitemap: https://footprintiq.app/sitemap.xml
-
-# IndexNow for instant search engine notifications
-# Key file: https://footprintiq.app/c0cc39aa52a04aeca5ef190b51e994b6.txt
 
 # Allow common search engine bots
 User-agent: Googlebot

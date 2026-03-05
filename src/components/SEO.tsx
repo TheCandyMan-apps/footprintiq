@@ -81,12 +81,32 @@ interface ArticleSchema {
   keywords?: string;
 }
 
+/**
+ * Strip query parameters from a URL to produce a clean canonical.
+ * Keeps protocol + host + pathname only.
+ */
+function stripQueryParams(url: string): string {
+  try {
+    const u = new URL(url);
+    // Keep trailing slash only for root path
+    const path = u.pathname === "/" ? "/" : u.pathname.replace(/\/$/, "");
+    return `${u.origin}${path}`;
+  } catch {
+    return url.split("?")[0].split("#")[0];
+  }
+}
+
 interface SEOProps {
   title?: string;
   description?: string;
   canonical?: string;
   ogImage?: string;
   ogType?: string;
+  /**
+   * When true, adds <meta name="robots" content="noindex,nofollow" />.
+   * Use for private, user-specific, or scan-result pages.
+   */
+  noindex?: boolean;
   article?: {
     publishedTime?: string;
     modifiedTime?: string;
@@ -132,10 +152,13 @@ export const SEO = ({
   canonical = "https://footprintiq.app/",
   ogImage = "https://footprintiq.app/og-image.jpg",
   ogType = "website",
+  noindex = false,
   article,
   schema,
   structuredData,
 }: SEOProps) => {
+  // Always strip query params from canonical URLs
+  const cleanCanonical = stripQueryParams(canonical);
   // Default structured data - only used if no schema or structuredData is provided
   const defaultStructuredData = {
     "@context": "https://schema.org",
@@ -184,11 +207,14 @@ export const SEO = ({
       <title>{title}</title>
       <meta name="title" content={title} />
       <meta name="description" content={description} />
-      <link rel="canonical" href={canonical} />
+      <link rel="canonical" href={cleanCanonical} />
+
+      {/* Indexing control */}
+      {noindex && <meta name="robots" content="noindex,nofollow" />}
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />
-      <meta property="og:url" content={canonical} />
+      <meta property="og:url" content={cleanCanonical} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={ogImage} />
@@ -217,7 +243,7 @@ export const SEO = ({
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:url" content={canonical} />
+      <meta name="twitter:url" content={cleanCanonical} />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
