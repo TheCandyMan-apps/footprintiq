@@ -815,10 +815,10 @@ function RouterContent() {
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
              <Route path="/best-osint-tools" element={<BestOsintTools />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
-              <Route path="/comparisons/pimeyes-alternative" element={<PimeyesAlternative />} />
+              <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
               <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
-              <Route path="/comparisons/sherlock-vs-footprintiq" element={<SherlockVsFootprintiq />} />
+              <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
                <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
                <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
                <Route path="/best-online-privacy-scanner" element={<BestOnlinePrivacyScanner />} />
