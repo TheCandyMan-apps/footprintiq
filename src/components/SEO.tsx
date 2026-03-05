@@ -206,11 +206,14 @@ export const SEO = ({
       <title>{title}</title>
       <meta name="title" content={title} />
       <meta name="description" content={description} />
-      <link rel="canonical" href={canonical} />
+      <link rel="canonical" href={cleanCanonical} />
+
+      {/* Indexing control */}
+      {noindex && <meta name="robots" content="noindex,nofollow" />}
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />
-      <meta property="og:url" content={canonical} />
+      <meta property="og:url" content={cleanCanonical} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={ogImage} />
