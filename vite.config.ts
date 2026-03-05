@@ -128,8 +128,15 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router')) {
+            return 'react-vendor';
+          }
+          // Consolidate all lucide-react icon chunks into one bundle
+          // to eliminate 4th-level chain depth from individual ~1KB icon files
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'lucide-icons';
+          }
         },
       },
     },
