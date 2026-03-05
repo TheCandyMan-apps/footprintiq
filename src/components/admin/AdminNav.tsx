@@ -210,6 +210,16 @@ export function AdminNav() {
         },
       ],
     },
+    {
+      title: 'SEO',
+      items: [
+        {
+          title: 'SEO Debug',
+          path: '/seo-debug',
+          icon: Search,
+        },
+      ],
+    },
   ];
 
   return (
