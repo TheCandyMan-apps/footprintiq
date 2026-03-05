@@ -138,7 +138,7 @@ export function PlatformUsernameSearchTemplate({ entry }: Props) {
             <ul className="space-y-3">
               {entry.limitations.map((item, i) => (
                 <li key={i} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card">
-                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                   <span className="text-sm text-muted-foreground">{item}</span>
                 </li>
               ))}

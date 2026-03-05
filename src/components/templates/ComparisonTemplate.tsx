@@ -105,7 +105,7 @@ export function ComparisonTemplate({ entry }: Props) {
               <ul className="space-y-2">
                 {entry.pros.map((pro, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     {pro}
                   </li>
                 ))}
