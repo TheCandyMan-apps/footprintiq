@@ -187,7 +187,8 @@ export function calculateExposureScore(findings: Finding[]): ExposureScoreResult
   const bucketMap: Record<string, { score: number; evidence: Finding[] }> = {
     public_profiles: profile,
     identifier_reuse: reuse,
-    data_broker: { score: 0, evidence: [] }, // Not scored in surface-area model
+    cross_platform: reuse, // cross-platform correlations derive from same reuse signal
+    public_identity: profile, // public identity indicators derive from profile presence
     breach_association: breach,
     metadata_signals: severity,
   };
