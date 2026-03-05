@@ -114,10 +114,34 @@ export function useLensPreview(): UseLensPreviewReturn {
       });
 
       if (error) {
+        // Handle 403 "already used" — sync local state and show upgrade prompt
+        try {
+          const errBody = JSON.parse(await (error as any).context?.text?.() ?? '{}');
+          if (errBody?.error?.includes?.('already used')) {
+            setHasUsedPreview(true);
+            toast({
+              title: 'Preview already used',
+              description: 'Upgrade to Pro for unlimited LENS verifications.',
+              variant: 'default',
+            });
+            return null;
+          }
+        } catch {
+          // couldn't parse body — fall through to generic error
+        }
         throw new Error(error.message || 'Verification failed');
       }
 
       if (data?.error) {
+        if (typeof data.error === 'string' && data.error.includes('already used')) {
+          setHasUsedPreview(true);
+          toast({
+            title: 'Preview already used',
+            description: 'Upgrade to Pro for unlimited LENS verifications.',
+            variant: 'default',
+          });
+          return null;
+        }
         throw new Error(data.error);
       }
 
