@@ -61,7 +61,10 @@ export const TrustSignals = () => {
           <img 
             src={scamadviserLogo} 
             alt="Verified by ScamAdviser" 
+            width="77"
+            height="24"
             className="h-6 w-auto"
+            loading="lazy"
           />
         </a>
       </div>
