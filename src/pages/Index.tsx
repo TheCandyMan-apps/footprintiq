@@ -7,9 +7,9 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 
-// Above-fold: eager
-import { HomepageResultPreview } from "@/components/HomepageResultPreview";
-import { HomepageEducational } from "@/components/HomepageEducational";
+// Below-fold on mobile (hero is 80svh): lazy-loaded for LCP
+const HomepageResultPreview = lazy(() => import("@/components/HomepageResultPreview").then(m => ({ default: m.HomepageResultPreview })));
+const HomepageEducational = lazy(() => import("@/components/HomepageEducational").then(m => ({ default: m.HomepageEducational })));
 
 // Below-fold: lazy-loaded to reduce initial JS and improve FCP
 const WhatYouCanDiscover = lazy(() => import("@/components/WhatYouCanDiscover").then(m => ({ default: m.WhatYouCanDiscover })));
