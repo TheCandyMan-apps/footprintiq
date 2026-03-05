@@ -186,7 +186,7 @@ export default function UsernameSearchPage() {
               <p>
                 This reuse pattern is why a single username can serve as a powerful entry point for mapping someone's entire digital footprint. Learn more about{" "}
                 <Link to="/what-can-a-username-reveal" className="text-primary hover:underline">what a username can reveal</Link>, or explore our guide on{" "}
-                <Link to="/where-is-this-username-used" className="text-primary hover:underline">where a username is used</Link> across the web.
+                <Link to="/check-username-across-platforms" className="text-primary hover:underline">checking a username across platforms</Link>.
               </p>
             </div>
           </div>

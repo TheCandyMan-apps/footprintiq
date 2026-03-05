@@ -284,7 +284,9 @@ const CheckMyDigitalFootprint = () => {
               ))}
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              FootprintIQ uses ethical, publicly accessible OSINT methods — no accounts are accessed, no passwords are required, and no platforms are notified during a scan. Results include confidence scores so you can evaluate the reliability of every finding before taking action. For a deeper dive into how <Link to="/how-username-reuse-exposes-you-online" className="text-primary hover:underline">username reuse creates exposure risks</Link>, see our companion guide.
+              FootprintIQ uses ethical, publicly accessible OSINT methods — no accounts are accessed, no passwords are required, and no platforms are notified during a scan. Results include confidence scores so you can evaluate the reliability of every finding before taking action. For a deeper dive into how <Link to="/how-username-reuse-exposes-you-online" className="text-primary hover:underline">username reuse creates exposure risks</Link>, see our companion guide. You can also run a{" "}
+              <Link to="/username-search" className="text-primary hover:underline">username search</Link> to find profiles linked to a specific handle, or use our{" "}
+              <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link> to trace connected accounts.
             </p>
           </div>
         </section>
@@ -368,7 +370,9 @@ const CheckMyDigitalFootprint = () => {
               Each additional platform sharing the same username exponentially increases your exposure surface. A breach on one platform doesn't just compromise that account — it potentially exposes every other service where you've used the same identifier. Attackers routinely use username enumeration tools to map these connections and identify high-value targets. As detailed in our <Link to="/research/username-reuse-report-2026#risk-distribution" className="text-primary hover:underline">exposure report</Link>, <strong>58% of username-linked accounts</strong> contain profile data that is five years old or older — yet this stale data remains fully indexed and aggregatable.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              FootprintIQ's <Link to="/instagram-username-search-tool" className="text-primary hover:underline">Instagram username search tool</Link> and cross-platform scanning reveal exactly how many services share your identifier — giving you the visibility needed to break these correlation chains. Read our full analysis on <Link to="/how-username-reuse-exposes-you-online" className="text-primary hover:underline">how username reuse exposes you online</Link>.
+              FootprintIQ's <Link to="/instagram-username-search-tool" className="text-primary hover:underline">Instagram username search tool</Link> and cross-platform scanning reveal exactly how many services share your identifier — giving you the visibility needed to break these correlation chains. Read our full analysis on <Link to="/how-username-reuse-exposes-you-online" className="text-primary hover:underline">how username reuse exposes you online</Link>, or explore how investigators{" "}
+              <Link to="/find-someone-by-username" className="text-primary hover:underline">find someone by username</Link> across platforms. You can also{" "}
+              <Link to="/check-username-across-platforms" className="text-primary hover:underline">check a username across platforms</Link> to see where a specific handle appears.
             </p>
           </div>
         </section>

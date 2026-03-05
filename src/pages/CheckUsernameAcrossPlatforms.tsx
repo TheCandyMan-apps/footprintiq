@@ -231,7 +231,9 @@ export default function CheckUsernameAcrossPlatforms() {
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold mb-6">What Platforms Get Checked?</h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              FootprintIQ's platform database covers 500+ sites across multiple categories:
+              FootprintIQ's platform database covers 500+ sites across multiple categories. You can also use our{" "}
+              <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link> to trace connected accounts, or{" "}
+              <Link to="/find-someone-by-username" className="text-primary hover:underline">find someone by username</Link> to understand how investigators map identities:
             </p>
             <div className="grid sm:grid-cols-2 gap-4">
               {[
@@ -261,7 +263,8 @@ export default function CheckUsernameAcrossPlatforms() {
                   <p className="font-semibold text-foreground mb-1">Ethical Usage</p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     FootprintIQ is designed for self-assessment and authorised investigations only. Only check usernames you own or have explicit permission to investigate. Using username search results for harassment, stalking, doxxing, or unauthorised profiling is illegal and violates our{" "}
-                    <Link to="/ethical-osint-charter" className="text-accent hover:underline">Ethical OSINT Charter</Link>.
+                    <Link to="/ethical-osint-charter" className="text-accent hover:underline">Ethical OSINT Charter</Link>. Want to understand your broader online exposure? Try our{" "}
+                    <Link to="/check-my-digital-footprint" className="text-accent hover:underline">digital footprint checker</Link>.
                   </p>
                 </div>
               </div>

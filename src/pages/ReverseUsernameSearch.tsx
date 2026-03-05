@@ -509,6 +509,9 @@ const ReverseUsernameSearch = () => {
                   <Link to="/digital-footprint-check" className="text-primary hover:underline flex items-center gap-1 text-sm">
                     Run a digital footprint scan <ArrowRight className="h-3 w-3" />
                   </Link>
+                  <Link to="/find-someone-by-username" className="text-primary hover:underline flex items-center gap-1 text-sm">
+                    Find profiles by username <ArrowRight className="h-3 w-3" />
+                  </Link>
                   <Link to="/find-social-media-accounts" className="text-primary hover:underline flex items-center gap-1 text-sm">
                     Find social media accounts <ArrowRight className="h-3 w-3" />
                   </Link>
@@ -551,7 +554,9 @@ const ReverseUsernameSearch = () => {
               <div className="max-w-4xl mx-auto">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Related Searches</h3>
                 <div className="flex flex-wrap gap-3">
-                  <Button asChild variant="ghost" size="sm"><Link to="/usernames">Username Search Tool</Link></Button>
+                  <Button asChild variant="ghost" size="sm"><Link to="/username-search">Username Search</Link></Button>
+                  <Button asChild variant="ghost" size="sm"><Link to="/check-username-across-platforms">Check Username Across Platforms</Link></Button>
+                  <Button asChild variant="ghost" size="sm"><Link to="/check-my-digital-footprint">Check Digital Footprint</Link></Button>
                   <Button asChild variant="ghost" size="sm"><Link to="/instagram-username-search">Instagram Username Search</Link></Button>
                   <Button asChild variant="ghost" size="sm"><Link to="/find-social-media-accounts">Find Social Media Accounts</Link></Button>
                   <Button asChild variant="ghost" size="sm"><Link to="/guides/how-username-search-tools-work">How Username Search Works</Link></Button>
