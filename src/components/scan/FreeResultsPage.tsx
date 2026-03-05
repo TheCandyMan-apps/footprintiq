@@ -74,6 +74,7 @@ import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
+import { PlatformExposureRanking, derivePlatformRisk } from '@/components/results/PlatformExposureRanking';
 import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
 import { ExposureReducedBadge } from '@/components/results/ExposureStatusSelector';
 import { calculateExposureScore, type ExposureLevel } from '@/lib/exposureScore';
@@ -208,6 +209,20 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
     </>
   );
 }
+
+/** Internal helper to render Platform Exposure Ranking */
+function PlatformExposureRankingSection({ results, isPro, onUpgradeClick }: { results: ScanResult[]; isPro: boolean; onUpgradeClick: () => void }) {
+  const platforms = useMemo(() => derivePlatformRisk(results as any[]), [results]);
+  if (platforms.length === 0) return null;
+  return (
+    <PlatformExposureRanking
+      platforms={platforms}
+      isPro={isPro}
+      onUpgradeClick={onUpgradeClick}
+    />
+  );
+}
+
 
 /** Exposure Reduction Score™ for Free users (score only, locked trends) */
 function FreeReductionScore({ results, onUpgradeClick }: { results: ScanResult[]; onUpgradeClick: () => void }) {
