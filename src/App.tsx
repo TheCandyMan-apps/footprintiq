@@ -1,12 +1,8 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { CookieConsent } from "@/components/consent/CookieConsent";
 import { ThemeProvider } from "next-themes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { GlobalSearch } from "@/components/GlobalSearch";
 import { SkipLink } from "@/components/SkipLink";
 import { lazy, Suspense, useEffect } from "react";
 import { LoadingState } from "@/components/LoadingState";
@@ -16,18 +12,24 @@ import { useGoogleAnalytics } from "@/hooks/useGoogleAnalytics";
 import { useTheme } from "next-themes";
 import { HelmetProvider } from 'react-helmet-async';
 import { PageTransition } from "@/components/PageTransition";
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
-import { MobileCTABar } from "@/components/MobileCTABar";
-import { FloatingProgressTracker } from "@/components/FloatingProgressTracker";
 import { ActiveScanProvider } from "@/contexts/ActiveScanContext";
-import { ProUnlockWrapper } from "@/components/billing/ProUnlockWrapper";
 import "@/lib/config"; // Validate env at boot
+
+// Deferred UI components (not needed for first paint)
+const Toaster = lazy(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster })));
+const Sonner = lazy(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster })));
+const CookieConsent = lazy(() => import("@/components/consent/CookieConsent").then(m => ({ default: m.CookieConsent })));
+const GlobalSearch = lazy(() => import("@/components/GlobalSearch").then(m => ({ default: m.GlobalSearch })));
+const PWAInstallPrompt = lazy(() => import("@/components/PWAInstallPrompt").then(m => ({ default: m.PWAInstallPrompt })));
+const MobileCTABar = lazy(() => import("@/components/MobileCTABar").then(m => ({ default: m.MobileCTABar })));
+const FloatingProgressTracker = lazy(() => import("@/components/FloatingProgressTracker").then(m => ({ default: m.FloatingProgressTracker })));
+const ProUnlockWrapper = lazy(() => import("@/components/billing/ProUnlockWrapper").then(m => ({ default: m.ProUnlockWrapper })));
 
 // Critical pages (loaded immediately for LCP optimization)
 import Index from "./pages/Index";
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-import NotFound from "./pages/NotFound";
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy-loaded pages (loaded on demand)
 const ScanPage = lazy(() => import("./pages/ScanPage"));
@@ -432,11 +434,15 @@ const queryClient = new QueryClient({
 function AppContent() {
   return (
     <ActiveScanProvider>
-      <Toaster />
-      <Sonner />
+      <Suspense fallback={null}>
+        <Toaster />
+        <Sonner />
+      </Suspense>
       <BrowserRouter>
         <RouterContent />
-        <FloatingProgressTracker />
+        <Suspense fallback={null}>
+          <FloatingProgressTracker />
+        </Suspense>
       </BrowserRouter>
     </ActiveScanProvider>
   );
@@ -492,10 +498,12 @@ function RouterContent() {
   return (
     <>
       <SkipLink />
-      <GlobalSearch />
-      <PWAInstallPrompt />
-      <MobileCTABar />
-      <ProUnlockWrapper />
+      <Suspense fallback={null}>
+        <GlobalSearch />
+        <PWAInstallPrompt />
+        <MobileCTABar />
+        <ProUnlockWrapper />
+      </Suspense>
       <Suspense fallback={<LoadingState />}>
         <PageTransition>
           <Routes>
@@ -921,7 +929,9 @@ function RouterContent() {
               </Routes>
             </PageTransition>
             </Suspense>
-            <CookieConsent />
+            <Suspense fallback={null}>
+              <CookieConsent />
+            </Suspense>
           </>
   );
 }
