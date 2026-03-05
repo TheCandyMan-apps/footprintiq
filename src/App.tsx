@@ -442,6 +442,7 @@ const PlatformPage = lazy(() => import("./pages/platforms/PlatformPage"));
 const ComparisonDetailPage = lazy(() => import("./pages/comparisons/ComparisonPage"));
 const TopicPage = lazy(() => import("./pages/topics/TopicPage"));
 const FAQPage = lazy(() => import("./pages/faq/FAQPage"));
+const SeoDebugPage = lazy(() => import("./pages/seo/SeoDebugPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
