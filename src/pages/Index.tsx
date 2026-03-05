@@ -6,6 +6,9 @@ import { PLATFORM_SCHEMA_DESCRIPTION, PLATFORM_META_DESCRIPTION } from "@/lib/pl
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
+import { HomepageResultPreview } from "@/components/HomepageResultPreview";
+import { HomepageEducational } from "@/components/HomepageEducational";
+import { HomepageSEOLinks } from "@/components/HomepageSEOLinks";
 import { TrustSignals } from "@/components/TrustSignals";
 import { WhatYouCanDiscover } from "@/components/WhatYouCanDiscover";
 import { WhatWeDoSection } from "@/components/WhatWeDoSection";
@@ -54,13 +57,8 @@ export default function Home() {
     }
   }, [navigate]);
 
-  const handleStartScan = () => {
-    navigate('/scan');
-  };
 
-  const handleAdvancedScan = () => {
-    navigate('/scan');
-  };
+
 
   const softwareAppSchema = {
     "@context": "https://schema.org",
@@ -162,9 +160,15 @@ export default function Home() {
       <Header />
       
       {/* Hero - Above fold, priority render */}
-      <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
+      <Hero />
       
-      {/* Below fold sections - use content-visibility for LCP optimization */}
+      {/* Result preview - immediately below hero */}
+      <HomepageResultPreview />
+      
+      {/* Educational content */}
+      <HomepageEducational />
+      
+      {/* Below fold sections */}
       <div className="below-fold">
         <WhatYouCanDiscover />
       </div>
@@ -254,6 +258,7 @@ export default function Home() {
       </div>
       
       <ResponsibleUsePledge />
+      <HomepageSEOLinks />
       <FloatingCTA />
       <ScrollToTop />
       <Footer />
