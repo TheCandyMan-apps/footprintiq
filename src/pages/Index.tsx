@@ -1,45 +1,51 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO, organizationSchema } from "@/components/SEO";
 import { PLATFORM_SCHEMA_DESCRIPTION, PLATFORM_META_DESCRIPTION } from "@/lib/platformDescription";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
+
+// Above-fold: eager
 import { HomepageResultPreview } from "@/components/HomepageResultPreview";
 import { HomepageEducational } from "@/components/HomepageEducational";
-import { HomepageSEOLinks } from "@/components/HomepageSEOLinks";
-import { TrustSignals } from "@/components/TrustSignals";
-import { WhatYouCanDiscover } from "@/components/WhatYouCanDiscover";
-import { WhatWeDoSection } from "@/components/WhatWeDoSection";
-import { HowItWorks } from "@/components/HowItWorks";
-import { WhyChooseUs } from "@/components/WhyChooseUs";
-import { WhatWeAre } from "@/components/WhatWeAre";
-import { WhoItsFor } from "@/components/WhoItsFor";
-import { ProductEntryPoints } from "@/components/ProductEntryPoints";
-import { FreeVsPro } from "@/components/FreeVsPro";
-import { SampleReportPreview } from "@/components/SampleReportPreview";
-import { WhyItMatters } from "@/components/WhyItMatters";
-import { TrustTransparency } from "@/components/TrustTransparency";
-import { FinalCTA } from "@/components/FinalCTA";
-import { FAQ } from "@/components/FAQ";
+
+// Below-fold: lazy-loaded to reduce initial JS and improve FCP
+const WhatYouCanDiscover = lazy(() => import("@/components/WhatYouCanDiscover").then(m => ({ default: m.WhatYouCanDiscover })));
+const TrustSignals = lazy(() => import("@/components/TrustSignals").then(m => ({ default: m.TrustSignals })));
+const WhatWeDoSection = lazy(() => import("@/components/WhatWeDoSection").then(m => ({ default: m.WhatWeDoSection })));
+const PlatformCapabilities = lazy(() => import("@/components/PlatformCapabilities").then(m => ({ default: m.PlatformCapabilities })));
+const ExposureIntelligenceSection = lazy(() => import("@/components/ExposureIntelligenceSection").then(m => ({ default: m.ExposureIntelligenceSection })));
+const HowItWorks = lazy(() => import("@/components/HowItWorks").then(m => ({ default: m.HowItWorks })));
+const WhyChooseUs = lazy(() => import("@/components/WhyChooseUs").then(m => ({ default: m.WhyChooseUs })));
+const CategoryComparisonStrip = lazy(() => import("@/components/CategoryComparisonStrip").then(m => ({ default: m.CategoryComparisonStrip })));
+const WhatWeAre = lazy(() => import("@/components/WhatWeAre").then(m => ({ default: m.WhatWeAre })));
+const WhoItsFor = lazy(() => import("@/components/WhoItsFor").then(m => ({ default: m.WhoItsFor })));
+const EverydayUseCases = lazy(() => import("@/components/EverydayUseCases").then(m => ({ default: m.EverydayUseCases })));
+const ProductEntryPoints = lazy(() => import("@/components/ProductEntryPoints").then(m => ({ default: m.ProductEntryPoints })));
+const FreeVsPro = lazy(() => import("@/components/FreeVsPro").then(m => ({ default: m.FreeVsPro })));
+const SampleReportPreview = lazy(() => import("@/components/SampleReportPreview").then(m => ({ default: m.SampleReportPreview })));
+const TrustTransparency = lazy(() => import("@/components/TrustTransparency").then(m => ({ default: m.TrustTransparency })));
+const WhyItMatters = lazy(() => import("@/components/WhyItMatters").then(m => ({ default: m.WhyItMatters })));
+const FinalCTA = lazy(() => import("@/components/FinalCTA").then(m => ({ default: m.FinalCTA })));
+const DiscoveryToProofSection = lazy(() => import("@/components/DiscoveryToProofSection").then(m => ({ default: m.DiscoveryToProofSection })));
+const FAQ = lazy(() => import("@/components/FAQ").then(m => ({ default: m.FAQ })));
+const ForProfessionals = lazy(() => import("@/components/ForProfessionals").then(m => ({ default: m.ForProfessionals })));
+const ResponsibleUsePledge = lazy(() => import("@/components/ResponsibleUsePledge").then(m => ({ default: m.ResponsibleUsePledge })));
+const HomepageSEOLinks = lazy(() => import("@/components/HomepageSEOLinks").then(m => ({ default: m.HomepageSEOLinks })));
+const FloatingCTA = lazy(() => import("@/components/FloatingCTA").then(m => ({ default: m.FloatingCTA })));
+const ScrollToTop = lazy(() => import("@/components/ScrollToTop").then(m => ({ default: m.ScrollToTop })));
 
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
-import { FloatingCTA } from "@/components/FloatingCTA";
-import { ScrollToTop } from "@/components/ScrollToTop";
-import { PlatformCapabilities } from "@/components/PlatformCapabilities";
-import { ForProfessionals } from "@/components/ForProfessionals";
-import { ExposureIntelligenceSection } from "@/components/ExposureIntelligenceSection";
-import { EverydayUseCases } from "@/components/EverydayUseCases";
-import { ResponsibleUsePledge } from "@/components/ResponsibleUsePledge";
-import { DiscoveryToProofSection } from "@/components/DiscoveryToProofSection";
-import { CategoryComparisonStrip } from "@/components/CategoryComparisonStrip";
+
+// Minimal suspense fallback that doesn't cause CLS
+const SectionFallback = () => <div className="min-h-[200px]" />;
 
 export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Defer auth check to avoid blocking LCP
     const checkAuth = () => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
@@ -48,11 +54,9 @@ export default function Home() {
       });
     };
     
-    // Use requestIdleCallback for non-blocking auth check
     if ('requestIdleCallback' in window) {
       requestIdleCallback(checkAuth, { timeout: 2000 });
     } else {
-      // Fallback: defer with setTimeout
       setTimeout(checkAuth, 100);
     }
   }, [navigate]);
@@ -168,99 +172,103 @@ export default function Home() {
       {/* Educational content */}
       <HomepageEducational />
       
-      {/* Below fold sections */}
-      <div className="below-fold">
-        <WhatYouCanDiscover />
-      </div>
+      {/* Below fold sections - lazy loaded */}
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><WhatYouCanDiscover /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <TrustSignals />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><TrustSignals /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <WhatWeDoSection />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><WhatWeDoSection /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <PlatformCapabilities includeSchema />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><PlatformCapabilities includeSchema /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <ExposureIntelligenceSection />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><ExposureIntelligenceSection /></div>
+      </Suspense>
       
-      <div id="how-it-works" className="below-fold">
-        <HowItWorks />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div id="how-it-works" className="below-fold"><HowItWorks /></div>
+      </Suspense>
       
-      <div id="features" className="below-fold">
-        <WhyChooseUs />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div id="features" className="below-fold"><WhyChooseUs /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <CategoryComparisonStrip />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><CategoryComparisonStrip /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <WhatWeAre />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><WhatWeAre /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <WhoItsFor />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><WhoItsFor /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <EverydayUseCases />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><EverydayUseCases /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <ProductEntryPoints />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><ProductEntryPoints /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <FreeVsPro />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><FreeVsPro /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <SampleReportPreview />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><SampleReportPreview /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <TrustTransparency />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><TrustTransparency /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <WhyItMatters />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><WhyItMatters /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <FinalCTA />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><FinalCTA /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <DiscoveryToProofSection />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><DiscoveryToProofSection /></div>
+      </Suspense>
       
-      <div className="below-fold">
-        <FAQ />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><FAQ /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <ForProfessionals />
-      </div>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold"><ForProfessionals /></div>
+      </Suspense>
 
-      <div className="below-fold">
-        <div className="max-w-3xl mx-auto px-6 pb-12 text-center">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            FootprintIQ is an ethical OSINT platform designed to help individuals understand their public digital footprint. It analyses publicly available information to identify potential account exposure and correlation risks, while emphasising accuracy, transparency, and responsible interpretation.
-          </p>
+      <Suspense fallback={<SectionFallback />}>
+        <div className="below-fold">
+          <div className="max-w-3xl mx-auto px-6 pb-12 text-center">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              FootprintIQ is an ethical OSINT platform designed to help individuals understand their public digital footprint. It analyses publicly available information to identify potential account exposure and correlation risks, while emphasising accuracy, transparency, and responsible interpretation.
+            </p>
+          </div>
         </div>
-      </div>
+      </Suspense>
       
-      <ResponsibleUsePledge />
-      <HomepageSEOLinks />
-      <FloatingCTA />
-      <ScrollToTop />
+      <Suspense fallback={null}>
+        <ResponsibleUsePledge />
+        <HomepageSEOLinks />
+        <FloatingCTA />
+        <ScrollToTop />
+      </Suspense>
       <Footer />
     </>
   );
