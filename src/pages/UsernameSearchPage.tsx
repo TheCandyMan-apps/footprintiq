@@ -155,7 +155,8 @@ export default function UsernameSearchPage() {
               </p>
               <p>
                 Unlike searching on a single platform, a comprehensive username search queries <strong className="text-foreground">hundreds of sites simultaneously</strong>, building a complete map of someone's publicly visible online presence. This is the foundation of{" "}
-                <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link> — starting from a known username and working outward to discover connected identities.
+                <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link> — starting from a known username and working outward to{" "}
+                <Link to="/find-someone-by-username" className="text-primary hover:underline">find someone by username</Link> across connected identities.
               </p>
             </div>
           </div>
@@ -184,7 +185,8 @@ export default function UsernameSearchPage() {
               </p>
               <p>
                 This reuse pattern is why a single username can serve as a powerful entry point for mapping someone's entire digital footprint. Learn more about{" "}
-                <Link to="/what-can-a-username-reveal" className="text-primary hover:underline">what a username can reveal</Link>.
+                <Link to="/what-can-a-username-reveal" className="text-primary hover:underline">what a username can reveal</Link>, or explore our guide on{" "}
+                <Link to="/where-is-this-username-used" className="text-primary hover:underline">where a username is used</Link> across the web.
               </p>
             </div>
           </div>
@@ -286,7 +288,8 @@ export default function UsernameSearchPage() {
 
               <p className="mt-4">
                 This scenario illustrates why username reuse is a significant privacy risk. A single handle can expose far more information than most users realise. Learn about the{" "}
-                <Link to="/guides/username-reuse-risk" className="text-primary hover:underline">risks of username reuse</Link> and how to reduce your exposure.
+                <Link to="/guides/username-reuse-risk" className="text-primary hover:underline">risks of username reuse</Link> and{" "}
+                <Link to="/check-my-digital-footprint" className="text-primary hover:underline">check your own digital footprint</Link> to see what's publicly visible about you.
               </p>
             </div>
           </div>
