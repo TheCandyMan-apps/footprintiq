@@ -88,9 +88,10 @@ interface ArticleSchema {
 function stripQueryParams(url: string): string {
   try {
     const u = new URL(url);
-    return `${u.origin}${u.pathname}`.replace(/\/$/, "") || u.origin;
+    // Keep trailing slash only for root path
+    const path = u.pathname === "/" ? "/" : u.pathname.replace(/\/$/, "");
+    return `${u.origin}${path}`;
   } catch {
-    // If it's a relative path, just strip ?…
     return url.split("?")[0].split("#")[0];
   }
 }
