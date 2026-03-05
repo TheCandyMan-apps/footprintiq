@@ -74,7 +74,9 @@ const sections = [
           <li><strong>Legacy handles</strong> — old usernames that still exist on abandoned accounts</li>
         </ul>
         <p className="mt-3">
-          Even when a person uses different usernames, shared profile photos, similar bios, or overlapping follower networks can link accounts together. The combination of username reuse and public metadata makes it remarkably easy to trace someone's digital presence from a single starting point.
+          Even when a person uses different usernames, shared profile photos, similar bios, or overlapping follower networks can link accounts together. The combination of username reuse and public metadata makes it remarkably easy to trace someone's digital presence from a single starting point. You can run a{" "}
+          <Link to="/username-search" className="text-primary hover:underline">username search</Link> to see this in action, or{" "}
+          <Link to="/check-my-digital-footprint" className="text-primary hover:underline">check your digital footprint</Link> to understand your own exposure.
         </p>
       </>
     ),
@@ -105,7 +107,8 @@ const sections = [
           </li>
         </ol>
         <p className="mt-3">
-          This process — from a single username to a comprehensive identity map — can take minutes with the right tools, or hours when manual verification is required for high-confidence results.
+          This process — from a single username to a comprehensive identity map — can take minutes with the right tools, or hours when manual verification is required for high-confidence results. To see which platforms a specific handle appears on, try our{" "}
+          <Link to="/check-username-across-platforms" className="text-primary hover:underline">cross-platform username checker</Link>.
         </p>
       </>
     ),
