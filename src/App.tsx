@@ -975,9 +975,11 @@ function RouterContent() {
            <Route path="/topics/:slug" element={<TopicPage />} />
 
            {/* FAQ Hub Pages */}
-           <Route path="/faq/:slug" element={<FAQPage />} />
+            <Route path="/faq/:slug" element={<FAQPage />} />
 
-           {/* Legacy comparison redirects */}
+           {/* SEO Debug (admin only, always noindex) */}
+           <Route path="/seo-debug" element={<SeoDebugPage />} />
+
            <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
            <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
 
