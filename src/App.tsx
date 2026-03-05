@@ -109,6 +109,7 @@ const PublicVsPrivateDataOsint = lazy(() => import("./pages/blog/PublicVsPrivate
 const RemoveFromDataBrokersGuide = lazy(() => import("./pages/blog/RemoveFromDataBrokersGuide"));
 const IsFootprintiqDataBroker = lazy(() => import("./pages/blog/IsFootprintiqDataBroker"));
 const AfterHaveIBeenPwned = lazy(() => import("./pages/AfterHaveIBeenPwned"));
+const Tools = lazy(() => import("./pages/Tools"));
 const HowToDeleteFacebookAccount = lazy(() => import("./pages/HowToDeleteFacebookAccount"));
 const DeleteSocialMediaAccounts = lazy(() => import("./pages/DeleteSocialMediaAccounts"));
 const DataBreachCleanupChecklist = lazy(() => import("./pages/DataBreachCleanupChecklist"));
@@ -579,7 +580,8 @@ function RouterContent() {
           <Route path="/digital-exposure-risk-explained" element={<DigitalExposureRiskExplained />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
-          <Route path="/usernames" element={<UsernamePage />} />
+           <Route path="/tools" element={<Tools />} />
+           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/username-search" element={<UsernameSearchSEOPage />} />
           <Route path="/email-breach-check" element={<EmailBreachCheckPage />} />
           <Route path="/email-exposure" element={<EmailBreachCheckPage />} />
