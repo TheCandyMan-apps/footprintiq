@@ -40,7 +40,7 @@
     <!-- Preload LCP image (logo) -->
     <link rel="preload" as="image" href="/logo-dark.png" fetchpriority="high" />
     
-    <!-- Critical CSS -->
+    <!-- Critical CSS – covers above-the-fold layout so browser can paint before full stylesheet -->
     <style>
       @font-face {
         font-family: 'Inter';
@@ -49,10 +49,22 @@
         font-display: swap;
         src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');
       }
-      
+
       /* Critical above-the-fold styles */
-      body { margin: 0; font-family: Inter, system-ui, -apple-system, sans-serif; }
-      #root { min-height: 100vh; }
+      *,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid}
+      html{line-height:1.5;-webkit-text-size-adjust:100%;tab-size:4;font-family:Inter,system-ui,-apple-system,sans-serif}
+      body{margin:0;line-height:inherit;background-color:hsl(0 0% 100%);color:hsl(220 14% 10%);overflow-x:hidden;font-family:Inter,system-ui,-apple-system,sans-serif}
+      #root{min-height:100vh;display:flex;flex-direction:column}
+      /* Header skeleton */
+      header{width:100%;border-bottom:1px solid hsl(220 13% 91%)}
+      /* Hero section placeholder sizing */
+      img{display:block;max-width:100%;height:auto}
+      a{color:inherit;text-decoration:inherit}
+      button,input,select,textarea{font-family:inherit;font-size:100%;font-weight:inherit;line-height:inherit;color:inherit;margin:0;padding:0}
+      button{cursor:pointer;background-color:transparent;background-image:none}
+      /* Dark mode critical overrides */
+      .dark body,.dark{background-color:hsl(224 71% 4%);color:hsl(213 31% 91%)}
+      .dark header{border-color:hsl(215 28% 17%)}
     </style>
     
     <!-- Default meta (overridden by Helmet) -->
