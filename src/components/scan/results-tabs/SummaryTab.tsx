@@ -34,6 +34,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useMessagingScores } from '@/hooks/useMessagingScores';
 import { cn } from '@/lib/utils';
 import { riskBadgeClass, BADGE_SIZE } from '@/lib/badgeStyles';
+import { PlatformExposureRanking, derivePlatformRisk } from '@/components/results/PlatformExposureRanking';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
@@ -444,6 +445,14 @@ export function SummaryTab({
             </ErrorBoundary>
           </div>
         )}
+
+        {/* Platform Exposure Ranking — Pro gets full list with explanations */}
+        {scanComplete && (() => {
+          const rankedPlatforms = derivePlatformRisk(displayResults as any[]);
+          return rankedPlatforms.length > 0 ? (
+            <PlatformExposureRanking platforms={rankedPlatforms} isPro={isFullAccess} />
+          ) : null;
+        })()}
 
         {/* Unified Profiles & Exposure Section */}
         <ProfilesExposureSection
