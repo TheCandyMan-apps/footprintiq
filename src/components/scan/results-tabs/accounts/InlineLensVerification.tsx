@@ -8,7 +8,7 @@
  * - Locks further verification with upgrade prompt
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -23,6 +23,7 @@ import {
 import { useLensPreview, LensConfidenceLevel, LensPreviewResult } from '@/hooks/useLensPreview';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InlineLensVerificationProps {
   profileId: string;
