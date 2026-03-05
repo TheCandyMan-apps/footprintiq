@@ -312,6 +312,21 @@ export const aiAnswerRoutes: SitemapEntry[] = [
   { path: "/ai/what-are-data-brokers", lastmod: BUILD_DATE },
 ];
 
+// ── Topic Hubs ─────────────────────────────────────────
+export const topicHubRoutes: SitemapEntry[] = [
+  { path: "/topics/username-search", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/topics/digital-footprint", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/topics/privacy-removal", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/topics/osint-for-individuals", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/topics/scam-safety", lastmod: BUILD_DATE, priority: 0.8 },
+];
+
+// ── FAQ Hubs ──────────────────────────────────────────
+export const faqHubRoutes: SitemapEntry[] = [
+  { path: "/faq/username-search", lastmod: BUILD_DATE, priority: 0.7 },
+  { path: "/faq/digital-footprint", lastmod: BUILD_DATE, priority: 0.7 },
+];
+
 // ── Static / Marketing pages ───────────────────────────
 export const staticRoutes: SitemapEntry[] = [
   { path: "/pricing", lastmod: BUILD_DATE, priority: 0.8 },
@@ -377,6 +392,8 @@ export function buildSitemapIndexXml(): string {
     "sitemap-research.xml",
     "sitemap-datasets.xml",
     "sitemap-ai-answers.xml",
+    "sitemap-topics.xml",
+    "sitemap-faq.xml",
     "sitemap-static.xml",
   ];
 

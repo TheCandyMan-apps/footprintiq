@@ -12,6 +12,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildSoftwareApplicationSchema, buildFAQSchema, buildBreadcrumbListSchema } from "@/lib/seo/schema";
 import type { ContentEntry } from "@/lib/seo/contentRegistry";
 import { CANONICAL_BASE } from "@/lib/seo/sitemapRoutes";
+import { FeaturedCollections } from "@/components/seo/FeaturedCollections";
+import { getToolSculptedLinks, flattenSculptedLinks } from "@/lib/seo/linkSculpting";
 
 interface ToolLandingTemplateProps {
   entry: ContentEntry;
@@ -182,7 +184,9 @@ export function ToolLandingTemplate({ entry, children }: ToolLandingTemplateProp
             </section>
           )}
 
-          <RelatedLinks paths={entry.related} />
+          <RelatedLinks paths={[...new Set([...entry.related, ...flattenSculptedLinks(getToolSculptedLinks(entry.path), [entry.path, ...entry.related])])]} />
+
+          <FeaturedCollections />
         </div>
       </main>
 

@@ -8,6 +8,8 @@ import { buildArticleSchema, buildFAQSchema, buildBreadcrumbListSchema } from "@
 import type { ContentEntry } from "@/lib/seo/contentRegistry";
 import { CANONICAL_BASE } from "@/lib/seo/sitemapRoutes";
 import { ArrowRight } from "lucide-react";
+import { FeaturedCollections } from "@/components/seo/FeaturedCollections";
+import { getGuideSculptedLinks, flattenSculptedLinks } from "@/lib/seo/linkSculpting";
 
 interface GuideArticleTemplateProps {
   entry: ContentEntry;
@@ -88,7 +90,9 @@ export function GuideArticleTemplate({ entry, children }: GuideArticleTemplatePr
             </section>
           )}
 
-          <RelatedLinks paths={entry.related} />
+          <RelatedLinks paths={[...new Set([...entry.related, ...flattenSculptedLinks(getGuideSculptedLinks(entry.path), [entry.path, ...entry.related])])]} />
+
+          <FeaturedCollections />
         </article>
       </main>
 

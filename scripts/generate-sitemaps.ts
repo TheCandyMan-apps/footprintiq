@@ -18,6 +18,8 @@ import {
   researchRoutes,
   datasetRoutes,
   aiAnswerRoutes,
+  topicHubRoutes,
+  faqHubRoutes,
   staticRoutes,
 } from "../src/lib/seo/sitemapRoutes.js";
 
@@ -37,6 +39,8 @@ out("sitemap-glossary.xml", buildSitemapXml(glossaryRoutes));
 out("sitemap-research.xml", buildSitemapXml(researchRoutes));
 out("sitemap-datasets.xml", buildSitemapXml(datasetRoutes));
 out("sitemap-ai-answers.xml", buildSitemapXml(aiAnswerRoutes));
+out("sitemap-topics.xml", buildSitemapXml(topicHubRoutes));
+out("sitemap-faq.xml", buildSitemapXml(faqHubRoutes));
 out("sitemap-static.xml", buildSitemapXml(staticRoutes));
 
 console.log("\nAll sitemaps generated.");

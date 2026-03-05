@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Button } from "@/components/ui/button";
 import { AboutFootprintIQBlock } from "@/components/seo/AboutFootprintIQBlock";
+import { FeaturedCollections } from "@/components/seo/FeaturedCollections";
 import { RelatedToolsGrid } from "@/components/seo/RelatedToolsGrid";
 import {
   Accordion,
@@ -344,6 +345,7 @@ export default function UsernameSearchPage() {
         <div className="max-w-3xl mx-auto px-6 py-12 space-y-12">
           <AboutFootprintIQBlock />
           <RelatedToolsGrid currentPath="/username-search" />
+          <FeaturedCollections />
         </div>
       </main>
 
