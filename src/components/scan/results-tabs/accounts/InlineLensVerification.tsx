@@ -84,6 +84,14 @@ export function InlineLensVerification({
   
   const [localVerifying, setLocalVerifying] = useState(false);
   const [localResult, setLocalResult] = useState<LensPreviewResult | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Check auth state once on mount — hide for anonymous users
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setIsAuthenticated(!!data.user);
+    });
+  }, []);
 
   // Check if THIS specific profile was verified
   const isThisProfileVerified = verifiedProfileId === profileId || localResult !== null;
