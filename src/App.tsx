@@ -420,6 +420,22 @@ const TrustSafety = lazy(() => import("./pages/TrustSafety"));
 const DataLifecycle = lazy(() => import("./pages/DataLifecycle"));
 const OsintPlayground = lazy(() => import("./pages/OsintPlayground"));
 
+// Authority cluster pages
+const WhereIsThisUsernameUsed = lazy(() => import("./pages/WhereIsThisUsernameUsed"));
+const SearchUsernameOnline = lazy(() => import("./pages/SearchUsernameOnline"));
+const UsernameAvailabilityChecker = lazy(() => import("./pages/UsernameAvailabilityChecker"));
+const SocialMediaAccountFinder = lazy(() => import("./pages/SocialMediaAccountFinder"));
+const DigitalFootprintChecker = lazy(() => import("./pages/DigitalFootprintChecker"));
+const WhatIsUsernameOsintGuide = lazy(() => import("./pages/guides/WhatIsUsernameOsint"));
+const HowToTraceAUsername = lazy(() => import("./pages/guides/HowToTraceAUsername"));
+const WhyUsernameReuseIsRiskyGuide = lazy(() => import("./pages/guides/WhyUsernameReuseIsRiskyGuide"));
+const HowToRemoveOldAccounts = lazy(() => import("./pages/guides/HowToRemoveOldAccounts"));
+const GlossaryUsernameOsint = lazy(() => import("./pages/glossary/UsernameOsint"));
+const GlossaryDigitalFootprint = lazy(() => import("./pages/glossary/DigitalFootprint"));
+const GlossaryDataBroker = lazy(() => import("./pages/glossary/DataBroker"));
+const DatasetUsernameReuse = lazy(() => import("./pages/datasets/UsernameReuse"));
+const AIAnswersHowInvestigatorsTraceUsernames = lazy(() => import("./pages/ai-answers/HowInvestigatorsTraceUsernames"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -923,7 +939,23 @@ function RouterContent() {
            <Route path="/install" element={<InstallApp />} />
            <Route path="/osint-playground" element={<OsintPlayground />} />
            <Route path="/compare" element={<ComparePage />} />
-          
+
+           {/* Authority Cluster Pages */}
+           <Route path="/where-is-this-username-used" element={<WhereIsThisUsernameUsed />} />
+           <Route path="/search-username-online" element={<SearchUsernameOnline />} />
+           <Route path="/username-availability-checker" element={<UsernameAvailabilityChecker />} />
+           <Route path="/social-media-account-finder" element={<SocialMediaAccountFinder />} />
+           <Route path="/digital-footprint-checker" element={<DigitalFootprintChecker />} />
+           <Route path="/guides/what-is-username-osint" element={<WhatIsUsernameOsintGuide />} />
+           <Route path="/guides/how-to-trace-a-username" element={<HowToTraceAUsername />} />
+           <Route path="/guides/why-username-reuse-is-risky" element={<WhyUsernameReuseIsRiskyGuide />} />
+           <Route path="/guides/how-to-remove-old-accounts" element={<HowToRemoveOldAccounts />} />
+           <Route path="/glossary/username-osint" element={<GlossaryUsernameOsint />} />
+           <Route path="/glossary/digital-footprint" element={<GlossaryDigitalFootprint />} />
+           <Route path="/glossary/data-broker" element={<GlossaryDataBroker />} />
+           <Route path="/datasets/username-reuse" element={<DatasetUsernameReuse />} />
+           <Route path="/ai-answers/how-investigators-trace-usernames" element={<AIAnswersHowInvestigatorsTraceUsernames />} />
+
               <Route path="/404" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
