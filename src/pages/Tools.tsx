@@ -61,7 +61,7 @@ export default function Tools() {
         <link rel="canonical" href="https://footprintiq.lovable.app/tools" />
       </Helmet>
 
-      <Navbar />
+      <Header />
 
       <main className="min-h-screen bg-background pt-24 pb-20 px-4">
         <div className="max-w-5xl mx-auto">
