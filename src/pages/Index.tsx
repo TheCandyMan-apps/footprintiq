@@ -57,13 +57,8 @@ export default function Home() {
     }
   }, [navigate]);
 
-  const handleStartScan = () => {
-    navigate('/scan');
-  };
 
-  const handleAdvancedScan = () => {
-    navigate('/scan');
-  };
+
 
   const softwareAppSchema = {
     "@context": "https://schema.org",
@@ -263,6 +258,7 @@ export default function Home() {
       </div>
       
       <ResponsibleUsePledge />
+      <HomepageSEOLinks />
       <FloatingCTA />
       <ScrollToTop />
       <Footer />
