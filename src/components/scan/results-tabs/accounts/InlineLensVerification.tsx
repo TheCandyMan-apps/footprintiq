@@ -8,7 +8,7 @@
  * - Locks further verification with upgrade prompt
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -23,6 +23,7 @@ import {
 import { useLensPreview, LensConfidenceLevel, LensPreviewResult } from '@/hooks/useLensPreview';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InlineLensVerificationProps {
   profileId: string;
@@ -83,6 +84,14 @@ export function InlineLensVerification({
   
   const [localVerifying, setLocalVerifying] = useState(false);
   const [localResult, setLocalResult] = useState<LensPreviewResult | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Check auth state once on mount — hide for anonymous users
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setIsAuthenticated(!!data.user);
+    });
+  }, []);
 
   // Check if THIS specific profile was verified
   const isThisProfileVerified = verifiedProfileId === profileId || localResult !== null;
@@ -110,6 +119,11 @@ export function InlineLensVerification({
     e.stopPropagation();
     navigate('/pricing');
   };
+
+  // Hide for anonymous / unauthenticated users
+  if (isAuthenticated === null || isAuthenticated === false) {
+    return null;
+  }
 
   // Loading initial state
   if (isLoading) {
