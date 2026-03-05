@@ -120,6 +120,11 @@ export function InlineLensVerification({
     navigate('/pricing');
   };
 
+  // Hide for anonymous / unauthenticated users
+  if (isAuthenticated === null || isAuthenticated === false) {
+    return null;
+  }
+
   // Loading initial state
   if (isLoading) {
     return null;
