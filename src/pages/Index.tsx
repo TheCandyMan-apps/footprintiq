@@ -165,9 +165,15 @@ export default function Home() {
       <Header />
       
       {/* Hero - Above fold, priority render */}
-      <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
+      <Hero />
       
-      {/* Below fold sections - use content-visibility for LCP optimization */}
+      {/* Result preview - immediately below hero */}
+      <HomepageResultPreview />
+      
+      {/* Educational content */}
+      <HomepageEducational />
+      
+      {/* Below fold sections */}
       <div className="below-fold">
         <WhatYouCanDiscover />
       </div>
