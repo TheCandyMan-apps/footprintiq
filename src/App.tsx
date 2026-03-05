@@ -436,6 +436,11 @@ const GlossaryDataBroker = lazy(() => import("./pages/glossary/DataBroker"));
 const DatasetUsernameReuse = lazy(() => import("./pages/datasets/UsernameReuse"));
 const AIAnswersHowInvestigatorsTraceUsernames = lazy(() => import("./pages/ai-answers/HowInvestigatorsTraceUsernames"));
 
+// Platform + Comparison programmatic pages
+const PlatformHub = lazy(() => import("./pages/platforms/PlatformHub"));
+const PlatformPage = lazy(() => import("./pages/platforms/PlatformPage"));
+const ComparisonDetailPage = lazy(() => import("./pages/comparisons/ComparisonPage"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
