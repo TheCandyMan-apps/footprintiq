@@ -120,7 +120,8 @@ const LEVEL_SUMMARIES: Record<ExposureLevel, string> = {
   low: 'Your exposure is limited. A few small steps can help maintain your privacy posture.',
   moderate: 'Several areas contribute to your public footprint. Targeted actions can meaningfully reduce your exposure.',
   high: 'Your identifier has significant public visibility. Prioritise the high-impact steps below.',
-  severe: 'Extensive exposure detected. We recommend working through these steps systematically, starting with the highest-impact items.',
+  very_high: 'Extensive exposure detected. We recommend working through these steps systematically, starting with the highest-impact items.',
+  critical: 'Critical exposure across multiple vectors. Immediate action is strongly recommended.',
 };
 
 export function buildRemediationPlan(

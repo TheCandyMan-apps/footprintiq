@@ -76,7 +76,7 @@ import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
 import { ExposureReductionScoreCard } from '@/components/results/ExposureReductionScoreCard';
 import { ExposureReducedBadge } from '@/components/results/ExposureStatusSelector';
-import { calculateExposureScore } from '@/lib/exposureScore';
+import { calculateExposureScore, type ExposureLevel } from '@/lib/exposureScore';
 import { calculateExposureReductionScore } from '@/lib/exposureReductionScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import type { Finding } from '@/lib/ufm';
@@ -173,13 +173,14 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
   }, [results]);
 
   const drivers = useMemo(() => generateExposureDrivers(results as any), [results]);
-  const level = scoreResult.score >= 80 ? 'severe' as const : scoreResult.level;
+  const level: ExposureLevel = scoreResult.level;
 
-  const interpretationMap: Record<string, string> = {
+  const interpretationMap: Record<ExposureLevel, string> = {
     low: 'Limited public discoverability detected for this identifier.',
     moderate: 'This identifier appears across multiple public platforms.',
     high: 'High public surface area across independent platforms.',
-    severe: 'Extensive public exposure detected across many sources.',
+    very_high: 'Significant exposure detected across many sources.',
+    critical: 'Extensive public exposure detected across many sources.',
   };
 
   const freeBadgeLabel = scoreResult.score >= 10 && scoreResult.score <= 24 ? 'Emerging exposure' : undefined;

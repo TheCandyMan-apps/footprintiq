@@ -67,7 +67,7 @@ export function ExposureScoreCard({
             {/* Header row */}
             <div className="flex items-center gap-2 flex-wrap">
               <Shield className="h-4 w-4 text-primary flex-shrink-0" />
-              <h3 className="text-sm font-semibold text-foreground">Exposure Score</h3>
+              <h3 className="text-sm font-semibold text-foreground">Digital Exposure Score</h3>
               <Badge
                 variant="outline"
                 className={cn(
@@ -95,10 +95,10 @@ export function ExposureScoreCard({
               ))}
             </ul>
 
-            {/* Category breakdown (Pro only) */}
+            {/* Score Breakdown */}
             {categories && !isLocked && (
-              <div className="pt-2 border-t border-border/30">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Category Breakdown</p>
+              <div className="pt-2 border-t border-border/30 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">What contributes to this score</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {categories.map((cat) => (
                     <div key={cat.id} className="flex items-center gap-1.5 text-xs">

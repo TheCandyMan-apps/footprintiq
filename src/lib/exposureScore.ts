@@ -7,7 +7,7 @@ export interface ExposureCategory {
   evidence?: Finding[];
 }
 
-export type ExposureLevel = 'low' | 'moderate' | 'high' | 'severe';
+export type ExposureLevel = 'low' | 'moderate' | 'high' | 'very_high' | 'critical';
 
 export interface ExposureScoreResult {
   score: number;
@@ -18,9 +18,10 @@ export interface ExposureScoreResult {
 
 // Category definitions (unchanged shape)
 const CATEGORY_DEFINITIONS = [
-  { id: 'public_profiles', label: 'Public profile discoverability' },
-  { id: 'identifier_reuse', label: 'Identifier reuse' },
-  { id: 'data_broker', label: 'Data broker–linked exposure' },
+  { id: 'public_profiles', label: 'Detected profiles' },
+  { id: 'identifier_reuse', label: 'Username reuse patterns' },
+  { id: 'cross_platform', label: 'Cross-platform correlations' },
+  { id: 'public_identity', label: 'Public identity indicators' },
   { id: 'breach_association', label: 'Breach association' },
   { id: 'metadata_signals', label: 'Metadata & infrastructure signals' },
 ] as const;
@@ -38,10 +39,11 @@ const INSIGHTS: Record<string, string> = {
 // --- Level helpers ---
 
 export function getExposureLevel(score: number): ExposureLevel {
-  if (score <= 24) return 'low';
-  if (score <= 49) return 'moderate';
-  if (score <= 74) return 'high';
-  return 'severe';
+  if (score <= 20) return 'low';
+  if (score <= 40) return 'moderate';
+  if (score <= 60) return 'high';
+  if (score <= 80) return 'very_high';
+  return 'critical';
 }
 
 export function getExposureLevelColor(level: ExposureLevel): string {
@@ -51,8 +53,10 @@ export function getExposureLevelColor(level: ExposureLevel): string {
     case 'moderate':
       return 'text-yellow-500';
     case 'high':
+      return 'text-orange-500';
+    case 'very_high':
       return 'text-red-500';
-    case 'severe':
+    case 'critical':
       return 'text-red-600';
   }
 }
@@ -64,8 +68,10 @@ export function getExposureLevelBgColor(level: ExposureLevel): string {
     case 'moderate':
       return 'bg-yellow-500/10 border-yellow-500/30';
     case 'high':
+      return 'bg-orange-500/10 border-orange-500/30';
+    case 'very_high':
       return 'bg-red-500/10 border-red-500/30';
-    case 'severe':
+    case 'critical':
       return 'bg-red-600/10 border-red-600/30';
   }
 }
@@ -73,13 +79,15 @@ export function getExposureLevelBgColor(level: ExposureLevel): string {
 export function getExposureLevelLabel(level: ExposureLevel): string {
   switch (level) {
     case 'low':
-      return 'Low exposure';
+      return 'Low Exposure';
     case 'moderate':
-      return 'Moderate exposure';
+      return 'Moderate Exposure';
     case 'high':
-      return 'High exposure';
-    case 'severe':
-      return 'Severe exposure';
+      return 'High Exposure';
+    case 'very_high':
+      return 'Very High Exposure';
+    case 'critical':
+      return 'Critical Exposure';
   }
 }
 
@@ -179,7 +187,8 @@ export function calculateExposureScore(findings: Finding[]): ExposureScoreResult
   const bucketMap: Record<string, { score: number; evidence: Finding[] }> = {
     public_profiles: profile,
     identifier_reuse: reuse,
-    data_broker: { score: 0, evidence: [] }, // Not scored in surface-area model
+    cross_platform: reuse, // cross-platform correlations derive from same reuse signal
+    public_identity: profile, // public identity indicators derive from profile presence
     breach_association: breach,
     metadata_signals: severity,
   };
