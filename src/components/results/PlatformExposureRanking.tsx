@@ -173,7 +173,7 @@ function buildExplanation(
   return `${name}: ${parts.join(', ')}.`;
 }
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 1;
 
 export function PlatformExposureRanking({
   platforms,
