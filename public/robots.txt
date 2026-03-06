@@ -61,9 +61,6 @@ Disallow: /404
 Disallow: /maigret/results/
 Disallow: /maigret/debug
 Disallow: /maigret/self-test
-Disallow: /scan/usernames/
-Disallow: /scan/emails/
-Disallow: /scan/phones/
 Disallow: /billing
 
 Sitemap: https://footprintiq.app/sitemap.xml
