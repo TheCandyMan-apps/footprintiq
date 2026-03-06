@@ -129,7 +129,7 @@
       else{setTimeout(_loadFbPixel,2000)}
       }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
     </script>
-    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_META_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+    <!-- Meta Pixel noscript fallback moved to <body> -->
 
     <!-- Google Ads Conversion Tag (shares existing gtag.js) -->
     <script>
@@ -494,6 +494,7 @@
 </head>
 
   <body>
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=YOUR_META_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
     <!-- Cloudflare Turnstile (explicit render mode) -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     
