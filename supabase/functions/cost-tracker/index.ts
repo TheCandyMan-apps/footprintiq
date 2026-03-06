@@ -22,7 +22,15 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const action = url.searchParams.get("action") || "record";
+    // Support action from query params OR body
+    let action = url.searchParams.get("action") || "record";
+    let bodyData: any = null;
+    if (req.method === "POST") {
+      try {
+        bodyData = await req.json();
+        if (bodyData?.action) action = bodyData.action;
+      } catch { /* no body */ }
+    }
     
     // For write operations (record), require internal token
     if (action === "record") {
@@ -90,8 +98,8 @@ serve(async (req) => {
     );
 
     // Record a cost event
-    if (action === "record" && req.method === "POST") {
-      const record: CostRecord = await req.json();
+    if (action === "record") {
+      const record: CostRecord = bodyData as CostRecord;
       
       const today = new Date().toISOString().split("T")[0];
       const monthStart = new Date();
@@ -240,10 +248,10 @@ serve(async (req) => {
     }
 
     // Get cost summary
-    if (action === "summary" && req.method === "GET") {
-      const workspaceId = url.searchParams.get("workspace_id");
-      const providerId = url.searchParams.get("provider_id");
-      const period = url.searchParams.get("period") || "daily";
+    if (action === "summary") {
+      const workspaceId = url.searchParams.get("workspace_id") || bodyData?.workspaceId;
+      const providerId = url.searchParams.get("provider_id") || bodyData?.providerId;
+      const period = url.searchParams.get("period") || bodyData?.period || "daily";
 
       let query = supabase
         .from("provider_costs")
@@ -270,8 +278,8 @@ serve(async (req) => {
     }
 
     // Generate cost recommendations
-    if (action === "recommend" && req.method === "POST") {
-      const { workspaceId } = await req.json();
+    if (action === "recommend") {
+      const workspaceId = bodyData?.workspaceId;
 
       // Get recent costs
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
