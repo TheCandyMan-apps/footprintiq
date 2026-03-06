@@ -46,11 +46,15 @@ export default function CostTracking() {
   const { data: costs, isLoading: costsLoading } = useQuery({
     queryKey: ["provider-costs"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("cost-tracker?action=summary&period=daily", {
-        method: "GET"
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+      
+      const { data, error } = await supabase.functions.invoke("cost-tracker", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { action: "summary", period: "daily" }
       });
       if (error) throw error;
-      return data.costs;
+      return data.costs || [];
     }
   });
 
@@ -59,11 +63,11 @@ export default function CostTracking() {
     queryKey: ["provider-budgets"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("provider_budgets" as any)
+        .from("provider_budgets")
         .select("*")
         .eq("is_active", true);
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
@@ -72,13 +76,13 @@ export default function CostTracking() {
     queryKey: ["budget-alerts"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("budget_alerts" as any)
+        .from("budget_alerts")
         .select("*")
         .eq("acknowledged", false)
         .order("created_at", { ascending: false })
         .limit(10);
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
@@ -92,7 +96,7 @@ export default function CostTracking() {
         .eq("status", "pending")
         .order("priority", { ascending: false });
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
@@ -100,7 +104,7 @@ export default function CostTracking() {
   const updateBudget = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       const { error } = await supabase
-        .from("provider_budgets" as any)
+        .from("provider_budgets")
         .update(updates)
         .eq("id", id);
       if (error) throw error;
@@ -115,7 +119,7 @@ export default function CostTracking() {
   const acknowledgeAlert = useMutation({
     mutationFn: async (alertId: string) => {
       const { error } = await supabase
-        .from("budget_alerts" as any)
+        .from("budget_alerts")
         .update({ acknowledged: true, acknowledged_at: new Date().toISOString() })
         .eq("id", alertId);
       if (error) throw error;
@@ -129,20 +133,24 @@ export default function CostTracking() {
   // Generate recommendations mutation
   const generateRecommendations = useMutation({
     mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       
-      const { data: workspace, error: workspaceError } = await supabase
-        .from("workspace_members" as any)
+      const { data: workspace } = await supabase
+        .from("workspace_members")
         .select("workspace_id")
         .eq("user_id", user.id)
+        .limit(1)
         .single();
 
-      if (workspaceError) throw workspaceError;
       if (!workspace) throw new Error("No workspace found");
 
       const { error } = await supabase.functions.invoke("cost-tracker", {
-        body: { action: "recommend", workspaceId: (workspace as any).workspace_id }
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { action: "recommend", workspaceId: workspace.workspace_id }
       });
       if (error) throw error;
     },
