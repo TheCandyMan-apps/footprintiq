@@ -887,7 +887,17 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               />
             )}
 
-            {/* ===== IDENTITY CORRELATION RISK ===== */}
+            {/* ===== URGENCY BANNER (time-limited offer) ===== */}
+            {scanComplete && foundProfiles.length > 0 && (
+              <UrgencyBanner
+                scanId={jobId}
+                onUpgradeClick={() => {
+                  analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'urgency_banner' });
+                  handleUpgradeClick();
+                }}
+              />
+            )}
+
             {foundProfiles.length > 0 && (
               <IdentityCorrelationRisk
                 profileCount={totalProfiles}
