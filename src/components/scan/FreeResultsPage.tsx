@@ -1446,6 +1446,14 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
       </CardContent>
     </Card>
     <InlineUpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+    <StickyMobileUpgradeCTA
+      hiddenPlatformCount={hiddenCount}
+      totalPlatformCount={foundProfiles.length}
+      onUpgradeClick={() => {
+        analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'sticky_mobile_cta' });
+        handleUpgradeClick();
+      }}
+    />
     </>
   );
 }
