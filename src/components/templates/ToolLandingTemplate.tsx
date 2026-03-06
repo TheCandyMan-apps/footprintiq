@@ -32,14 +32,14 @@ export function ToolLandingTemplate({ entry, children }: ToolLandingTemplateProp
       e.preventDefault();
       const trimmed = username.trim();
       if (!trimmed) return;
-      navigate(`/scan?q=${encodeURIComponent(trimmed)}`);
+      navigate(`/free-scan?q=${encodeURIComponent(trimmed)}`);
     },
     [username, navigate]
   );
 
   const handleExample = () => {
     setUsername(DEMO_USERNAME);
-    navigate(`/scan?q=${encodeURIComponent(DEMO_USERNAME)}`);
+    navigate(`/free-scan?q=${encodeURIComponent(DEMO_USERNAME)}`);
   };
 
   const faqSchema = buildFAQSchema(entry.faqs);
