@@ -98,6 +98,9 @@ import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
 import { PostScanInlineUpgrade } from '@/components/conversion/PostScanInlineUpgrade';
 import { InlineUpgradeModal } from '@/components/results/InlineUpgradeModal';
+import { StickyMobileUpgradeCTA } from '@/components/conversion/StickyMobileUpgradeCTA';
+import { FreeVsProComparison } from '@/components/conversion/FreeVsProComparison';
+import { UrgencyBanner } from '@/components/conversion/UrgencyBanner';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { AttentionSection } from './AttentionSection';
@@ -884,7 +887,17 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               />
             )}
 
-            {/* ===== IDENTITY CORRELATION RISK ===== */}
+            {/* ===== URGENCY BANNER (time-limited offer) ===== */}
+            {scanComplete && foundProfiles.length > 0 && (
+              <UrgencyBanner
+                scanId={jobId}
+                onUpgradeClick={() => {
+                  analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'urgency_banner' });
+                  handleUpgradeClick();
+                }}
+              />
+            )}
+
             {foundProfiles.length > 0 && (
               <IdentityCorrelationRisk
                 profileCount={totalProfiles}
@@ -1379,6 +1392,19 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
+            {/* ===== FREE VS PRO COMPARISON (personalized to scan) ===== */}
+            {foundProfiles.length > 3 && (
+              <FreeVsProComparison
+                visiblePlatforms={Math.min(3, foundProfiles.length)}
+                totalPlatforms={foundProfiles.length}
+                username={username}
+                onUpgradeClick={() => {
+                  analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'free_vs_pro_comparison' });
+                  handleUpgradeClick();
+                }}
+              />
+            )}
+
             {/* ===== LOCKED INTELLIGENCE TABS (single consolidated upsell) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
@@ -1420,6 +1446,14 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
       </CardContent>
     </Card>
     <InlineUpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+    <StickyMobileUpgradeCTA
+      hiddenPlatformCount={hiddenCount}
+      totalPlatformCount={foundProfiles.length}
+      onUpgradeClick={() => {
+        analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'sticky_mobile_cta' });
+        handleUpgradeClick();
+      }}
+    />
     </>
   );
 }
