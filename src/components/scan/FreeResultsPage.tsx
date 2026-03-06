@@ -102,6 +102,7 @@ import { StickyMobileUpgradeCTA } from '@/components/conversion/StickyMobileUpgr
 import { FreeVsProComparison } from '@/components/conversion/FreeVsProComparison';
 import { UrgencyBanner } from '@/components/conversion/UrgencyBanner';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
+import { InlineGoogleSignIn } from '@/components/conversion/InlineGoogleSignIn';
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { AttentionSection } from './AttentionSection';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
@@ -272,8 +273,20 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   const [job, setJob] = useState<ScanJob | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
   const [broadcastResultCount, setBroadcastResultCount] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const { toast } = useToast();
   const jobChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Check auth state for inline sign-in prompt
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
   const progressChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Use centralized data hook (includes refetch from the same realtime instance)
@@ -777,6 +790,11 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 FootprintIQ analyses digital footprints across 100+ platforms and helps investigators, journalists and privacy professionals understand identity exposure.
               </p>
             </div>
+
+            {/* ===== INLINE GOOGLE SIGN-IN (anonymous users only) ===== */}
+            {isAuthenticated === false && foundProfiles.length > 0 && (
+              <InlineGoogleSignIn context="save your scan results and track changes" />
+            )}
 
             {/* ===== EXPOSURE REDUCTION SCORE™ ===== */}
             <FreeReductionScore results={results} onUpgradeClick={handleUpgradeClick} />

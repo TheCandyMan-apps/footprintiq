@@ -38,6 +38,8 @@ const FloatingCTA = lazy(() => import("@/components/FloatingCTA").then(m => ({ d
 const ScrollToTop = lazy(() => import("@/components/ScrollToTop").then(m => ({ default: m.ScrollToTop })));
 
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
+import { SocialProofToast } from "@/components/conversion/SocialProofToast";
+import { ExitIntentModal } from "@/components/conversion/ExitIntentModal";
 
 // Minimal suspense fallback that doesn't cause CLS
 const SectionFallback = () => <div className="min-h-[200px]" />;
@@ -269,6 +271,8 @@ export default function Home() {
         <FloatingCTA />
         <ScrollToTop />
       </Suspense>
+      <SocialProofToast />
+      <ExitIntentModal />
       <Footer />
     </>
   );
