@@ -48,8 +48,8 @@ serve(async (req) => {
         { price: PRICE_ID, quantity: 1 },
       ],
       mode: "subscription",
-      success_url: `${origin}/?checkout=success`,
-      cancel_url: `${origin}/?checkout=cancelled`,
+      success_url: `${origin}/dashboard?checkout=success`,
+      cancel_url: `${origin}/pricing?checkout=cancelled`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
