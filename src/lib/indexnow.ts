@@ -233,6 +233,15 @@ export const INDEXNOW_URLS = [
   "/for-professionals",
   // Trust
   "/trust/data-ethics",
+  // Username Investigation Cluster
+  "/username-osint-techniques",
+  "/username-reuse-risks",
+  "/digital-footprint-investigation",
+  "/how-investigators-trace-usernames",
+  "/what-can-a-username-reveal",
+  "/find-someone-by-username",
+  "/where-is-this-username-used",
+  "/research/username-reuse-statistics",
 ];
 
 /**
