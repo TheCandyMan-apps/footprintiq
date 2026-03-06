@@ -530,12 +530,37 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     ? 'HIGH' : totalProfiles >= 4 || highConfidenceCount >= 2 || uniquePlatformCount >= 3
     ? 'MEDIUM' : 'LOW';
 
+  // Compute exposure score for tracking metadata
+  const exposureScore = useMemo(() => {
+    if (!results || results.length === 0) return 0;
+    const findings: Finding[] = (results as any[]).map(r => ({
+      id: r.id || '',
+      type: r.kind === 'profile_presence' ? 'social_media' : (r.kind || 'identity'),
+      title: r.meta?.title || r.site || '',
+      description: '',
+      severity: (['low', 'medium', 'high', 'critical', 'info'].includes(r.severity) ? r.severity : 'info') as Finding['severity'],
+      confidence:
+        typeof (r as any).confidence === 'number' ? (r as any).confidence :
+        typeof (r as any).evidence?.confidence_score === 'number' ? (r as any).evidence.confidence_score / 100 :
+        0.5,
+      provider: r.provider || '',
+      providerCategory: '',
+      evidence: [],
+      impact: '',
+      remediation: [],
+      tags: [],
+      observedAt: r.created_at || new Date().toISOString(),
+    }));
+    return calculateExposureScore(findings).score;
+  }, [results]);
+
   const trackingMeta = useMemo(() => ({
     scan_id: jobId,
     username,
     platform_count: uniquePlatformCount,
+    exposure_score: exposureScore,
     risk_level: riskLevel,
-  }), [jobId, username, uniquePlatformCount, riskLevel]);
+  }), [jobId, username, uniquePlatformCount, exposureScore, riskLevel]);
 
   const handleUpgradeClick = () => {
     analytics.trackEvent('upgrade_cta_clicked', trackingMeta);
