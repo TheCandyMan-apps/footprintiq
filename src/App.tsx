@@ -787,6 +787,10 @@ function RouterContent() {
               <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
              <Route path="/is-username-search-accurate" element={<IsUsernameSearchAccurate />} />
              <Route path="/what-can-a-username-reveal" element={<WhatCanAUsernameReveal />} />
+             <Route path="/username-osint-techniques" element={<UsernameOsintTechniques />} />
+             <Route path="/username-reuse-risks" element={<UsernameReuseRisks />} />
+             <Route path="/digital-footprint-investigation" element={<DigitalFootprintInvestigation />} />
+             <Route path="/how-investigators-trace-usernames" element={<HowInvestigatorsTraceUsernamesPage />} />
              <Route path="/find-someone-by-username" element={<FindSomeoneByUsername />} />
              <Route path="/after-have-i-been-pwned-what-next" element={<AfterHaveIBeenPwned />} />
              <Route path="/data-breach-cleanup-checklist" element={<DataBreachCleanupChecklist />} />

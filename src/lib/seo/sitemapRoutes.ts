@@ -66,6 +66,11 @@ export const toolRoutes: SitemapEntry[] = [
   { path: "/username-availability-checker", lastmod: BUILD_DATE, priority: 0.8 },
   { path: "/social-media-account-finder", lastmod: BUILD_DATE, priority: 0.8 },
   { path: "/digital-footprint-checker", lastmod: BUILD_DATE, priority: 0.8 },
+  // Username investigation cluster
+  { path: "/username-osint-techniques", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/username-reuse-risks", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/digital-footprint-investigation", lastmod: BUILD_DATE, priority: 0.8 },
+  { path: "/how-investigators-trace-usernames", lastmod: BUILD_DATE, priority: 0.8 },
   // Platform-specific (canonical paths)
   { path: "/platforms", lastmod: BUILD_DATE, priority: 0.8 },
   { path: "/platforms/instagram/username-search", lastmod: BUILD_DATE, priority: 0.7 },
