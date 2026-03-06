@@ -9,6 +9,7 @@ interface InvestigatorInsightProps {
   profileCount: number;
   scanType?: string;
   onUpgradeClick: () => void;
+  onInsightExpand?: () => void;
 }
 
 function generateInsights(username: string, profileCount: number, scanType?: string): string[] {
@@ -53,6 +54,7 @@ export function InvestigatorInsight({
   profileCount,
   scanType,
   onUpgradeClick,
+  onInsightExpand,
 }: InvestigatorInsightProps) {
   const insights = useMemo(
     () => generateInsights(username, profileCount, scanType),
@@ -96,7 +98,7 @@ export function InvestigatorInsight({
               </Badge>
             ))}
           </div>
-          <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" onClick={onUpgradeClick}>
+          <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" onClick={() => { onInsightExpand?.(); onUpgradeClick(); }}>
             Unlock Full Analysis <ArrowRight className="h-3 w-3" />
           </Button>
         </div>

@@ -13,11 +13,12 @@ interface Platform {
 interface PlatformTeaserProps {
   platforms: Platform[];
   onUpgradeClick: () => void;
+  onInteraction?: () => void;
 }
 
 const VISIBLE_LIMIT = 3;
 
-export function PlatformTeaser({ platforms, onUpgradeClick }: PlatformTeaserProps) {
+export function PlatformTeaser({ platforms, onUpgradeClick, onInteraction }: PlatformTeaserProps) {
   if (platforms.length === 0) return null;
 
   const visible = platforms.slice(0, VISIBLE_LIMIT);
@@ -64,7 +65,7 @@ export function PlatformTeaser({ platforms, onUpgradeClick }: PlatformTeaserProp
             <p className="text-[11px] text-muted-foreground/70">
               Including social media, forums, and niche communities
             </p>
-            <Button size="sm" onClick={onUpgradeClick} className="gap-2 h-9">
+            <Button size="sm" onClick={() => { onInteraction?.(); onUpgradeClick(); }} className="gap-2 h-9">
               Unlock Full Platform List
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>

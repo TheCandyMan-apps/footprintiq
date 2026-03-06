@@ -83,6 +83,7 @@ import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import type { Finding } from '@/lib/ufm';
 import { filterFindings } from '@/lib/findingFilters';
 // PostScanUpgradeModal removed to reduce upsell fatigue
+import { analytics } from '@/lib/analytics';
 import { useNavigate } from 'react-router-dom';
 import { useExposureStatuses } from '@/hooks/useExposureStatuses';
 import type { ExposureStatus } from '@/hooks/useExposureStatuses';
@@ -523,7 +524,21 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
+  // Compute risk level for tracking metadata
+  const uniquePlatformCount = new Set(foundProfiles.map(p => p.platform)).size;
+  const riskLevel = totalProfiles >= 8 || highConfidenceCount >= 5 || uniquePlatformCount >= 6
+    ? 'HIGH' : totalProfiles >= 4 || highConfidenceCount >= 2 || uniquePlatformCount >= 3
+    ? 'MEDIUM' : 'LOW';
+
+  const trackingMeta = useMemo(() => ({
+    scan_id: jobId,
+    username,
+    platform_count: uniquePlatformCount,
+    risk_level: riskLevel,
+  }), [jobId, username, uniquePlatformCount, riskLevel]);
+
   const handleUpgradeClick = () => {
+    analytics.trackEvent('upgrade_cta_clicked', trackingMeta);
     setShowUpgradeModal(true);
   };
 
@@ -830,6 +845,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   confidence: p.confidence,
                 }))}
                 onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('platform_teaser_clicked', trackingMeta)}
               />
             )}
 
@@ -849,6 +865,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 uniquePlatforms={new Set(foundProfiles.map(p => p.platform)).size}
                 hasUsernameReuse={new Set(foundProfiles.map(p => p.platform)).size < foundProfiles.length}
                 onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('exposure_breakdown_clicked', trackingMeta)}
               />
             )}
 
@@ -859,6 +876,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 platforms={[...new Set(foundProfiles.map(p => p.platform))]}
                 username={username}
                 onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('identity_graph_preview_clicked', trackingMeta)}
               />
             )}
 
@@ -869,6 +887,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 profileCount={totalProfiles}
                 scanType={job?.scan_type}
                 onUpgradeClick={handleUpgradeClick}
+                onInsightExpand={() => analytics.trackEvent('investigator_insight_expand', trackingMeta)}
               />
             )}
 

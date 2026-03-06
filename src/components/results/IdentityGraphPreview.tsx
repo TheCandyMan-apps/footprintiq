@@ -9,6 +9,7 @@ interface IdentityGraphPreviewProps {
   platforms: string[];
   username: string;
   onUpgradeClick: () => void;
+  onInteraction?: () => void;
 }
 
 /**
@@ -20,6 +21,7 @@ export function IdentityGraphPreview({
   platforms,
   username,
   onUpgradeClick,
+  onInteraction,
 }: IdentityGraphPreviewProps) {
   // Generate deterministic node positions from platform names
   const nodes = useMemo(() => {
@@ -105,7 +107,7 @@ export function IdentityGraphPreview({
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/30">
             <Lock className="h-5 w-5 text-muted-foreground/70" />
             <p className="text-xs font-medium text-muted-foreground">{profileCount} connections mapped</p>
-            <Button size="sm" onClick={onUpgradeClick} className="gap-1.5 h-8 text-xs">
+            <Button size="sm" onClick={() => { onInteraction?.(); onUpgradeClick(); }} className="gap-1.5 h-8 text-xs">
               Unlock Full Graph <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
