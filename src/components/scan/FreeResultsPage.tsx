@@ -1392,6 +1392,19 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
+            {/* ===== FREE VS PRO COMPARISON (personalized to scan) ===== */}
+            {foundProfiles.length > 3 && (
+              <FreeVsProComparison
+                visiblePlatforms={Math.min(3, foundProfiles.length)}
+                totalPlatforms={foundProfiles.length}
+                username={username}
+                onUpgradeClick={() => {
+                  analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'free_vs_pro_comparison' });
+                  handleUpgradeClick();
+                }}
+              />
+            )}
+
             {/* ===== LOCKED INTELLIGENCE TABS (single consolidated upsell) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
