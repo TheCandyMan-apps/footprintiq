@@ -36,11 +36,11 @@ interface InlineUpgradeModalProps {
 }
 
 const BENEFITS = [
-  { icon: TrendingUp, text: 'Platform-level risk scoring' },
-  { icon: Network, text: 'Correlation mapping' },
-  { icon: ListChecks, text: 'Exposure reduction checklist' },
-  { icon: ArrowRight, text: 'Removal prioritization guidance' },
-  { icon: Activity, text: 'Ongoing monitoring' },
+  { icon: TrendingUp, text: 'Full platform list + risk scoring' },
+  { icon: Network, text: 'Identity correlation mapping' },
+  { icon: ListChecks, text: 'Step-by-step exposure reduction' },
+  { icon: ArrowRight, text: 'Removal priority guidance' },
+  { icon: Activity, text: 'Ongoing monitoring & alerts' },
 ] as const;
 
 type BillingCycle = 'monthly' | 'annual';
@@ -105,17 +105,17 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
           </div>
         ) : (
           <>
-            {/* Header */}
+            {/* Header — urgency-driven */}
             <div className="bg-gradient-to-br from-primary/10 via-background to-accent/5 p-6 pb-4 text-center space-y-2">
               <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-primary/15 flex items-center justify-center">
                 <Shield className="h-6 w-6 text-primary" />
               </div>
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold leading-tight">
-                  Unlock Your Full Exposure Report
+                  Your Scan Found Hidden Exposure
                 </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground pt-1">
-                  See what increases your identity risk — and what to fix first.
+                  Unlock the full report to see every platform, risk score, and removal steps.
                 </DialogDescription>
               </DialogHeader>
             </div>
@@ -165,7 +165,7 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
               </div>
             </div>
 
-            {/* CTAs */}
+            {/* CTAs — single prominent action */}
             <div className="px-6 pb-4 space-y-2.5">
               <Button
                 onClick={handleUpgrade}
@@ -173,7 +173,7 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
                 size="lg"
                 className="w-full h-12 text-base font-semibold gap-2"
               >
-                {loading ? 'Processing…' : 'Upgrade Now'}
+                {loading ? 'Processing…' : cycle === 'annual' ? 'Upgrade — £3.75/mo' : 'Upgrade — £4.99/mo'}
                 {!loading && <ChevronRight className="h-4 w-4" />}
               </Button>
 
@@ -181,7 +181,7 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
                 onClick={handleComparePlans}
                 className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2 text-center"
               >
-                Compare Plans
+                Compare all plans
               </button>
             </div>
 
@@ -189,7 +189,7 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
             <div className="border-t border-border/50 px-6 py-3 text-center">
               <p className="text-[10px] text-muted-foreground/60 flex items-center justify-center gap-1.5">
                 <Shield className="h-2.5 w-2.5" />
-                Public sources only · Ethical OSINT · Cancel anytime
+                30-day money-back guarantee · Cancel anytime · Ethical OSINT only
               </p>
             </div>
           </>

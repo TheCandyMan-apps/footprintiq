@@ -57,19 +57,22 @@ export function PlatformTeaser({ platforms, onUpgradeClick, onInteraction }: Pla
         </div>
 
         {hiddenCount > 0 && (
-          <div className="rounded-lg bg-muted/30 border border-border/30 p-4 text-center space-y-2.5">
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Lock className="h-4 w-4" />
-              <span className="font-medium">{hiddenCount} more platform{hiddenCount > 1 ? 's' : ''} detected</span>
+          <button
+            onClick={() => { onInteraction?.(); onUpgradeClick(); }}
+            className="w-full rounded-lg bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 p-4 text-center space-y-2.5 transition-all duration-200 cursor-pointer group"
+          >
+            <div className="flex items-center justify-center gap-2 text-sm text-foreground">
+              <Lock className="h-4 w-4 text-primary" />
+              <span className="font-semibold">{hiddenCount} more platform{hiddenCount > 1 ? 's' : ''} detected</span>
             </div>
-            <p className="text-[11px] text-muted-foreground/70">
+            <p className="text-[11px] text-muted-foreground">
               Including social media, forums, and niche communities
             </p>
-            <Button size="sm" onClick={() => { onInteraction?.(); onUpgradeClick(); }} className="gap-2 h-9">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-primary group-hover:gap-3 transition-all duration-200">
               Unlock Full Platform List
               <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+            </div>
+          </button>
         )}
       </CardContent>
     </Card>

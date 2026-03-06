@@ -70,9 +70,8 @@ export default function AnonScanPage() {
     submittedRef.current = true;
     const scanId = await triggerScan(trimmed, turnstileToken || undefined);
     submittedRef.current = false;
-    // Reset turnstile after submission
-    turnstileRef.current?.reset();
-    setTurnstileToken(null);
+    // Don't reset Turnstile after successful submission — token stays valid
+    // for follow-up scans within the session, reducing re-challenge friction
 
     if (scanId) {
       navigate(`/results/${scanId}?anon=1`);
@@ -191,8 +190,8 @@ export default function AnonScanPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full"
-                disabled={!identifier.trim() || isLoading || (!isRestrictedType && !turnstileToken)}
+                className="w-full h-12"
+                disabled={!identifier.trim() || isLoading}
               >
                 {isLoading ? (
                   <>

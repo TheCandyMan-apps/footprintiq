@@ -156,7 +156,8 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
     analytics.scanStartClick();
     setTurnstileError(null);
     
-    // Validate Turnstile if required
+    // Validate Turnstile only if required AND token not yet obtained
+    // Once verified, the token persists for the session to avoid re-challenges
     if (requiresTurnstile && !turnstileToken) {
       setTurnstileError("Please complete the verification to continue.");
       return;
@@ -207,10 +208,7 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
     
     analytics.scanSubmit(type);
     onSubmit(config);
-    
-    // Reset Turnstile
-    setTurnstileToken(null);
-    turnstileRef.current?.reset();
+    // Don't reset Turnstile — token persists for follow-up scans to avoid friction
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
