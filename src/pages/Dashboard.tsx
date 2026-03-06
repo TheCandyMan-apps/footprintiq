@@ -58,6 +58,7 @@ import { TOURS } from '@/lib/tour/steps';
 import { useWelcomeEmail } from '@/hooks/useWelcomeEmail';
 import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X, Bookmark, Settings2 } from 'lucide-react';
 import { WelcomeInterstitial } from '@/components/conversion/WelcomeInterstitial';
+import { PostCheckoutOnboarding } from '@/components/conversion/PostCheckoutOnboarding';
 import { format } from 'date-fns';
 import { DashboardBarChart, DashboardLineChart } from '@/components/dashboard/DashboardCharts';
 import type { Database } from '@/integrations/supabase/types';
@@ -682,6 +683,7 @@ const Dashboard = () => {
   return <>
       <InitializeDarkWebDemo />
       <WelcomeInterstitial isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
+      <PostCheckoutOnboarding />
       <SEO title="Dashboard – Your Digital Exposure Overview | FootprintIQ" description="View your OSINT scans, findings, and entity relationships" canonical="https://footprintiq.app/dashboard" />
       <AnnouncementBar message="💡 Pro Tip: Use AI Analyst to get instant insights from your scan results." link="/ai-analyst" linkText="Try AI Analyst" storageKey="ai-analyst-dashboard-tip" variant="update" />
       <ScrollProgressBar />
