@@ -13,7 +13,7 @@ export default function RoleManagement() {
     queryKey: ["user-roles"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("user_roles" as any)
+        .from("user_roles")
         .select("*")
         .order("created_at", { ascending: false });
 

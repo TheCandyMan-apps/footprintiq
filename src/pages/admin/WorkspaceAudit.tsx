@@ -21,7 +21,7 @@ export default function WorkspaceAudit() {
     queryKey: ["workspace-audit", eventType],
     queryFn: async () => {
       let query = supabase
-        .from("activity_logs" as any)
+        .from("activity_logs")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100);

@@ -119,7 +119,7 @@ export default function Glitches() {
     try {
       const errorRate = (recentErrors / avgErrorRate - 1) * 100;
       
-      const { error } = await supabase.functions.invoke('admin/send-glitch-alert', {
+      const { error } = await supabase.functions.invoke('send-glitch-alert', {
         body: {
           errorRate: errorRate.toFixed(1),
         },
