@@ -136,7 +136,9 @@ export function derivePlatformRisk(rows: any[]): RankedPlatform[] {
 function buildExplanation(
   name: string,
   data: { count: number; severities: string[]; kinds: string[] },
-  risk: PlatformRisk
+  risk: PlatformRisk,
+  metaScore?: number,
+  correlationScore?: number,
 ): string {
   const parts: string[] = [];
 
@@ -154,6 +156,14 @@ function buildExplanation(
 
   if (data.kinds.includes('profile_presence') || data.kinds.includes('presence.hit')) {
     parts.push('public profile detected');
+  }
+
+  if (metaScore !== undefined && metaScore >= 2) {
+    parts.push('rich profile metadata');
+  }
+
+  if (correlationScore !== undefined && correlationScore >= 2) {
+    parts.push('strong cross-platform correlation');
   }
 
   if (parts.length === 0) {
