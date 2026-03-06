@@ -931,6 +931,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   </Button>
                 </CardContent>
               </Card>
+            )}
+
+            {/* ===== IDENTITY SIGNALS DETECTED ===== */}
             {foundProfiles.length > 0 && (
               <IdentitySignalsDetected
                 username={username}
