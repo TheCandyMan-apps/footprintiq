@@ -767,6 +767,14 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </div>
             </div>
 
+            {/* ===== SOCIAL PROOF BANNER ===== */}
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-muted/30 border border-border/40">
+              <Shield className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                FootprintIQ analyses digital footprints across 100+ platforms and helps investigators, journalists and privacy professionals understand identity exposure.
+              </p>
+            </div>
+
             {/* ===== EXPOSURE REDUCTION SCORE™ ===== */}
             <FreeReductionScore results={results} onUpgradeClick={handleUpgradeClick} />
             {getScoreImprovement() > 0 && (
