@@ -136,16 +136,24 @@ export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
     }
   };
 
-  const handleSave = () => {
-    if (role !== user.role) {
-      updateUserRole({ userId: user.user_id, role });
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const promises: Promise<void>[] = [];
+      if (role !== user.role) {
+        promises.push(updateUserRoleAsync({ userId: user.user_id, role }));
+      }
+      if (subscriptionTier !== user.subscription_tier) {
+        promises.push(updateUserSubscriptionAsync({ userId: user.user_id, tier: subscriptionTier }));
+      }
+      await Promise.all(promises);
+      onClose();
+    } catch (error) {
+      // Toast errors are handled by the mutation's onError
+      console.error('Save failed:', error);
+    } finally {
+      setIsSaving(false);
     }
-    
-    if (subscriptionTier !== user.subscription_tier) {
-      updateUserSubscription({ userId: user.user_id, tier: subscriptionTier });
-    }
-    
-    onClose();
   };
 
   const handleStatusChanged = () => {
