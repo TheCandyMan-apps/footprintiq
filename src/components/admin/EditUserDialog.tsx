@@ -345,8 +345,8 @@ export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isUpdating}>
-              {isUpdating ? 'Saving...' : 'Save Changes'}
+            <Button onClick={handleSave} disabled={isSaving || isUpdating}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
