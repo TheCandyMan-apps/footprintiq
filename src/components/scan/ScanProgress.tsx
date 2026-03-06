@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, Loader2, TrendingUp } from 'lucide-react';
+import { Clock, CheckCircle, Loader2, TrendingUp, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 // Rotating live status messages shown during scan
@@ -20,6 +20,27 @@ const SCAN_PHASES = [
   { message: 'Almost there — finalising intelligence report...', minElapsed: 200 },
 ];
 
+// Platform scanning log entries shown dynamically
+const SCAN_LOG_ENTRIES = [
+  { text: 'Scanning GitHub…', delay: 2 },
+  { text: 'Scanning Twitter / X…', delay: 4 },
+  { text: 'Scanning Reddit…', delay: 7 },
+  { text: 'Scanning Instagram…', delay: 10 },
+  { text: 'Scanning Steam…', delay: 14 },
+  { text: 'Scanning developer forums…', delay: 18 },
+  { text: 'Scanning LinkedIn…', delay: 22 },
+  { text: 'Scanning gaming platforms…', delay: 27 },
+  { text: 'Scanning academic databases…', delay: 32 },
+  { text: 'Scanning discussion forums…', delay: 38 },
+  { text: 'Scanning content platforms…', delay: 44 },
+  { text: 'Mapping identity correlations…', delay: 52 },
+  { text: 'Analysing cross-platform patterns…', delay: 60 },
+  { text: 'Checking breach databases…', delay: 70 },
+  { text: 'Verifying profile metadata…', delay: 82 },
+];
+
+const SIGNAL_THRESHOLD = 40; // seconds before showing correlation message
+
 interface ScanProgressProps {
   startedAt: string | null;
   finishedAt: string | null;
@@ -33,44 +54,53 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
   const [estimatedTotal, setEstimatedTotal] = useState(0);
   const [liveMessage, setLiveMessage] = useState(SCAN_PHASES[0].message);
   const [messageVisible, setMessageVisible] = useState(true);
-  const messageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [logEntries, setLogEntries] = useState<string[]>([]);
+  const [showCorrelationMsg, setShowCorrelationMsg] = useState(false);
+  const logContainerRef = useRef<HTMLDivElement>(null);
 
   // Estimated total sites based on scan type
   useEffect(() => {
-    if (allSites) {
-      // All sites mode - rough estimate based on Maigret's database
-      setEstimatedTotal(500);
-    } else {
-      // Standard mode - smaller set of popular sites
-      setEstimatedTotal(100);
-    }
+    setEstimatedTotal(allSites ? 500 : 100);
   }, [allSites]);
 
   // Drive live status message based on elapsed time
   useEffect(() => {
     if (!['running', 'pending'].includes(status) || finishedAt) return;
 
-    const updateMessage = (seconds: number) => {
-      // Find the most advanced phase that has been reached
-      let phase = SCAN_PHASES[0];
-      for (const p of SCAN_PHASES) {
-        if (seconds >= p.minElapsed) phase = p;
-      }
-      if (phase.message !== liveMessage) {
-        // Fade out → swap → fade in
-        setMessageVisible(false);
-        setTimeout(() => {
-          setLiveMessage(phase.message);
-          setMessageVisible(true);
-        }, 300);
-      }
-    };
-
-    updateMessage(elapsedSeconds);
+    let phase = SCAN_PHASES[0];
+    for (const p of SCAN_PHASES) {
+      if (elapsedSeconds >= p.minElapsed) phase = p;
+    }
+    if (phase.message !== liveMessage) {
+      setMessageVisible(false);
+      setTimeout(() => {
+        setLiveMessage(phase.message);
+        setMessageVisible(true);
+      }, 300);
+    }
   }, [elapsedSeconds, status, finishedAt]);
 
-  // Update elapsed time
+  // Drive scanning log entries based on elapsed time
+  useEffect(() => {
+    if (!['running', 'pending'].includes(status) || finishedAt) return;
 
+    const visible = SCAN_LOG_ENTRIES.filter(e => elapsedSeconds >= e.delay).map(e => e.text);
+    setLogEntries(prev => {
+      if (visible.length !== prev.length) return visible;
+      return prev;
+    });
+
+    setShowCorrelationMsg(elapsedSeconds >= SIGNAL_THRESHOLD);
+  }, [elapsedSeconds, status, finishedAt]);
+
+  // Auto-scroll log to bottom
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [logEntries]);
+
+  // Update elapsed time
   useEffect(() => {
     if (!startedAt || finishedAt || !['running', 'pending'].includes(status)) return;
 
@@ -109,7 +139,6 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
     if (['finished', 'completed', 'completed_partial', 'completed_empty'].includes(status)) return 100;
     if (resultCount === 0 || estimatedTotal === 0) return Math.max(5, lastProgress);
     
-    // Ensure progress is monotonically increasing
     const newProgress = Math.min(Math.round((resultCount / estimatedTotal) * 100), 99);
     const clampedProgress = Math.max(newProgress, lastProgress);
     
@@ -123,10 +152,8 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
   const calculateEstimatedRemaining = (): string => {
     if (['finished', 'completed', 'completed_partial', 'completed_empty', 'error', 'failed', 'timeout'].includes(status)) return '-';
     
-    // If no results yet but scan is running, show time-based estimate
     if (resultCount === 0) {
-      // Deep scans typically take 3-10 minutes
-      const estimatedTotalSeconds = allSites ? 600 : 180; // 10 min for all sites, 3 min for popular
+      const estimatedTotalSeconds = allSites ? 600 : 180;
       const remainingSeconds = Math.max(0, estimatedTotalSeconds - elapsedSeconds);
       if (remainingSeconds <= 0) return 'Almost done...';
       return formatTime(remainingSeconds);
@@ -134,7 +161,7 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
     
     if (elapsedSeconds === 0) return 'Starting...';
     
-    const scanRate = resultCount / elapsedSeconds; // sites per second
+    const scanRate = resultCount / elapsedSeconds;
     const remainingSites = Math.max(0, estimatedTotal - resultCount);
     const remainingSeconds = Math.round(remainingSites / scanRate);
     
@@ -142,7 +169,6 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
   };
 
   const getScanRate = (): string => {
-    // If no results yet, show "awaiting" status instead of confusing 0.0
     if (resultCount === 0) return 'Awaiting data...';
     if (elapsedSeconds === 0) return '-';
     const rate = (resultCount / elapsedSeconds).toFixed(1);
@@ -189,6 +215,43 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
               )}
             </div>
           </div>
+
+          {/* Scanning Log */}
+          {isRunning && logEntries.length > 0 && (
+            <div className="space-y-2">
+              <div
+                ref={logContainerRef}
+                className="max-h-[140px] overflow-y-auto rounded-lg bg-muted/30 border border-border/40 p-3 space-y-1.5 scroll-smooth"
+              >
+                {logEntries.map((entry, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 text-xs animate-in fade-in slide-in-from-bottom-1 duration-300"
+                    style={{ animationDelay: `${i * 50}ms` }}
+                  >
+                    {i === logEntries.length - 1 ? (
+                      <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
+                    ) : (
+                      <CheckCircle className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                    )}
+                    <span className={i === logEntries.length - 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}>
+                      {entry}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Correlation detection message */}
+              {showCorrelationMsg && (
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/15 animate-in fade-in duration-500">
+                  <Search className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <p className="text-xs font-medium text-foreground">
+                    Potential identity signals detected — analysing correlations
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Time Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2">
