@@ -820,6 +820,58 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             </Card>
             </MobileCollapsible>
 
+            {/* ===== PLATFORM TEASER (first 3 platforms, rest locked) ===== */}
+            {foundProfiles.length > 0 && (
+              <PlatformTeaser
+                platforms={foundProfiles.map(p => ({
+                  name: p.platform,
+                  url: p.url || undefined,
+                  username: p.username || undefined,
+                  confidence: p.confidence,
+                }))}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
+            {/* ===== IDENTITY CORRELATION RISK ===== */}
+            {foundProfiles.length > 0 && (
+              <IdentityCorrelationRisk
+                profileCount={totalProfiles}
+                highConfidenceCount={highConfidenceCount}
+                uniquePlatforms={new Set(foundProfiles.map(p => p.platform)).size}
+              />
+            )}
+
+            {/* ===== EXPOSURE BREAKDOWN ===== */}
+            {foundProfiles.length > 0 && (
+              <ExposureBreakdown
+                profileCount={totalProfiles}
+                uniquePlatforms={new Set(foundProfiles.map(p => p.platform)).size}
+                hasUsernameReuse={new Set(foundProfiles.map(p => p.platform)).size < foundProfiles.length}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
+            {/* ===== IDENTITY GRAPH PREVIEW (blurred) ===== */}
+            {foundProfiles.length > 1 && (
+              <IdentityGraphPreview
+                profileCount={foundProfiles.length}
+                platforms={[...new Set(foundProfiles.map(p => p.platform))]}
+                username={username}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
+            {/* ===== INVESTIGATOR INSIGHT ===== */}
+            {foundProfiles.length > 0 && (
+              <InvestigatorInsight
+                username={username}
+                profileCount={totalProfiles}
+                scanType={job?.scan_type}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
             {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
             <HiddenInsightsTeaser signalsCount={signalsFound} />
 
