@@ -14,6 +14,7 @@ import { CANONICAL_BASE } from "@/lib/seo/sitemapRoutes";
 import type { PlatformEntry } from "@/lib/seo/platformRegistry";
 import { AccuracyCallout } from "@/components/seo/AccuracyCallout";
 import { FeaturedCollections } from "@/components/seo/FeaturedCollections";
+import { InstantPreviewTeaser } from "@/components/conversion/InstantPreviewTeaser";
 
 interface Props {
   entry: PlatformEntry;
@@ -31,14 +32,14 @@ export function PlatformUsernameSearchTemplate({ entry }: Props) {
       e.preventDefault();
       const trimmed = username.trim();
       if (!trimmed) return;
-      navigate(`/scan?q=${encodeURIComponent(trimmed)}`);
+      navigate(`/free-scan?q=${encodeURIComponent(trimmed)}`);
     },
     [username, navigate]
   );
 
   const handleExample = () => {
     setUsername(DEMO_USERNAME);
-    navigate(`/scan?q=${encodeURIComponent(DEMO_USERNAME)}`);
+    navigate(`/free-scan?q=${encodeURIComponent(DEMO_USERNAME)}`);
   };
 
   const pageTitle = `${entry.name} Username Search – Find ${entry.name} Profiles Across 500+ Sites | FootprintIQ`;
@@ -119,6 +120,11 @@ export function PlatformUsernameSearchTemplate({ entry }: Props) {
               <Sparkles className="w-4 h-4" />
               Try an example: <span className="font-mono font-medium">{DEMO_USERNAME}</span>
             </button>
+
+            {/* Mobile engagement teaser */}
+            <div className="sm:hidden">
+              <InstantPreviewTeaser />
+            </div>
           </section>
 
           {/* What you'll find */}
