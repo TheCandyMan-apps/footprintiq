@@ -34,7 +34,7 @@ export const toolPages: ContentEntry[] = [
       { q: "Is username search free?", a: "Yes. FootprintIQ offers a free tier that lets you run username scans without creating an account." },
       { q: "Can a username search find deleted accounts?", a: "Username searches check live, public data. Deleted accounts typically do not appear, though cached references on third-party sites may surface." },
     ],
-    related: ["/reverse-username-search", "/find-someone-by-username", "/guides/what-is-username-osint", "/glossary/username-osint", "/check-username-across-platforms"],
+    related: ["/reverse-username-search", "/find-someone-by-username", "/username-osint-techniques", "/how-investigators-trace-usernames", "/where-is-this-username-used", "/username-reuse-risks", "/digital-footprint-investigation", "/username-search-tools", "/research/username-reuse-statistics", "/what-can-a-username-reveal"],
   },
   {
     path: "/reverse-username-search",
@@ -45,7 +45,7 @@ export const toolPages: ContentEntry[] = [
       { q: "What is a reverse username search?", a: "A reverse username search takes a known handle and checks hundreds of platforms to find matching public profiles and mentions." },
       { q: "Is reverse username searching legal?", a: "Yes, when limited to publicly accessible data. FootprintIQ only queries public sources and follows ethical OSINT principles." },
     ],
-    related: ["/username-search", "/find-someone-by-username", "/guides/how-to-trace-a-username", "/glossary/username-osint", "/research/username-reuse-statistics"],
+    related: ["/username-search", "/find-someone-by-username", "/username-osint-techniques", "/how-investigators-trace-usernames", "/research/username-reuse-statistics"],
   },
   {
     path: "/find-someone-by-username",
@@ -56,7 +56,7 @@ export const toolPages: ContentEntry[] = [
       { q: "Can I find someone using just their username?", a: "Yes. A single username can be checked across 500+ platforms to locate matching public profiles." },
       { q: "Is this the same as doxxing?", a: "No. FootprintIQ only surfaces publicly available data and follows strict ethical OSINT guidelines. It is designed for self-assessment, risk evaluation, and authorised investigations." },
     ],
-    related: ["/username-search", "/reverse-username-search", "/check-username-across-platforms", "/guides/how-to-trace-a-username", "/glossary/digital-footprint"],
+    related: ["/username-search", "/reverse-username-search", "/what-can-a-username-reveal", "/how-investigators-trace-usernames", "/digital-footprint-investigation"],
   },
   {
     path: "/where-is-this-username-used",
@@ -67,7 +67,7 @@ export const toolPages: ContentEntry[] = [
       { q: "How many platforms does this check?", a: "FootprintIQ scans over 500 public platforms including social media, forums, developer sites, and more." },
       { q: "Will the person know I searched their username?", a: "No. FootprintIQ only queries public data — no notifications are sent to profile owners." },
     ],
-    related: ["/username-search", "/check-username-across-platforms", "/guides/why-username-reuse-is-risky", "/glossary/username-osint"],
+    related: ["/username-search", "/find-someone-by-username", "/username-osint-techniques", "/username-reuse-risks"],
   },
   {
     path: "/search-username-online",
@@ -111,7 +111,7 @@ export const toolPages: ContentEntry[] = [
       { q: "What is a digital footprint?", a: "Your digital footprint is the trail of data you leave online — including social profiles, forum posts, data broker entries, and breach records." },
       { q: "How often should I check my digital footprint?", a: "We recommend quarterly checks, or immediately after a data breach notification." },
     ],
-    related: ["/check-my-digital-footprint", "/digital-footprint-scanner", "/guides/how-to-remove-old-accounts", "/glossary/digital-footprint", "/research/username-reuse-statistics"],
+    related: ["/check-my-digital-footprint", "/digital-footprint-scanner", "/digital-footprint-investigation", "/glossary/digital-footprint", "/research/username-reuse-statistics"],
   },
   {
     path: "/check-my-digital-footprint",
@@ -123,6 +123,55 @@ export const toolPages: ContentEntry[] = [
       { q: "What data does the scan find?", a: "It surfaces public profiles, potential data broker listings, and breach exposure associated with your username or email." },
     ],
     related: ["/digital-footprint-checker", "/digital-footprint-scanner", "/audit-your-digital-footprint", "/glossary/digital-footprint", "/datasets/username-reuse"],
+  },
+  // ── Username Investigation Cluster ───────────────────
+  {
+    path: "/username-osint-techniques",
+    title: "Username OSINT Techniques – Methods for Ethical Investigation | FootprintIQ",
+    description: "Discover the OSINT techniques used to investigate usernames across platforms. Learn ethical methods for tracing digital identities.",
+    primaryKeyword: "username osint techniques",
+    faqs: [
+      { q: "What are OSINT techniques for username investigation?", a: "OSINT techniques include multi-platform enumeration, pattern correlation, false-positive filtering, and cross-referencing profile metadata — all using publicly accessible data." },
+      { q: "Can OSINT techniques identify the person behind a username?", a: "OSINT can correlate publicly available signals but cannot definitively confirm identity. It provides intelligence indicators, not certainty." },
+      { q: "What tools are used for username OSINT?", a: "Common tools include Maigret, Sherlock, WhatsMyName, and FootprintIQ — which combines multiple tools into a single AI-filtered pipeline." },
+    ],
+    related: ["/username-search", "/how-investigators-trace-usernames", "/reverse-username-search", "/what-can-a-username-reveal", "/digital-footprint-investigation", "/research/username-reuse-statistics"],
+  },
+  {
+    path: "/username-reuse-risks",
+    title: "Username Reuse Risks – Why Repeating Handles Is Dangerous | FootprintIQ",
+    description: "Understand the risks of reusing usernames across platforms. Learn how handle repetition enables identity correlation and increases digital exposure.",
+    primaryKeyword: "username reuse risks",
+    faqs: [
+      { q: "Why is reusing a username risky?", a: "Reusing the same username across platforms allows investigators, marketers, and bad actors to link your accounts and build a comprehensive profile of your online activity." },
+      { q: "How many platforms does the average person reuse a username on?", a: "Research shows over 60% of users reuse the same username across 3 or more platforms, significantly increasing their digital exposure." },
+      { q: "How can I reduce username reuse risk?", a: "Use unique handles for sensitive accounts, run a username scan to assess your current exposure, and consider changing high-risk handles." },
+    ],
+    related: ["/username-search", "/research/username-reuse-statistics", "/what-can-a-username-reveal", "/digital-footprint-investigation", "/username-osint-techniques", "/find-someone-by-username"],
+  },
+  {
+    path: "/digital-footprint-investigation",
+    title: "Digital Footprint Investigation – Trace Online Activity | FootprintIQ",
+    description: "Investigate digital footprints ethically. Trace usernames, emails, and online activity across 500+ platforms with FootprintIQ.",
+    primaryKeyword: "digital footprint investigation",
+    faqs: [
+      { q: "What is a digital footprint investigation?", a: "A digital footprint investigation maps a person's publicly visible online presence — including social profiles, forum posts, data broker entries, and breach records — to assess exposure and risk." },
+      { q: "Is digital footprint investigation legal?", a: "Yes, when conducted using publicly accessible data and ethical OSINT methods. FootprintIQ follows strict ethical guidelines and only accesses public sources." },
+      { q: "Who uses digital footprint investigations?", a: "Cybersecurity professionals, journalists, HR teams, legal investigators, and individuals conducting self-audits of their online exposure." },
+    ],
+    related: ["/username-search", "/username-osint-techniques", "/how-investigators-trace-usernames", "/what-can-a-username-reveal", "/reverse-username-search", "/username-reuse-risks"],
+  },
+  {
+    path: "/how-investigators-trace-usernames",
+    title: "How Investigators Trace Usernames – Ethical OSINT Methods | FootprintIQ",
+    description: "Learn how investigators ethically trace usernames across platforms using OSINT tools like Maigret, Sherlock, and FootprintIQ.",
+    primaryKeyword: "how investigators trace usernames",
+    faqs: [
+      { q: "How do investigators trace a username?", a: "Investigators use multi-platform enumeration tools to check a username against hundreds of known URL patterns, then apply false-positive filtering and cross-reference correlation." },
+      { q: "What tools do investigators use?", a: "Common tools include Maigret (2,500+ sites), Sherlock, WhatsMyName, and FootprintIQ — which combines multiple tools with AI-powered filtering." },
+      { q: "Is username tracing ethical?", a: "Yes, when limited to publicly accessible data and conducted for legitimate purposes such as authorised investigations, self-audits, and risk assessments." },
+    ],
+    related: ["/username-search", "/username-osint-techniques", "/reverse-username-search", "/digital-footprint-investigation", "/find-someone-by-username", "/what-can-a-username-reveal"],
   },
 ];
 
