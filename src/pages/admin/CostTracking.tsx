@@ -91,7 +91,7 @@ export default function CostTracking() {
     queryKey: ["cost-recommendations"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("cost_recommendations")
+        .from("cost_recommendations" as any)
         .select("*")
         .eq("status", "pending")
         .order("priority", { ascending: false });
