@@ -546,6 +546,14 @@ serve(async (req) => {
       }
     }
 
+    // Count actual findings stored in DB for this scan (not just payload)
+    const { count: actualFindingsCount } = await supabase
+      .from('findings')
+      .select('id', { count: 'exact', head: true })
+      .eq('scan_id', scanId);
+
+    const storedFindings = actualFindingsCount ?? findings?.length ?? 0;
+
     // Determine final scan status
     let finalStatus = status || 'completed';
     if (scanError) {
@@ -560,6 +568,12 @@ serve(async (req) => {
       } else if (hasSuccess && results.some((r) => r.status === 'failed' || r.status === 'timeout')) {
         finalStatus = 'completed_partial';
       }
+    }
+
+    // Override completed_empty if findings actually exist
+    if (finalStatus === 'completed_empty' && storedFindings > 0) {
+      console.log(`[n8n-scan-results] Overriding completed_empty → completed (${storedFindings} findings found)`);
+      finalStatus = 'completed';
     }
 
     // Update scan status
