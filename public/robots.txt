@@ -55,7 +55,6 @@ Disallow: /predictive-analytics
 Disallow: /context-enrichment
 Disallow: /analytics
 Allow: /search-engines-to-find-people
-Disallow: /search$
 Disallow: /ai-analyst
 Disallow: /assistant
 Disallow: /404
