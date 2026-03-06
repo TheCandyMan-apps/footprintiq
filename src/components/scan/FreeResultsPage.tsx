@@ -884,7 +884,53 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               />
             )}
 
-            {/* ===== IDENTITY SIGNALS DETECTED ===== */}
+            {/* ===== IDENTITY ANALYSIS UPGRADE CTA ===== */}
+            {foundProfiles.length > 0 && (
+              <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary/5 via-background to-primary/5">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Lock className="h-4 w-4 text-primary" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground">Unlock Full Identity Analysis</h3>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    This identifier appears across many platforms and may allow accounts to be linked to the same person.
+                  </p>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Pro reveals:</p>
+                    <ul className="space-y-1.5">
+                      {[
+                        'All detected platforms',
+                        'Identity correlation map',
+                        'Exposure prioritisation',
+                        'Platform risk ranking',
+                        'AI attribution insights',
+                      ].map((item) => (
+                        <li key={item} className="flex items-center gap-2 text-xs text-foreground">
+                          <Check className="h-3 w-3 text-primary shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    className="w-full gap-2 bg-primary hover:bg-primary/90 h-11"
+                    onClick={() => {
+                      analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'post_correlation_risk' });
+                      handleUpgradeClick();
+                    }}
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    Unlock Full Analysis
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </CardContent>
+              </Card>
             {foundProfiles.length > 0 && (
               <IdentitySignalsDetected
                 username={username}
