@@ -16,12 +16,22 @@ export function useAdminUsers() {
 
       if (profilesError) throw profilesError;
 
-      // Get user roles
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-
-      if (rolesError) throw rolesError;
+      // Get user roles — paginate to avoid 1000-row default limit
+      let allRoles: any[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: batch, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('*')
+          .range(from, from + pageSize - 1);
+        if (rolesError) throw rolesError;
+        if (!batch || batch.length === 0) break;
+        allRoles = allRoles.concat(batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+      const roles = allRoles;
 
       // Combine the data
       const usersWithRoles = profiles.map(profile => {
