@@ -10579,6 +10579,10 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: Json
       }
+      admin_update_user_role: {
+        Args: { _new_role: string; _user_id: string }
+        Returns: Json
+      }
       can_access_support_message: {
         Args: { message_is_internal: boolean; message_ticket_id: string }
         Returns: boolean
