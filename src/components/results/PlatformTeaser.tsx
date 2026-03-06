@@ -1,0 +1,76 @@
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Lock, ArrowRight, ExternalLink } from 'lucide-react';
+
+interface Platform {
+  name: string;
+  url?: string;
+  username?: string;
+  confidence?: number;
+}
+
+interface PlatformTeaserProps {
+  platforms: Platform[];
+  onUpgradeClick: () => void;
+}
+
+const VISIBLE_LIMIT = 3;
+
+export function PlatformTeaser({ platforms, onUpgradeClick }: PlatformTeaserProps) {
+  if (platforms.length === 0) return null;
+
+  const visible = platforms.slice(0, VISIBLE_LIMIT);
+  const hiddenCount = Math.max(0, platforms.length - VISIBLE_LIMIT);
+
+  return (
+    <Card className="overflow-hidden border-border/50">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Detected Platforms</h3>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+            {platforms.length} found
+          </Badge>
+        </div>
+
+        <div className="space-y-2">
+          {visible.map((p, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/20 border border-border/30"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-primary">
+                  {p.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium capitalize text-foreground">{p.name}</span>
+                {p.username && (
+                  <span className="ml-2 text-[10px] font-mono text-muted-foreground">@{p.username}</span>
+                )}
+              </div>
+              {p.url && <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />}
+            </div>
+          ))}
+        </div>
+
+        {hiddenCount > 0 && (
+          <div className="rounded-lg bg-muted/30 border border-border/30 p-4 text-center space-y-2.5">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Lock className="h-4 w-4" />
+              <span className="font-medium">{hiddenCount} more platform{hiddenCount > 1 ? 's' : ''} detected</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground/70">
+              Including social media, forums, and niche communities
+            </p>
+            <Button size="sm" onClick={onUpgradeClick} className="gap-2 h-9">
+              Unlock Full Platform List
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
