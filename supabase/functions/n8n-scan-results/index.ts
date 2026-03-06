@@ -582,7 +582,7 @@ serve(async (req) => {
       .update({
         status: finalStatus,
         completed_at: new Date().toISOString(),
-        total_sources_found: findings?.length || 0,
+        total_sources_found: storedFindings,
       })
       .eq('id', scanId);
 
