@@ -114,7 +114,9 @@ export function useAdminUsers() {
     isLoading,
     refetch,
     updateUserRole: updateUserRole.mutate,
+    updateUserRoleAsync: updateUserRole.mutateAsync,
     updateUserSubscription: updateUserSubscription.mutate,
+    updateUserSubscriptionAsync: updateUserSubscription.mutateAsync,
     isUpdating: updateUserRole.isPending || updateUserSubscription.isPending,
   };
 }
