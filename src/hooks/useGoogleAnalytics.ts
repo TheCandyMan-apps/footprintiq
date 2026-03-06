@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { firePageConversions } from '@/lib/retargeting';
 
 declare global {
   interface Window {
@@ -10,9 +11,8 @@ declare global {
 const GA_MEASUREMENT_ID = 'G-7B32ERNHXN';
 
 /**
- * Hook to track page views in Google Analytics for SPA navigation.
- * This sends a pageview event on every route change since the gtag in index.html
- * only fires on initial page load.
+ * Hook to track page views in Google Analytics for SPA navigation
+ * and fire retargeting pixel conversion events per route.
  */
 export function useGoogleAnalytics() {
   const location = useLocation();
@@ -24,5 +24,8 @@ export function useGoogleAnalytics() {
         page_title: document.title,
       });
     }
+
+    // Fire Meta Pixel / Google Ads conversion events for key pages
+    firePageConversions(location.pathname);
   }, [location.pathname, location.search]);
 }
