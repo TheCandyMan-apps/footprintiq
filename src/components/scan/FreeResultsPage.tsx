@@ -106,6 +106,11 @@ import { LazySection } from './LazySection';
 import { MobileCollapsible } from './MobileCollapsible';
 import { AccountsListSkeleton } from './skeletons/ProfileCardSkeleton';
 import { ConfidenceBreakdownSkeleton } from './skeletons/ConfidenceBreakdownSkeleton';
+import { PlatformTeaser } from '@/components/results/PlatformTeaser';
+import { ExposureBreakdown } from '@/components/results/ExposureBreakdown';
+import { IdentityCorrelationRisk } from '@/components/results/IdentityCorrelationRisk';
+import { IdentityGraphPreview } from '@/components/results/IdentityGraphPreview';
+import { InvestigatorInsight } from '@/components/results/InvestigatorInsight';
 
 // Number of full Pro-style results to show for Free users
 const FREE_PREVIEW_LIMIT = 10;
@@ -814,6 +819,58 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
             </MobileCollapsible>
+
+            {/* ===== PLATFORM TEASER (first 3 platforms, rest locked) ===== */}
+            {foundProfiles.length > 0 && (
+              <PlatformTeaser
+                platforms={foundProfiles.map(p => ({
+                  name: p.platform,
+                  url: p.url || undefined,
+                  username: p.username || undefined,
+                  confidence: p.confidence,
+                }))}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
+            {/* ===== IDENTITY CORRELATION RISK ===== */}
+            {foundProfiles.length > 0 && (
+              <IdentityCorrelationRisk
+                profileCount={totalProfiles}
+                highConfidenceCount={highConfidenceCount}
+                uniquePlatforms={new Set(foundProfiles.map(p => p.platform)).size}
+              />
+            )}
+
+            {/* ===== EXPOSURE BREAKDOWN ===== */}
+            {foundProfiles.length > 0 && (
+              <ExposureBreakdown
+                profileCount={totalProfiles}
+                uniquePlatforms={new Set(foundProfiles.map(p => p.platform)).size}
+                hasUsernameReuse={new Set(foundProfiles.map(p => p.platform)).size < foundProfiles.length}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
+            {/* ===== IDENTITY GRAPH PREVIEW (blurred) ===== */}
+            {foundProfiles.length > 1 && (
+              <IdentityGraphPreview
+                profileCount={foundProfiles.length}
+                platforms={[...new Set(foundProfiles.map(p => p.platform))]}
+                username={username}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
+
+            {/* ===== INVESTIGATOR INSIGHT ===== */}
+            {foundProfiles.length > 0 && (
+              <InvestigatorInsight
+                username={username}
+                profileCount={totalProfiles}
+                scanType={job?.scan_type}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            )}
 
             {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
             <HiddenInsightsTeaser signalsCount={signalsFound} />
