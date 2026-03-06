@@ -78,13 +78,12 @@ export function useAdminUsers() {
       tier: 'free' | 'pro' | 'enterprise'; 
       expiresAt?: string;
     }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ 
-          subscription_tier: tier as any,
-          subscription_expires_at: expiresAt 
-        })
-        .eq('user_id', userId);
+      // Use the SECURITY DEFINER RPC to bypass RLS
+      const { data, error } = await supabase.rpc('update_user_subscription', {
+        _user_id: userId,
+        _new_tier: tier as any,
+        ...(expiresAt ? { _expires_at: expiresAt } : {}),
+      });
 
       if (error) throw error;
 
