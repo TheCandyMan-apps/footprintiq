@@ -8,6 +8,7 @@ interface ExposureBreakdownProps {
   uniquePlatforms: number;
   hasUsernameReuse: boolean;
   onUpgradeClick: () => void;
+  onInteraction?: () => void;
 }
 
 const SIGNALS = [
@@ -42,6 +43,7 @@ export function ExposureBreakdown({
   uniquePlatforms,
   hasUsernameReuse,
   onUpgradeClick,
+  onInteraction,
 }: ExposureBreakdownProps) {
   return (
     <Card className="overflow-hidden border-border/50">
@@ -92,7 +94,7 @@ export function ExposureBreakdown({
           <div className="absolute inset-0 backdrop-blur-[3px] bg-background/40 z-10 flex flex-col items-center justify-center gap-2">
             <Lock className="h-4 w-4 text-muted-foreground/60" />
             <p className="text-[11px] font-medium text-muted-foreground">Detailed analysis — Pro only</p>
-            <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" onClick={onUpgradeClick}>
+            <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" onClick={() => { onInteraction?.(); onUpgradeClick(); }}>
               Unlock Analysis <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
