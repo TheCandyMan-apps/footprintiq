@@ -106,6 +106,11 @@ import { LazySection } from './LazySection';
 import { MobileCollapsible } from './MobileCollapsible';
 import { AccountsListSkeleton } from './skeletons/ProfileCardSkeleton';
 import { ConfidenceBreakdownSkeleton } from './skeletons/ConfidenceBreakdownSkeleton';
+import { PlatformTeaser } from '@/components/results/PlatformTeaser';
+import { ExposureBreakdown } from '@/components/results/ExposureBreakdown';
+import { IdentityCorrelationRisk } from '@/components/results/IdentityCorrelationRisk';
+import { IdentityGraphPreview } from '@/components/results/IdentityGraphPreview';
+import { InvestigatorInsight } from '@/components/results/InvestigatorInsight';
 
 // Number of full Pro-style results to show for Free users
 const FREE_PREVIEW_LIMIT = 10;
