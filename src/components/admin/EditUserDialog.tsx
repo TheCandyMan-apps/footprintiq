@@ -40,10 +40,11 @@ interface WorkspaceInfo {
 }
 
 export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
-  const { updateUserRole, updateUserSubscription, isUpdating, refetch } = useAdminUsers();
+  const { updateUserRoleAsync, updateUserSubscriptionAsync, isUpdating, refetch } = useAdminUsers();
   const [role, setRole] = useState(user.role);
   const [subscriptionTier, setSubscriptionTier] = useState(user.subscription_tier);
   const [showFlagDialog, setShowFlagDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Credit grant state
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
