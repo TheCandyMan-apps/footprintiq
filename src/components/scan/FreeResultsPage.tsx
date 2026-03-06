@@ -1392,6 +1392,29 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               hiddenCount={hiddenCount}
               highConfidenceCount={highConfidenceCount}
             />
+
+            {/* ===== FOOTER CTA ===== */}
+            <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+              <CardContent className="p-6 text-center space-y-3">
+                <h3 className="text-base font-semibold text-foreground">
+                  Discover your full digital footprint
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Unlock the full analysis to see which profiles reveal the most about your identity.
+                </p>
+                <Button
+                  className="w-full gap-2 h-12 text-base bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'footer' });
+                    handleUpgradeClick();
+                  }}
+                >
+                  <Lock className="h-4 w-4" />
+                  Unlock Full Intelligence
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
       </CardContent>
