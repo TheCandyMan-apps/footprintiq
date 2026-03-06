@@ -236,13 +236,20 @@ serve(async (req) => {
       console.log('[name-intel] No findings to insert');
     }
 
-    // Update scan with provider results
-    const totalFindings = findings.length;
+    // Count actual stored findings (not just payload count)
+    const { count: actualCount } = await supabase
+      .from('findings')
+      .select('id', { count: 'exact', head: true })
+      .eq('scan_id', scanId);
+
+    const actualFindings = actualCount ?? totalFindings;
+    const finalStatus = actualFindings > 0 ? 'completed' : 'completed_empty';
+
     const { error: updateError } = await supabase
       .from('scans')
       .update({
         provider_counts: providerResults,
-        status: totalFindings > 0 ? 'completed' : 'completed_empty',
+        status: finalStatus,
         completed_at: new Date().toISOString(),
       })
       .eq('id', scanId);
@@ -259,8 +266,8 @@ serve(async (req) => {
         event: 'scan_complete',
         payload: {
           scanId,
-          status: totalFindings > 0 ? 'completed' : 'completed_empty',
-          findingsCount: totalFindings,
+          status: finalStatus,
+          findingsCount: actualFindings,
           providerResults,
         },
       });
