@@ -956,7 +956,59 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               />
             )}
 
-            {/* ===== IDENTITY GRAPH PREVIEW (blurred) ===== */}
+            {/* ===== AI ATTRIBUTION INSIGHTS (moved up) ===== */}
+            {foundProfiles.length > 0 && (
+              <Card className="overflow-hidden border-border/50">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">AI Attribution Insights</h3>
+                      <p className="text-xs text-muted-foreground">
+                        FootprintIQ AI analysis identifies signals that may link profiles across platforms.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/15">
+                    <p className="text-xs font-medium text-foreground">
+                      3 AI attribution insights detected
+                    </p>
+                  </div>
+
+                  {/* Blurred preview rows */}
+                  <div className="space-y-2">
+                    {['Cross-platform handle correlation suggests shared identity across social and developer platforms',
+                      'Naming convention analysis reveals structured pattern consistent with professional usage',
+                      'Temporal registration clustering detected — accounts created within a similar timeframe',
+                    ].map((text, i) => (
+                      <div
+                        key={i}
+                        className="p-2.5 rounded-lg bg-muted/20 border border-border/20 blur-[5px] select-none pointer-events-none opacity-50"
+                      >
+                        <p className="text-xs text-foreground">{text}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button
+                    size="sm"
+                    className="w-full gap-2 bg-primary hover:bg-primary/90 h-10"
+                    onClick={() => {
+                      analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'ai_attribution_insights' });
+                      handleUpgradeClick();
+                    }}
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    Unlock AI Attribution Insights
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {foundProfiles.length > 1 && (
               <IdentityGraphPreview
                 profileCount={foundProfiles.length}
@@ -978,8 +1030,6 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               />
             )}
 
-            {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
-            <HiddenInsightsTeaser signalsCount={signalsFound} />
 
             <MobileCollapsible
               storageKey="public-profiles"
