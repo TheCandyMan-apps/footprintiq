@@ -24,17 +24,14 @@ export default function ErrorViewer() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-errors', filters, offset],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      params.append('limit', limit.toString());
-      params.append('offset', offset.toString());
+      const page = Math.floor(offset / limit) + 1;
       
-      if (filters.severity) params.append('severity', filters.severity);
-      if (filters.function_name) params.append('function_name', filters.function_name);
-      if (filters.start_date) params.append('start_date', filters.start_date);
-      if (filters.end_date) params.append('end_date', filters.end_date);
+      const body: Record<string, any> = { page };
+      if (filters.severity) body.severity = filters.severity;
+      if (filters.function_name) body.function_name = filters.function_name;
 
       const { data, error } = await supabase.functions.invoke('admin-get-errors', {
-        method: 'GET',
+        body,
       });
 
       if (error) throw error;

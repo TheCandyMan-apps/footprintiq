@@ -52,10 +52,17 @@ serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const functionName = url.searchParams.get('function_name');
-    const severity = url.searchParams.get('severity');
-    const workspaceId = url.searchParams.get('workspace_id');
-    const pageParam = url.searchParams.get('page') || '1';
+    
+    // Support params from query string OR body
+    let bodyData: any = {};
+    if (req.method === 'POST') {
+      try { bodyData = await req.json(); } catch { /* no body */ }
+    }
+    
+    const functionName = url.searchParams.get('function_name') || bodyData?.function_name || null;
+    const severity = url.searchParams.get('severity') || bodyData?.severity || null;
+    const workspaceId = url.searchParams.get('workspace_id') || bodyData?.workspace_id || null;
+    const pageParam = url.searchParams.get('page') || bodyData?.page?.toString() || '1';
     
     // Input validation for page param
     const pageValidation = validateInput(pageParam);
