@@ -3,7 +3,7 @@
  * Accessible without authentication.
  * Routes through the free n8n quick-scan workflow.
  */
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
@@ -18,6 +18,7 @@ import {
   AlertCircle, Lock, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InstantPreviewTeaser } from "@/components/conversion/InstantPreviewTeaser";
 
 type DetectedType = "email" | "phone" | "name" | "username";
 
@@ -91,7 +92,7 @@ export default function AnonScanPage() {
         canonical="https://footprintiq.app/scan"
       />
       <Header />
-      <main className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-16">
+      <main className="min-h-screen bg-background flex flex-col items-center justify-start pt-12 sm:justify-center sm:pt-0 px-4 py-16">
         <div className="w-full max-w-lg">
           <p className="text-center text-[11px] text-muted-foreground mb-4">
             This page is a shortcut. For the latest version, use{" "}
@@ -222,8 +223,13 @@ export default function AnonScanPage() {
             </form>
           </Card>
 
-          {/* Feature pills */}
-          <div className="flex flex-wrap justify-center gap-2 mt-6 text-xs text-muted-foreground">
+          {/* Instant preview teaser — mobile engagement hook */}
+          <div className="sm:hidden">
+            <InstantPreviewTeaser />
+          </div>
+
+          {/* Feature pills — desktop */}
+          <div className="hidden sm:flex flex-wrap justify-center gap-2 mt-6 text-xs text-muted-foreground">
             {["500+ platforms", "Instant results", "Ethical OSINT only", "No surveillance"].map(f => (
               <span key={f} className="px-2.5 py-1 rounded-full bg-muted/40 border border-border/50">
                 {f}
