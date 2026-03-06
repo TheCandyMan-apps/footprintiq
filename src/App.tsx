@@ -435,6 +435,11 @@ const GlossaryDigitalFootprint = lazy(() => import("./pages/glossary/DigitalFoot
 const GlossaryDataBroker = lazy(() => import("./pages/glossary/DataBroker"));
 const DatasetUsernameReuse = lazy(() => import("./pages/datasets/UsernameReuse"));
 const AIAnswersHowInvestigatorsTraceUsernames = lazy(() => import("./pages/ai-answers/HowInvestigatorsTraceUsernames"));
+// Username investigation cluster pages
+const UsernameOsintTechniques = lazy(() => import("./pages/UsernameOsintTechniques"));
+const UsernameReuseRisks = lazy(() => import("./pages/UsernameReuseRisks"));
+const DigitalFootprintInvestigation = lazy(() => import("./pages/DigitalFootprintInvestigation"));
+const HowInvestigatorsTraceUsernamesPage = lazy(() => import("./pages/HowInvestigatorsTraceUsernames"));
 
 // Platform + Comparison programmatic pages
 const PlatformHub = lazy(() => import("./pages/platforms/PlatformHub"));
