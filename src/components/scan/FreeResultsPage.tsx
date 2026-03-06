@@ -845,6 +845,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   confidence: p.confidence,
                 }))}
                 onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('platform_teaser_clicked', trackingMeta)}
               />
             )}
 
@@ -864,6 +865,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 uniquePlatforms={new Set(foundProfiles.map(p => p.platform)).size}
                 hasUsernameReuse={new Set(foundProfiles.map(p => p.platform)).size < foundProfiles.length}
                 onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('exposure_breakdown_clicked', trackingMeta)}
               />
             )}
 
@@ -874,6 +876,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 platforms={[...new Set(foundProfiles.map(p => p.platform))]}
                 username={username}
                 onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('identity_graph_preview_clicked', trackingMeta)}
               />
             )}
 
@@ -884,6 +887,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 profileCount={totalProfiles}
                 scanType={job?.scan_type}
                 onUpgradeClick={handleUpgradeClick}
+                onInsightExpand={() => analytics.trackEvent('investigator_insight_expand', trackingMeta)}
               />
             )}
 
