@@ -98,6 +98,9 @@ import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
 import { PostScanInlineUpgrade } from '@/components/conversion/PostScanInlineUpgrade';
 import { InlineUpgradeModal } from '@/components/results/InlineUpgradeModal';
+import { StickyMobileUpgradeCTA } from '@/components/conversion/StickyMobileUpgradeCTA';
+import { FreeVsProComparison } from '@/components/conversion/FreeVsProComparison';
+import { UrgencyBanner } from '@/components/conversion/UrgencyBanner';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { AttentionSection } from './AttentionSection';
