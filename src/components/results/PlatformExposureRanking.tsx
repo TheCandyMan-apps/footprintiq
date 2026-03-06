@@ -48,47 +48,82 @@ function getRiskLabel(risk: PlatformRisk) {
 
 /**
  * Derive platform risk from scan result data.
+ * Risk is based on:
+ *  - Profile metadata richness (bio, avatar, followers, location, etc.)
+ *  - Public identity signals (real-name patterns, profile presence, high severity)
+ *  - Cross-platform correlation confidence (reuse across multiple providers)
  * Call this from the parent to build RankedPlatform[].
  */
 export function derivePlatformRisk(rows: any[]): RankedPlatform[] {
   // Group by platform name
-  const platformMap = new Map<string, { count: number; severities: string[]; kinds: string[] }>();
+  const platformMap = new Map<string, {
+    count: number;
+    severities: string[];
+    kinds: string[];
+    providers: Set<string>;
+    metaFields: number;
+    confidences: number[];
+  }>();
 
   for (const r of rows) {
     const platform = r.site || r.meta?.platform || r.platformName || r.platform_name || r.provider;
     if (!platform) continue;
 
     const name = String(platform).charAt(0).toUpperCase() + String(platform).slice(1);
-    const existing = platformMap.get(name) || { count: 0, severities: [], kinds: [] };
+    const existing = platformMap.get(name) || {
+      count: 0, severities: [], kinds: [], providers: new Set<string>(), metaFields: 0, confidences: [],
+    };
     existing.count++;
     if (r.severity) existing.severities.push(r.severity);
     if (r.kind) existing.kinds.push(r.kind);
+    if (r.provider) existing.providers.add(r.provider);
+
+    // Count metadata richness (bio, avatar, followers, location, display_name, website, joined)
+    const meta = r.meta || {};
+    const richFields = ['bio', 'avatar_url', 'display_name', 'followers', 'location', 'website', 'joined'].filter(
+      f => meta[f] !== undefined && meta[f] !== null && meta[f] !== ''
+    );
+    existing.metaFields += richFields.length;
+
+    // Track confidence for correlation scoring
+    const conf = typeof r.confidence === 'number' ? r.confidence
+      : typeof r.evidence?.confidence_score === 'number' ? r.evidence.confidence_score / 100
+      : null;
+    if (conf !== null) existing.confidences.push(conf);
+
     platformMap.set(name, existing);
   }
 
   const ranked: RankedPlatform[] = [];
 
   for (const [name, data] of platformMap) {
-    let risk: PlatformRisk = 'low';
+    // --- Score each risk dimension (0-3 each) ---
 
-    const hasBreach = data.kinds.some(k =>
-      k.includes('breach') || k.includes('leak') || k.includes('pwned')
-    );
+    // 1. Metadata richness score
+    const metaScore = data.metaFields >= 5 ? 3 : data.metaFields >= 3 ? 2 : data.metaFields >= 1 ? 1 : 0;
+
+    // 2. Public identity signals score
+    const hasBreach = data.kinds.some(k => k.includes('breach') || k.includes('leak') || k.includes('pwned'));
     const hasHighSeverity = data.severities.some(s => s === 'high' || s === 'critical');
+    const hasPresence = data.kinds.some(k => k.includes('profile_presence') || k.includes('presence.hit'));
+    const identityScore = (hasBreach ? 2 : 0) + (hasHighSeverity ? 1 : 0) + (hasPresence ? 0.5 : 0);
 
-    if (hasBreach || hasHighSeverity) {
-      risk = 'high';
-    } else if (data.count >= 3 || data.severities.some(s => s === 'medium')) {
-      risk = 'medium';
-    }
+    // 3. Cross-platform correlation confidence score
+    const avgConf = data.confidences.length > 0
+      ? data.confidences.reduce((a, b) => a + b, 0) / data.confidences.length
+      : 0;
+    const correlationScore = (data.providers.size >= 3 ? 2 : data.providers.size >= 2 ? 1 : 0)
+      + (avgConf >= 0.7 ? 1 : avgConf >= 0.4 ? 0.5 : 0);
 
-    // Breach + high severity = critical
-    if (hasBreach && hasHighSeverity) {
-      risk = 'critical';
-    }
+    const totalScore = metaScore + identityScore + correlationScore;
 
-    const explanation = buildExplanation(name, data, risk);
+    let risk: PlatformRisk;
+    if (totalScore >= 5) risk = 'critical';
+    else if (totalScore >= 3.5) risk = 'high';
+    else if (totalScore >= 2) risk = 'medium';
+    else risk = 'low';
 
+    const explanation = buildExplanation(name, data, risk, metaScore, correlationScore);
     ranked.push({ name, risk, explanation });
   }
 
@@ -101,7 +136,9 @@ export function derivePlatformRisk(rows: any[]): RankedPlatform[] {
 function buildExplanation(
   name: string,
   data: { count: number; severities: string[]; kinds: string[] },
-  risk: PlatformRisk
+  risk: PlatformRisk,
+  metaScore?: number,
+  correlationScore?: number,
 ): string {
   const parts: string[] = [];
 
@@ -121,6 +158,14 @@ function buildExplanation(
     parts.push('public profile detected');
   }
 
+  if (metaScore !== undefined && metaScore >= 2) {
+    parts.push('rich profile metadata');
+  }
+
+  if (correlationScore !== undefined && correlationScore >= 2) {
+    parts.push('strong cross-platform correlation');
+  }
+
   if (parts.length === 0) {
     parts.push('presence detected');
   }
@@ -128,7 +173,7 @@ function buildExplanation(
   return `${name}: ${parts.join(', ')}.`;
 }
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 1;
 
 export function PlatformExposureRanking({
   platforms,
