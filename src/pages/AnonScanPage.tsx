@@ -67,12 +67,16 @@ export default function AnonScanPage() {
       return;
     }
 
+    // If Turnstile hasn't completed yet, let the user know instead of dead-clicking
+    if (!turnstileToken) {
+      // Scroll to the Turnstile widget area to draw attention
+      turnstileRef.current?.reset();
+      return;
+    }
+
     submittedRef.current = true;
     const scanId = await triggerScan(trimmed, turnstileToken || undefined);
     submittedRef.current = false;
-    // Reset turnstile after submission
-    turnstileRef.current?.reset();
-    setTurnstileToken(null);
 
     if (scanId) {
       navigate(`/results/${scanId}?anon=1`);
@@ -191,8 +195,8 @@ export default function AnonScanPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full"
-                disabled={!identifier.trim() || isLoading || (!isRestrictedType && !turnstileToken)}
+                className="w-full h-12"
+                disabled={!identifier.trim() || isLoading}
               >
                 {isLoading ? (
                   <>
