@@ -88,7 +88,7 @@ export default function Performance() {
     queryKey: ["query-performance", timeRange],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("query_performance" as any)
+        .from("query_performance")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
@@ -102,7 +102,7 @@ export default function Performance() {
     queryKey: ["rate-limits"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("rate_limits" as any)
+        .from("rate_limits")
         .select("*")
         .order("total_requests", { ascending: false })
         .limit(20);
