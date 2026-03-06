@@ -67,11 +67,16 @@ export default function AnonScanPage() {
       return;
     }
 
+    // If Turnstile hasn't completed yet, let the user know instead of dead-clicking
+    if (!turnstileToken) {
+      // Scroll to the Turnstile widget area to draw attention
+      turnstileRef.current?.reset();
+      return;
+    }
+
     submittedRef.current = true;
     const scanId = await triggerScan(trimmed, turnstileToken || undefined);
     submittedRef.current = false;
-    // Don't reset Turnstile after successful submission — token stays valid
-    // for follow-up scans within the session, reducing re-challenge friction
 
     if (scanId) {
       navigate(`/results/${scanId}?anon=1`);
