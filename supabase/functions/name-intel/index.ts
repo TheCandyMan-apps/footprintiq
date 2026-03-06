@@ -266,8 +266,8 @@ serve(async (req) => {
         event: 'scan_complete',
         payload: {
           scanId,
-          status: totalFindings > 0 ? 'completed' : 'completed_empty',
-          findingsCount: totalFindings,
+          status: finalStatus,
+          findingsCount: actualFindings,
           providerResults,
         },
       });
