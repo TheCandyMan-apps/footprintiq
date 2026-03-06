@@ -8,7 +8,11 @@ Disallow: /settings
 Disallow: /auth
 Disallow: /api
 Disallow: /api-keys
-Disallow: /scan
+Allow: /scan-my-online-presence
+Allow: /scan
+Disallow: /scan/usernames/
+Disallow: /scan/emails/
+Disallow: /scan/phones/
 Disallow: /results/
 Disallow: /my-tickets
 Disallow: /reports
@@ -50,16 +54,13 @@ Disallow: /sovereignty
 Disallow: /predictive-analytics
 Disallow: /context-enrichment
 Disallow: /analytics
-Disallow: /search
+Allow: /search-engines-to-find-people
 Disallow: /ai-analyst
 Disallow: /assistant
 Disallow: /404
 Disallow: /maigret/results/
 Disallow: /maigret/debug
 Disallow: /maigret/self-test
-Disallow: /scan/usernames/
-Disallow: /scan/emails/
-Disallow: /scan/phones/
 Disallow: /billing
 
 Sitemap: https://footprintiq.app/sitemap.xml
