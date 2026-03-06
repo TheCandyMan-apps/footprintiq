@@ -1,14 +1,15 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { UsernameScanForm } from '@/components/scan/UsernameScanForm';
 import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, Search, ShieldCheck, ListChecks, AlertTriangle } from 'lucide-react';
+import { Info, Search, ShieldCheck, ListChecks, AlertTriangle, TrendingUp, Users, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
 
 // Lazy load below-fold / non-critical components to reduce LCP
 const ScanJobList = lazy(() => import('@/components/scan/ScanJobList').then(m => ({ default: m.ScanJobList })));
@@ -74,6 +75,21 @@ const STEPS = [
 ];
 
 export default function UsernamesPage() {
+  const [scanCount, setScanCount] = useState<number | null>(null);
+
+  // Fetch today's scan count for social proof
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    supabase
+      .from('scans')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString())
+      .then(({ count }) => {
+        if (count !== null) setScanCount(count);
+      });
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
@@ -91,22 +107,52 @@ export default function UsernamesPage() {
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Free Username Search Tool</h1>
-              <p className="text-muted-foreground mt-2">
-                Find where a username appears across 500+ platforms — social media, forums, dating sites, and more
-              </p>
+          
+          {/* ===== HERO SECTION — Prominent CTA ===== */}
+          <div className="text-center space-y-3 pb-2">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Free Username Search Tool</h1>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Find where a username appears across 500+ platforms — social media, forums, dating sites, and more.
+            </p>
+            
+            {/* Social proof stats */}
+            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70 pt-1">
+              <span className="flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Public sources only
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                500+ platforms
+              </span>
+              {scanCount !== null && scanCount > 5 && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {scanCount} scans today
+                  </span>
+                </>
+              )}
             </div>
+          </div>
+
+          {/* ===== SCAN FORM — Full width, front and centre ===== */}
+          <div className="max-w-2xl mx-auto">
+            <UsernameScanForm />
+          </div>
+
+          {/* Pro conversion banner */}
+          <Suspense fallback={null}>
+            <UsernamesProBanner />
+          </Suspense>
+
+          <div className="flex items-center justify-between">
             <Suspense fallback={null}>
               <WorkerHealth />
             </Suspense>
           </div>
-
-          {/* Pro conversion banner - deferred */}
-          <Suspense fallback={null}>
-            <UsernamesProBanner />
-          </Suspense>
 
           <Alert className="bg-muted/50">
             <Info className="h-4 w-4" />
@@ -121,19 +167,17 @@ export default function UsernamesPage() {
             </AlertDescription>
           </Alert>
 
-          <Tabs defaultValue="scan" className="w-full">
+          {/* Scan history and compare — secondary */}
+          <Tabs defaultValue="history" className="w-full">
             <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="scan">New Scan</TabsTrigger>
+              <TabsTrigger value="history">Scan History</TabsTrigger>
               <TabsTrigger value="compare">Compare Scans</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="scan" className="space-y-6 mt-6">
-              <div className="grid lg:grid-cols-2 gap-6">
-                <UsernameScanForm />
-                <Suspense fallback={<ListSkeleton />}>
-                  <ScanJobList />
-                </Suspense>
-              </div>
+            <TabsContent value="history" className="mt-6">
+              <Suspense fallback={<ListSkeleton />}>
+                <ScanJobList />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="compare" className="mt-6">
