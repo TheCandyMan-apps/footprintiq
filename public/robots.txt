@@ -9,8 +9,10 @@ Disallow: /auth
 Disallow: /api
 Disallow: /api-keys
 Allow: /scan-my-online-presence
-Allow: /scan$
-Disallow: /scan/
+Allow: /scan
+Disallow: /scan/usernames/
+Disallow: /scan/emails/
+Disallow: /scan/phones/
 Disallow: /results/
 Disallow: /my-tickets
 Disallow: /reports
