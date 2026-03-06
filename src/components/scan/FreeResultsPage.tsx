@@ -112,6 +112,7 @@ import { ExposureBreakdown } from '@/components/results/ExposureBreakdown';
 import { IdentityCorrelationRisk } from '@/components/results/IdentityCorrelationRisk';
 import { IdentityGraphPreview } from '@/components/results/IdentityGraphPreview';
 import { InvestigatorInsight } from '@/components/results/InvestigatorInsight';
+import { IdentitySignalsDetected } from '@/components/results/IdentitySignalsDetected';
 
 // Number of full Pro-style results to show for Free users
 const FREE_PREVIEW_LIMIT = 10;
@@ -880,6 +881,18 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 profileCount={totalProfiles}
                 highConfidenceCount={highConfidenceCount}
                 uniquePlatforms={new Set(foundProfiles.map(p => p.platform)).size}
+              />
+            )}
+
+            {/* ===== IDENTITY SIGNALS DETECTED ===== */}
+            {foundProfiles.length > 0 && (
+              <IdentitySignalsDetected
+                username={username}
+                profileCount={totalProfiles}
+                platforms={[...new Set(foundProfiles.map(p => p.platform))]}
+                highConfidenceCount={highConfidenceCount}
+                onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('identity_signals_clicked', trackingMeta)}
               />
             )}
 
