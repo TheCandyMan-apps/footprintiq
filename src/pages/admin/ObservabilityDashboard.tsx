@@ -109,9 +109,23 @@ export default function ObservabilityDashboard() {
 
   const createIncident = useMutation({
     mutationFn: async (data: typeof newIncident) => {
-      const { data: result, error } = await supabase.functions.invoke("create-incident", {
-        body: data,
-      });
+      // Generate incident number via DB function
+      const { data: numberData, error: numberError } = await supabase.rpc('generate_incident_number');
+      if (numberError) throw numberError;
+      
+      const { data: result, error } = await supabase
+        .from("incidents")
+        .insert({
+          title: data.title,
+          description: data.description,
+          severity: data.severity,
+          impact: data.impact,
+          slack_thread_url: data.slack_thread_url || null,
+          incident_number: numberData,
+          status: "investigating",
+        })
+        .select()
+        .single();
       if (error) throw error;
       return result;
     },
