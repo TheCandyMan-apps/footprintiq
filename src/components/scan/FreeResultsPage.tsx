@@ -115,7 +115,7 @@ import { InvestigatorInsight } from '@/components/results/InvestigatorInsight';
 import { IdentitySignalsDetected } from '@/components/results/IdentitySignalsDetected';
 
 // Number of full Pro-style results to show for Free users
-const FREE_PREVIEW_LIMIT = 10;
+const FREE_PREVIEW_LIMIT = 3;
 
 /**
  * Adapter: Convert AggregatedProfile to ScanResult format for AccountRow
@@ -998,16 +998,16 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings in full detail.
+                    Showing {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} detected profiles
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3 md:hidden">
-                  Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings.
+                  Showing {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} detected profiles
                 </p>
 
                 {previewProfiles.length > 0 ? (
                   <div className="space-y-0 border border-border/30 rounded-lg overflow-hidden">
-                    {/* Full Pro-style AccountRow for first 10 results with inline LENS */}
+                    {/* Full Pro-style AccountRow for first 3 results with inline LENS */}
                     {(() => {
                       // Compute LENS-eligible indices once
                       const eligibleIndices = getLensEligibleIndices(previewProfiles.length);
@@ -1054,28 +1054,44 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                       });
                     })()}
                     
-                    {/* Lock Divider - shown after the 10th result */}
+                    {/* Blurred placeholder rows for hidden profiles */}
                     {hiddenCount > 0 && (
                       <>
+                        {/* Blurred fake rows */}
+                        {Array.from({ length: Math.min(3, hiddenCount) }).map((_, i) => (
+                          <div
+                            key={`blur-${i}`}
+                            className="flex items-center gap-3 px-4 py-3 border-t border-border/30 blur-[5px] select-none pointer-events-none opacity-40"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-muted" />
+                            <div className="flex-1 space-y-1.5">
+                              <div className="h-3.5 w-28 rounded bg-muted" />
+                              <div className="h-2.5 w-40 rounded bg-muted/60" />
+                            </div>
+                            <div className="h-5 w-14 rounded-full bg-muted/50" />
+                          </div>
+                        ))}
+
+                        {/* Lock divider with count */}
                         <div className="flex items-center justify-center gap-2 py-3 px-4 bg-muted/30 border-t border-border/30">
-                          <Lock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground font-medium">
-                            {hiddenCount} more finding{hiddenCount > 1 ? 's' : ''} hidden — including {Math.ceil(hiddenCount * 0.3)} high-risk exposures
+                          <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground font-medium">
+                            +{hiddenCount} additional profiles detected across multiple platforms
                           </span>
                         </div>
                         
-                        {/* Locked Results Block */}
+                        {/* Upgrade CTA */}
                         <div className="p-4 bg-muted/20 border-t border-border/30 text-center space-y-3">
-                          <p className="text-sm font-medium text-foreground">
-                            Pro reveals risk scores, removal steps, and full evidence for every finding
-                          </p>
                           <Button 
-                            onClick={handleUpgradeClick}
-                            className="gap-2 h-12 px-6 text-base"
+                            onClick={() => {
+                              analytics.trackEvent('upgrade_cta_clicked', { ...trackingMeta, placement: 'profiles_list' });
+                              handleUpgradeClick();
+                            }}
+                            className="gap-2 h-11 px-6"
                           >
-                            <Lock className="h-4 w-4" />
-                            Unlock All Findings
-                            <ArrowRight className="h-4 w-4" />
+                            <Lock className="h-3.5 w-3.5" />
+                            Unlock Full Platform Discovery
+                            <ArrowRight className="h-3.5 w-3.5" />
                           </Button>
                           <p className="text-[10px] text-muted-foreground/50">
                             From £14.99/mo · Cancel anytime
