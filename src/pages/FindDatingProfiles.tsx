@@ -108,20 +108,43 @@ const FindDatingProfiles = () => {
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Discover which dating platforms are linked to a username or email address using ethical, publicly sourced OSINT intelligence. No hacking, no login bypass — just transparent exposure mapping.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="gap-2">
-                <Link to="/scan">
+
+            {/* Inline scan input */}
+            <div className="max-w-lg mx-auto mb-6">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const input = (e.target as HTMLFormElement).elements.namedItem('query') as HTMLInputElement;
+                  const val = input?.value?.trim();
+                  if (val) {
+                    window.location.href = `/free-scan?username=${encodeURIComponent(val)}`;
+                  }
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  name="query"
+                  type="text"
+                  placeholder="Enter a username or email..."
+                  className="flex-1 h-12 px-4 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  required
+                />
+                <Button type="submit" size="lg" className="gap-2 h-12 px-6">
                   <Search className="w-4 h-4" />
-                  Run a Free Scan
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="gap-2">
-                <Link to="/ethical-osint-charter">
-                  <Shield className="w-4 h-4" />
-                  Our Ethical Charter
-                </Link>
-              </Button>
+                  Scan Free
+                </Button>
+              </form>
+              <p className="text-xs text-muted-foreground/60 mt-2">
+                No account needed · Results in seconds · 500+ platforms checked
+              </p>
             </div>
+
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link to="/ethical-osint-charter">
+                <Shield className="w-4 h-4" />
+                Our Ethical Charter
+              </Link>
+            </Button>
           </div>
         </section>
 
@@ -222,7 +245,7 @@ const FindDatingProfiles = () => {
               Run a free scan to discover which dating sites are linked to your username or email. Privacy-first, ethical OSINT scanning.
             </p>
             <Button asChild size="lg" className="gap-2">
-              <Link to="/scan">
+              <Link to="/free-scan">
                 <ArrowRight className="w-4 h-4" />
                 Start Free Scan
               </Link>
