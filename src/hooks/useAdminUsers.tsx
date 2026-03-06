@@ -40,10 +40,10 @@ export function useAdminUsers() {
 
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role })
-        .eq('user_id', userId);
+      const { data, error } = await supabase.rpc('admin_update_user_role', {
+        _user_id: userId,
+        _new_role: role,
+      });
 
       if (error) throw error;
 
