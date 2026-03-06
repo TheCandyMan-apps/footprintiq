@@ -113,6 +113,7 @@ import { IdentityCorrelationRisk } from '@/components/results/IdentityCorrelatio
 import { IdentityGraphPreview } from '@/components/results/IdentityGraphPreview';
 import { InvestigatorInsight } from '@/components/results/InvestigatorInsight';
 import { IdentitySignalsDetected } from '@/components/results/IdentitySignalsDetected';
+import { PlatformCategoriesDetected } from '@/components/results/PlatformCategoriesDetected';
 
 // Number of full Pro-style results to show for Free users
 const FREE_PREVIEW_LIMIT = 3;
@@ -1030,6 +1031,15 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               />
             )}
 
+
+            {/* ===== PLATFORM CATEGORIES DETECTED ===== */}
+            {foundProfiles.length > 0 && (
+              <PlatformCategoriesDetected
+                platforms={[...new Set(foundProfiles.map(p => p.platform))]}
+                onUpgradeClick={handleUpgradeClick}
+                onInteraction={() => analytics.trackEvent('platform_categories_clicked', trackingMeta)}
+              />
+            )}
 
             <MobileCollapsible
               storageKey="public-profiles"
