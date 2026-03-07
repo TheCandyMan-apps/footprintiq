@@ -187,91 +187,123 @@ function TikTokContent() {
     <>
       <section className="py-16 px-6 bg-muted/30">
         <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-          <h2>Can You Find Someone By Username On TikTok</h2>
+          <h2>How TikTok Username Searches Work</h2>
 
           <p>
-            Yes. TikTok profiles are publicly accessible at <code>tiktok.com/@username</code>, making them one of
-            the easiest social media accounts to discover through a username search. TikTok does not require
-            authentication to view public profiles, which means anyone — including search engines, OSINT tools,
-            and data aggregators — can access profile information.
+            A <strong>TikTok username search</strong> checks whether a specific handle is registered on
+            TikTok and — critically — where else that same handle appears across the public internet.
+            TikTok profiles are publicly accessible at <code>tiktok.com/@username</code>, making them one
+            of the easiest social media accounts to discover through a username search.
           </p>
 
           <p>
-            TikTok's rapid growth has made it a particularly important platform for username investigations.
-            Younger users frequently create TikTok accounts using the same handle they already use on Instagram,
-            Snapchat, and Discord. This cross-platform username reuse means that finding a TikTok handle often
-            leads to discovering accounts on multiple other networks.
+            When you enter a username into FootprintIQ, the tool executes a multi-stage process. First,
+            it verifies whether the handle exists on TikTok by checking the platform's public profile URL
+            structure. TikTok returns distinct responses for existing and non-existing profiles, making
+            detection reliable. Then it performs cross-platform enumeration — scanning Instagram, Snapchat,
+            Discord, Reddit, gaming networks, developer communities, and 500+ other platforms for matching
+            handles.
           </p>
 
           <p>
-            FootprintIQ checks over 500 platforms when you search a TikTok username. The scan identifies not only
-            whether the handle exists on TikTok, but where else it appears — across social media, gaming networks,
-            forums, messaging apps, and professional sites. Results include confidence scoring to help distinguish
-            genuine matches from coincidental ones.
+            The challenge with TikTok username searches isn't detection — it's context. A username match
+            tells you the account exists, but not whether it belongs to the person you're looking for.
+            Common handles like <code>sarah</code> or <code>gaming</code> appear on every platform, owned
+            by different people entirely. FootprintIQ addresses this with AI-powered confidence scoring
+            that analyses profile metadata, creation patterns, and contextual signals to separate genuine
+            cross-platform matches from coincidental username collisions.
           </p>
         </div>
       </section>
 
       <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-          <h2>How Username Searches Work On TikTok</h2>
+          <h2>Can You Find Someone On TikTok By Username</h2>
 
           <p>
-            TikTok username search tools query the platform's public profile URL structure. When you enter a handle,
-            the tool checks <code>tiktok.com/@username</code> and analyses whether a valid profile page exists. TikTok
-            returns distinct responses for existing and non-existing profiles, making detection relatively reliable.
+            Yes — if the account is public. TikTok does not require authentication to view public profiles,
+            which means anyone — including search engines, OSINT tools, and data aggregators — can access
+            profile information. A public TikTok profile reveals the display name, bio, follower and
+            following counts, video content, and liked videos.
           </p>
 
           <p>
-            The challenge with TikTok username searches isn't detection — it's context. A username match on TikTok
-            tells you the account exists, but not whether it belongs to the person you're looking for. Common handles
-            like "sarah" or "gaming" appear on every platform, owned by different people entirely.
+            There are several approaches to <strong>find TikTok user</strong> profiles:
           </p>
 
-          <p>
-            FootprintIQ addresses this with multi-layer filtering. After the initial scan identifies matches across
-            500+ platforms, AI-powered confidence scoring analyses profile metadata, creation patterns, and contextual
-            signals to separate genuine cross-platform matches from coincidental username collisions. This approach
-            significantly reduces the false-positive rate compared to basic enumeration tools.
-          </p>
+          <ul>
+            <li>
+              <strong>Direct URL check.</strong> Navigate to <code>tiktok.com/@username</code> to confirm
+              profile existence. FootprintIQ automates this programmatically.
+            </li>
+            <li>
+              <strong>Cross-platform pivoting.</strong> If someone uses the same handle on TikTok and
+              other platforms, discovering it on Instagram or Discord provides strong evidence for the
+              TikTok account. FootprintIQ's{" "}
+              <Link to="/usernames" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                username search tool
+              </Link>{" "}
+              automates this cross-referencing across 500+ platforms.
+            </li>
+            <li>
+              <strong>In-app search.</strong> TikTok's built-in search queries display names, usernames,
+              and hashtags. However, this only works within TikTok itself.
+            </li>
+            <li>
+              <strong>Search engine indexing.</strong> Google indexes TikTok profiles, so searching
+              <code>site:tiktok.com "@username"</code> may surface the profile directly.
+            </li>
+          </ul>
 
           <p>
-            For users wanting to understand how this technology works in detail, our{" "}
-            <Link to="/guides/how-username-search-tools-work" className="text-primary underline underline-offset-4 hover:text-primary/80">technical guide</Link>{" "}
-            explains the full pipeline from URL construction to result enrichment.
+            Important caveat: finding a TikTok username on another platform does not confirm it belongs
+            to the same person. Always cross-validate using additional signals — profile photos, bio
+            content, posting history — before drawing conclusions.
           </p>
         </div>
       </section>
 
       <section className="py-16 px-6 bg-muted/30">
         <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-          <h2>How Investigators Track Accounts</h2>
+          <h2>OSINT Investigation Techniques</h2>
 
           <p>
-            TikTok has become a key platform in OSINT investigations. Its public-by-default profile structure,
-            combined with the high rate of username reuse among its user base, makes it a productive starting
-            point for digital footprint analysis.
+            TikTok has become a key platform in OSINT investigations. Its public-by-default profile
+            structure, combined with the high rate of username reuse among its user base, makes it a
+            productive starting point for digital footprint analysis.
           </p>
 
-          <p>
-            Investigators typically begin with a known TikTok handle and run it through a{" "}
-            <Link to="/reverse-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">reverse username search</Link>{" "}
-            to identify cross-platform presence. If the same handle appears on Instagram, Snapchat, Discord, and
-            Reddit, the investigator can begin building a composite view of the subject's online activity.
-          </p>
+          <ul>
+            <li>
+              <strong>Username enumeration.</strong> The TikTok handle serves as a search key across all
+              indexed platforms. A single confirmed username can reveal connected accounts on Instagram,
+              Snapchat, Discord, Reddit, and dozens of niche communities.
+            </li>
+            <li>
+              <strong>Cross-referencing metadata.</strong> A TikTok bio that mentions a location, combined
+              with an Instagram profile using the same handle that displays a real name, creates a
+              correlation chain. Professional OSINT practitioners use tools like FootprintIQ to automate
+              this process.
+            </li>
+            <li>
+              <strong>Temporal analysis.</strong> Investigators examine when accounts were created and how
+              activity patterns align across platforms. A TikTok account created in 2023 with a matching
+              Snapchat account from 2021 suggests long-term username reuse.
+            </li>
+            <li>
+              <strong>Content-based correlation.</strong> Video thumbnails, audio choices, and visual styles
+              can provide additional signals when comparing TikTok activity with content on other platforms.
+            </li>
+          </ul>
 
           <p>
-            Cross-referencing is critical. A TikTok bio that mentions a location, combined with an Instagram
-            profile using the same handle that displays a real name, creates a correlation chain. Professional
-            OSINT practitioners use tools like FootprintIQ to automate this process — checking hundreds of
-            platforms simultaneously rather than searching each one manually.
-          </p>
-
-          <p>
-            All legitimate OSINT work accesses only publicly available data. FootprintIQ never bypasses privacy
-            settings, accesses private accounts, or interacts with platform APIs in unauthorised ways. The same
-            information our tool surfaces is available to anyone willing to check each platform individually — we
-            simply automate the process.
+            All legitimate OSINT work accesses only publicly available data. FootprintIQ delivers
+            confidence-scored, categorised results rather than raw URL lists. For a broader approach,
+            use our{" "}
+            <Link to="/reverse-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">
+              reverse username lookup
+            </Link>{" "}
+            to map the full digital footprint associated with any handle.
           </p>
         </div>
       </section>
@@ -281,53 +313,77 @@ function TikTokContent() {
           <h2>Username Reuse Across Platforms</h2>
 
           <p>
-            TikTok users — particularly those under 25 — exhibit some of the highest rates of username reuse across
-            platforms. The typical pattern involves creating a handle on Instagram or Snapchat first, then carrying
-            it to TikTok when joining the platform. This means a TikTok username often predicts the existence of
-            matching accounts on multiple other services.
+            TikTok users — particularly those under 25 — exhibit some of the highest rates of username
+            reuse across platforms. The typical pattern involves creating a handle on Instagram or
+            Snapchat first, then carrying it to TikTok when joining the platform. This means a TikTok
+            username often predicts the existence of matching accounts on multiple other services.
           </p>
 
           <p>
-            The exposure risk is compounded by TikTok's algorithm-driven discoverability. Even users who don't
-            actively promote their TikTok profiles may find their content surfaced to large audiences through the
-            For You feed. When that content is linked to other platforms via a shared username, the exposure
-            multiplies.
+            The exposure risk is compounded by TikTok's algorithm-driven discoverability. Even users who
+            don't actively promote their TikTok profiles may find their content surfaced to large
+            audiences through the For You feed. When that content is linked to other platforms via a
+            shared username, the exposure multiplies.
           </p>
 
           <p>
-            Use FootprintIQ's{" "}
-            <Link to="/usernames" className="text-primary underline underline-offset-4 hover:text-primary/80">username search tool</Link>{" "}
-            to see where your TikTok handle appears across the web. If you discover accounts you've forgotten about
-            or exposure you didn't intend, take action: delete unused accounts, change reused handles, and tighten
-            privacy settings on platforms you actively use.
+            A single <strong>search TikTok username</strong> scan can reveal forgotten accounts on
+            platforms you no longer use, connections between personal and professional identities,
+            activity on communities you'd prefer to keep separate, and data broker listings aggregating
+            all these profiles into a single searchable dossier. Use a{" "}
+            <Link to="/digital-footprint-checker" className="text-primary underline underline-offset-4 hover:text-primary/80">
+              digital footprint checker
+            </Link>{" "}
+            to map this exposure and prioritise cleanup.
           </p>
         </div>
       </section>
 
       <section className="py-16 px-6 bg-muted/30">
         <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-          <h2>Privacy Risks Of Public Profiles</h2>
+          <h2>Privacy Risks Of TikTok Profiles</h2>
 
           <p>
-            TikTok profiles are public by default. Your username, display name, bio, follower count, and video
-            content are visible to anyone — including search engines, which index TikTok profiles and serve them
-            in search results. This means a TikTok profile can appear in Google searches for your username, even
-            if you never intended your TikTok activity to be discoverable outside the app.
+            TikTok profiles are public by default. Your username, display name, bio, follower count, and
+            video content are visible to anyone — including search engines, which index TikTok profiles
+            and serve them in search results. This means a TikTok profile can appear in Google searches
+            for your username, even if you never intended your TikTok activity to be discoverable outside
+            the app.
           </p>
 
           <p>
-            The privacy implications are significant. Data brokers scrape public TikTok profiles and aggregate them
-            with information from other sources. Employers, landlords, and educational institutions increasingly
-            check social media as part of their vetting processes. Content posted casually on TikTok can surface
-            in contexts where it wasn't intended.
+            Specific risks include:
           </p>
 
+          <ul>
+            <li>
+              <strong>Cross-platform identity linking.</strong> A reused TikTok handle allows anyone to
+              map your presence across Instagram, Snapchat, Reddit, and hundreds of other platforms.
+            </li>
+            <li>
+              <strong>Data broker harvesting.</strong> Public TikTok profiles are scraped and aggregated
+              with information from other sources. Employers, landlords, and educational institutions
+              increasingly check social media as part of vetting processes.
+            </li>
+            <li>
+              <strong>Algorithm-driven exposure.</strong> TikTok's recommendation engine can surface your
+              content to audiences far beyond your follower base, amplifying the reach of any personal
+              information in your videos.
+            </li>
+            <li>
+              <strong>Geolocation leakage.</strong> Location tags, recognisable landmarks in videos, and
+              location-specific content reveal real-world information that persists even after stories expire.
+            </li>
+          </ul>
+
           <p>
-            To protect yourself: consider using a unique username for TikTok that doesn't match your other platforms;
-            review your privacy settings to limit discoverability; remove personal information from your bio; and
-            run a regular{" "}
-            <Link to="/digital-footprint-checker" className="text-primary underline underline-offset-4 hover:text-primary/80">digital footprint check</Link>{" "}
-            to stay aware of your exposure across all platforms — not just TikTok.
+            To protect yourself: consider using a unique username for TikTok that doesn't match your
+            other platforms; review your privacy settings to limit discoverability; remove personal
+            information from your bio; and run a regular scan with the{" "}
+            <Link to="/username-search-engine" className="text-primary underline underline-offset-4 hover:text-primary/80">
+              username search engine
+            </Link>{" "}
+            to stay aware of your exposure across all platforms.
           </p>
         </div>
       </section>
