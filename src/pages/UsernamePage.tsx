@@ -69,6 +69,26 @@ const faqItems = [
   {
     question: "What is a social media user search?",
     answer: "A social media user search lets you search user names across platforms like Instagram, TikTok, Twitter, Reddit, and Facebook to find linked accounts. Unlike manual searching, FootprintIQ checks 500+ platforms simultaneously with AI-powered confidence scoring, so you get accurate results without false positives. It's the fastest way to see where a username appears across social media."
+  },
+  {
+    question: "What is the difference between a username search and a people search?",
+    answer: "A people search uses real-world identifiers like names, phone numbers, or addresses to find someone. A username search uses an online handle — a screen name, alias, or nickname — to locate public profiles across platforms. Username search is more precise for digital investigations because handles are unique within each platform, whereas names are shared by millions of people."
+  },
+  {
+    question: "Can a username search find deleted or deactivated accounts?",
+    answer: "Generally, no. Username search tools check live, publicly accessible profile URLs. If an account has been fully deleted, the profile page will return a 404 error and won't appear in results. However, some platforms retain profile pages for deactivated (but not deleted) accounts, and cached references on third-party sites may still surface."
+  },
+  {
+    question: "How accurate is an online username search?",
+    answer: "Accuracy depends on username uniqueness and the quality of the tool's filtering. Common handles like 'alex' or 'gaming123' produce many false positives — matches belonging to different people. FootprintIQ uses AI-powered confidence scoring to filter these, achieving significantly higher accuracy than raw enumeration tools. Unique or unusual usernames typically produce the most reliable results."
+  },
+  {
+    question: "Will the account owner know I searched their username?",
+    answer: "No. FootprintIQ only queries publicly accessible profile URLs — the same pages anyone can visit by typing the URL into a browser. No notifications are sent to profile owners, no accounts are accessed, and no interactions are recorded on the target platforms."
+  },
+  {
+    question: "How often should I search my own username?",
+    answer: "We recommend running a username search at least once per quarter, or immediately after receiving a data breach notification. Your digital footprint changes over time — new accounts are created, old platforms change their privacy defaults, and data brokers continuously aggregate public information. Regular scanning catches new exposure before it becomes entrenched."
   }
 ];
 
