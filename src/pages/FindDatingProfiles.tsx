@@ -42,6 +42,14 @@ const faqs = [
     question: "Can I search for my own dating profiles to check exposure?",
     answer: "Yes — and this is the most common ethical use case. Many people want to understand which dating platforms still hold their data after deleting accounts. A self-audit scan reveals lingering profiles, cached data, and breach-linked registrations tied to your username or email.",
   },
+  {
+    question: "How do I find accounts on dating apps I've forgotten about?",
+    answer: "Run both a username scan and an email breach check through FootprintIQ. Many users create dating accounts years ago with emails they rarely check. Breach databases and public registration records often surface these forgotten accounts even after the app has been deleted from your phone.",
+  },
+  {
+    question: "Can someone find my dating profiles from my username?",
+    answer: "If you reuse the same username on dating platforms and other social media, a reverse username search can link them together. Using unique handles for dating accounts — separate from your public social media — significantly reduces this risk.",
+  },
 ];
 
 const articleSchema = {
@@ -209,6 +217,64 @@ const FindDatingProfiles = () => {
               Coverage depends on whether platforms expose public profile data or whether credentials have appeared in known breach databases. FootprintIQ continuously updates its platform coverage as new data sources become available.
             </p>
 
+            <h2>How Usernames Reveal Dating Profiles</h2>
+            <p>
+              Username reuse is the single most common way dating profiles are discovered through OSINT.
+              When someone creates a Tinder or Bumble account using the same handle they use on Instagram,
+              Discord, or gaming platforms, a single{" "}
+              <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>{" "}
+              scan can reveal the dating registration alongside dozens of other accounts.
+            </p>
+            <p>
+              The correlation works in both directions. An investigator who discovers a username on a dating
+              platform can pivot to social media, forums, and professional networks to build a broader
+              identity profile. Conversely, someone who finds a handle on Instagram can check whether the
+              same person maintains dating profiles under the same username. FootprintIQ's{" "}
+              <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>{" "}
+              automates this cross-referencing across 500+ platforms simultaneously.
+            </p>
+            <p>
+              Dating platforms are particularly sensitive because they contain personal information —
+              age ranges, location, relationship preferences, and photos — that users rarely intend to
+              be publicly discoverable. When this data is linked to a social media identity through a
+              shared username, the privacy implications are significant.
+            </p>
+
+            <h2>Privacy Risks Of Dating Platform Exposure</h2>
+            <p>
+              Dating profiles create unique privacy risks that extend beyond typical social media exposure:
+            </p>
+            <ul>
+              <li>
+                <strong>Identity correlation.</strong> A dating profile linked to a social media username
+                reveals personal details — age, location, relationship status, preferences — that the user
+                may not share publicly elsewhere. A{" "}
+                <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint checker</Link>{" "}
+                reveals exactly which platforms hold this information.
+              </li>
+              <li>
+                <strong>Breach exposure.</strong> Dating platforms have been involved in major data breaches
+                (Ashley Madison, MeetMindful, OkCupid). Credentials leaked in these breaches persist in
+                databases indefinitely, meaning your registration may be discoverable years after you deleted
+                the account.
+              </li>
+              <li>
+                <strong>Social engineering.</strong> Dating profile details — interests, location, photos —
+                provide material for targeted phishing, catfishing, and impersonation attacks. Attackers
+                routinely harvest dating profiles to build convincing social engineering personas.
+              </li>
+              <li>
+                <strong>Professional consequences.</strong> Employers, clients, and business associates who
+                discover dating profiles through username correlation may form unintended impressions. This
+                is especially relevant for professionals in public-facing roles.
+              </li>
+              <li>
+                <strong>Data broker aggregation.</strong> Data brokers scrape dating platforms and combine
+                the information with social media, property records, and other public sources. This creates
+                comprehensive profiles that are sold commercially without the subject's knowledge.
+              </li>
+            </ul>
+
             <h2>Ethical Considerations</h2>
             <p>
               FootprintIQ takes a firm ethical stance on dating profile discovery. We believe in <strong>transparency, consent, and responsible use</strong>. Our platform is designed primarily for <strong>self-auditing</strong> — helping you understand your own digital exposure rather than surveilling others.
@@ -233,6 +299,8 @@ const FindDatingProfiles = () => {
               <li><strong>Check for cached profiles</strong> using Google's <Link to="/remove-yourself-from-google-search" className="text-primary hover:underline">content removal tools</Link> to request removal of indexed dating profiles.</li>
               <li><strong>Run a follow-up scan</strong> after 30 days to verify that deleted profiles have been removed from public indexes.</li>
               <li><strong>Review data broker listings</strong> — some data brokers aggregate dating profile data. Use FootprintIQ's <Link to="/automated-removal" className="text-primary hover:underline">automated removal</Link> to opt out.</li>
+              <li><strong>Use unique usernames</strong> for dating platforms that don't match your public social media handles — this breaks the correlation chain that makes{" "}
+                <Link to="/username-search-engine" className="text-primary hover:underline">username search engines</Link> effective.</li>
             </ol>
           </div>
         </section>
