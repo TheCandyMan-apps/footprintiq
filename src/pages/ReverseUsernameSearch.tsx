@@ -68,6 +68,21 @@ const faqs = [
     answer:
       "Use unique handles for sensitive accounts, avoid reusing the same username across platforms, enable two-factor authentication, and periodically audit your digital footprint. Our guide on reducing your digital footprint provides detailed, step-by-step instructions.",
   },
+  {
+    question: "What is OSINT username search?",
+    answer:
+      "OSINT stands for Open Source Intelligence — the practice of gathering information from publicly available sources. An OSINT username search applies this methodology to usernames, systematically checking public platforms for a specific handle. It's the same process anyone could do manually by visiting each website, but automated to cover 500+ platforms in seconds.",
+  },
+  {
+    question: "How many platforms does a reverse username search check?",
+    answer:
+      "FootprintIQ checks over 500 public platforms including social media networks, gaming communities, developer hubs, forums, marketplaces, and messaging platforms. No tool covers every website on the internet, but 500+ platforms provides comprehensive coverage of the most widely used services.",
+  },
+  {
+    question: "Can I use reverse username search for brand monitoring?",
+    answer:
+      "Yes. Businesses use reverse username search to detect unauthorised use of brand handles, identify impersonation accounts, and monitor where their brand name appears across public platforms. This is a legitimate and common application of username investigation tools.",
+  },
 ];
 
 const comparisonTools = [
@@ -205,7 +220,7 @@ const ReverseUsernameSearch = () => {
                 </div>
 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-                  Reverse Username Lookup: How to Find Accounts by Username
+                  Reverse Username Search Tool
                 </h1>
 
                 <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto">
