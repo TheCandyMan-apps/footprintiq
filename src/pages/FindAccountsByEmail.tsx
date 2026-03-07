@@ -74,7 +74,7 @@ export default function FindAccountsByEmail() {
       </Helmet>
       <JsonLd data={buildArticleSchema({ headline: "Find Accounts By Email", description: DESC, url: CANONICAL, datePublished: "2026-03-07", dateModified: "2026-03-07" })} />
       <JsonLd data={buildFAQSchema(FAQS)} />
-      <JsonLd data={buildBreadcrumbListSchema([{ name: "Home", url: CANONICAL_BASE }, { name: "Find Accounts By Email", url: CANONICAL }])} />
+      <JsonLd data={buildBreadcrumbListSchema([{ name: "Home", path: "/" }, { name: "Find Accounts By Email", path: SLUG }])} />
 
       <Header />
       <main className="min-h-screen bg-background">

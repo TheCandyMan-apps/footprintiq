@@ -74,7 +74,7 @@ export default function FindAccountsByPhone() {
       </Helmet>
       <JsonLd data={buildArticleSchema({ headline: "Find Accounts By Phone Number", description: DESC, url: CANONICAL, datePublished: "2026-03-07", dateModified: "2026-03-07" })} />
       <JsonLd data={buildFAQSchema(FAQS)} />
-      <JsonLd data={buildBreadcrumbListSchema([{ name: "Home", url: CANONICAL_BASE }, { name: "Find Accounts By Phone", url: CANONICAL }])} />
+      <JsonLd data={buildBreadcrumbListSchema([{ name: "Home", path: "/" }, { name: "Find Accounts By Phone", path: SLUG }])} />
 
       <Header />
       <main className="min-h-screen bg-background">
