@@ -66,8 +66,6 @@ const ArchivedScans = lazy(() => import('@/components/ArchivedScans').then(m => 
 const WelcomeInterstitial = lazy(() => import('@/components/conversion/WelcomeInterstitial').then(m => ({ default: m.WelcomeInterstitial })));
 const PostCheckoutOnboarding = lazy(() => import('@/components/conversion/PostCheckoutOnboarding').then(m => ({ default: m.PostCheckoutOnboarding })));
 
-const { analyzeTrends } = await import('@/lib/trends');
-
 const SectionSkeleton = () => <Skeleton className="w-full h-[200px] rounded-xl" />;
 type Scan = Database['public']['Tables']['scans']['Row'];
 const Dashboard = () => {
