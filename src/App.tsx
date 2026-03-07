@@ -439,6 +439,28 @@ const SearchDribbbleUsername = lazy(() => import("./pages/search-username/Search
 const SearchStackoverflowUsername = lazy(() => import("./pages/search-username/SearchStackoverflowUsername"));
 const SearchVkUsername = lazy(() => import("./pages/search-username/SearchVkUsername"));
 const SearchWeiboUsername = lazy(() => import("./pages/search-username/SearchWeiboUsername"));
+const SearchSoundcloudUsername = lazy(() => import("./pages/search-username/SearchSoundcloudUsername"));
+const SearchMixcloudUsername = lazy(() => import("./pages/search-username/SearchMixcloudUsername"));
+const SearchOnlyfansUsername = lazy(() => import("./pages/search-username/SearchOnlyfansUsername"));
+const SearchKickUsername = lazy(() => import("./pages/search-username/SearchKickUsername"));
+const SearchRumbleUsername = lazy(() => import("./pages/search-username/SearchRumbleUsername"));
+const SearchThreadsUsername = lazy(() => import("./pages/search-username/SearchThreadsUsername"));
+const SearchMastodonUsername = lazy(() => import("./pages/search-username/SearchMastodonUsername"));
+const SearchSubstackUsername = lazy(() => import("./pages/search-username/SearchSubstackUsername"));
+const SearchProducthuntUsername = lazy(() => import("./pages/search-username/SearchProducthuntUsername"));
+const SearchHackernewsUsername = lazy(() => import("./pages/search-username/SearchHackernewsUsername"));
+const SearchFlickrUsername = lazy(() => import("./pages/search-username/SearchFlickrUsername"));
+const SearchDeviantartUsername = lazy(() => import("./pages/search-username/SearchDeviantartUsername"));
+const SearchPatreonUsername = lazy(() => import("./pages/search-username/SearchPatreonUsername"));
+const SearchBandcampUsername = lazy(() => import("./pages/search-username/SearchBandcampUsername"));
+const SearchKeybaseUsername = lazy(() => import("./pages/search-username/SearchKeybaseUsername"));
+const SearchRobloxUsername = lazy(() => import("./pages/search-username/SearchRobloxUsername"));
+const SearchMinecraftUsername = lazy(() => import("./pages/search-username/SearchMinecraftUsername"));
+const SearchChessUsername = lazy(() => import("./pages/search-username/SearchChessUsername"));
+const SearchLastfmUsername = lazy(() => import("./pages/search-username/SearchLastfmUsername"));
+const SearchSpotifyUsername = lazy(() => import("./pages/search-username/SearchSpotifyUsername"));
+const SearchLinkedinUsername = lazy(() => import("./pages/search-username/SearchLinkedinUsername"));
+const SearchWordpressUsername = lazy(() => import("./pages/search-username/SearchWordpressUsername"));
 const CheckUsernameAcrossPlatforms = lazy(() => import("./pages/CheckUsernameAcrossPlatforms"));
 const SherlockVsFootprintiq = lazy(() => import("./pages/comparisons/SherlockVsFootprintiq"));
 const CredentialReuseRisk = lazy(() => import("./pages/CredentialReuseRisk"));
@@ -948,6 +970,28 @@ function RouterContent() {
               <Route path="/search-stackoverflow-username" element={<SearchStackoverflowUsername />} />
               <Route path="/search-vk-username" element={<SearchVkUsername />} />
               <Route path="/search-weibo-username" element={<SearchWeiboUsername />} />
+              <Route path="/search-soundcloud-username" element={<SearchSoundcloudUsername />} />
+              <Route path="/search-mixcloud-username" element={<SearchMixcloudUsername />} />
+              <Route path="/search-onlyfans-username" element={<SearchOnlyfansUsername />} />
+              <Route path="/search-kick-username" element={<SearchKickUsername />} />
+              <Route path="/search-rumble-username" element={<SearchRumbleUsername />} />
+              <Route path="/search-threads-username" element={<SearchThreadsUsername />} />
+              <Route path="/search-mastodon-username" element={<SearchMastodonUsername />} />
+              <Route path="/search-substack-username" element={<SearchSubstackUsername />} />
+              <Route path="/search-producthunt-username" element={<SearchProducthuntUsername />} />
+              <Route path="/search-hackernews-username" element={<SearchHackernewsUsername />} />
+              <Route path="/search-flickr-username" element={<SearchFlickrUsername />} />
+              <Route path="/search-deviantart-username" element={<SearchDeviantartUsername />} />
+              <Route path="/search-patreon-username" element={<SearchPatreonUsername />} />
+              <Route path="/search-bandcamp-username" element={<SearchBandcampUsername />} />
+              <Route path="/search-keybase-username" element={<SearchKeybaseUsername />} />
+              <Route path="/search-roblox-username" element={<SearchRobloxUsername />} />
+              <Route path="/search-minecraft-username" element={<SearchMinecraftUsername />} />
+              <Route path="/search-chess-username" element={<SearchChessUsername />} />
+              <Route path="/search-lastfm-username" element={<SearchLastfmUsername />} />
+              <Route path="/search-spotify-username" element={<SearchSpotifyUsername />} />
+              <Route path="/search-linkedin-username" element={<SearchLinkedinUsername />} />
+              <Route path="/search-wordpress-username" element={<SearchWordpressUsername />} />
               <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
                <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
                <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
