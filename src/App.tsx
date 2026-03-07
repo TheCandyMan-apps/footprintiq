@@ -394,6 +394,10 @@ const SearchTelegramByUsername = lazy(() => import("./pages/search-by-username/S
 const SearchSnapchatByUsername = lazy(() => import("./pages/search-by-username/SearchSnapchatByUsername"));
 const SearchTwitchByUsername = lazy(() => import("./pages/search-by-username/SearchTwitchByUsername"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
+const HowToFindSomeoneOnReddit = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnReddit"));
+const HowToFindSomeoneOnInstagram = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnInstagram"));
+const HowToFindSomeoneOnTiktok = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnTiktok"));
+const HowToFindSomeoneOnDiscord = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnDiscord"));
 const FindSomeoneByEmail = lazy(() => import("./pages/find-someone/FindSomeoneByEmail"));
 const FindSomeoneByPhoneNumber = lazy(() => import("./pages/find-someone/FindSomeoneByPhoneNumber"));
 const FindSomeoneByPhoto = lazy(() => import("./pages/find-someone/FindSomeoneByPhoto"));
@@ -863,6 +867,10 @@ function RouterContent() {
               <Route path="/search-snapchat-by-username" element={<SearchSnapchatByUsername />} />
               <Route path="/search-twitch-by-username" element={<SearchTwitchByUsername />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
+              <Route path="/how-to-find-someone-on-reddit" element={<HowToFindSomeoneOnReddit />} />
+              <Route path="/how-to-find-someone-on-instagram" element={<HowToFindSomeoneOnInstagram />} />
+              <Route path="/how-to-find-someone-on-tiktok" element={<HowToFindSomeoneOnTiktok />} />
+              <Route path="/how-to-find-someone-on-discord" element={<HowToFindSomeoneOnDiscord />} />
               <Route path="/find-someone-by-email" element={<FindSomeoneByEmail />} />
               <Route path="/find-someone-by-phone-number" element={<FindSomeoneByPhoneNumber />} />
               <Route path="/find-someone-by-photo" element={<FindSomeoneByPhoto />} />
