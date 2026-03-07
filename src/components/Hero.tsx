@@ -19,19 +19,19 @@ export const Hero = () => {
   }, [username, navigate]);
 
   return (
-    <section className="relative min-h-[80svh] md:min-h-[85vh] flex items-center justify-center bg-background">
+    <section className="relative min-h-[60svh] md:min-h-[85vh] flex items-center justify-center bg-background">
       <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-background" />
 
-      <div className="relative z-10 max-w-3xl mx-auto px-6 py-24 text-center">
-        <p className="text-sm font-medium uppercase tracking-widest text-primary mb-4">
+      <div className="relative z-10 max-w-3xl mx-auto px-4 md:px-6 py-12 md:py-24 text-center">
+        <p className="text-xs md:text-sm font-medium uppercase tracking-widest text-primary mb-3 md:mb-4">
           Ethical Digital Footprint Scanner
         </p>
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight text-foreground">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 leading-tight tracking-tight text-foreground">
           Find Where a Username Appears Online
         </h1>
 
-        <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-xl md:text-2xl text-muted-foreground mb-6 md:mb-10 max-w-2xl mx-auto leading-relaxed">
           FootprintIQ scans hundreds of platforms to reveal profiles, exposure risks, and digital footprint signals.
         </p>
 
