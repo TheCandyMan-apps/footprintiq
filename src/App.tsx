@@ -429,6 +429,16 @@ const SearchSnapchatUsername = lazy(() => import("./pages/search-username/Search
 const SearchTwitchUsername = lazy(() => import("./pages/search-username/SearchTwitchUsername"));
 const SearchPinterestUsername = lazy(() => import("./pages/search-username/SearchPinterestUsername"));
 const SearchGithubUsername = lazy(() => import("./pages/search-username/SearchGithubUsername"));
+const SearchTwitterUsername = lazy(() => import("./pages/search-username/SearchTwitterUsername"));
+const SearchSteamUsername = lazy(() => import("./pages/search-username/SearchSteamUsername"));
+const SearchTumblrUsername = lazy(() => import("./pages/search-username/SearchTumblrUsername"));
+const SearchQuoraUsername = lazy(() => import("./pages/search-username/SearchQuoraUsername"));
+const SearchMediumUsername = lazy(() => import("./pages/search-username/SearchMediumUsername"));
+const SearchBehanceUsername = lazy(() => import("./pages/search-username/SearchBehanceUsername"));
+const SearchDribbbleUsername = lazy(() => import("./pages/search-username/SearchDribbbleUsername"));
+const SearchStackoverflowUsername = lazy(() => import("./pages/search-username/SearchStackoverflowUsername"));
+const SearchVkUsername = lazy(() => import("./pages/search-username/SearchVkUsername"));
+const SearchWeiboUsername = lazy(() => import("./pages/search-username/SearchWeiboUsername"));
 const CheckUsernameAcrossPlatforms = lazy(() => import("./pages/CheckUsernameAcrossPlatforms"));
 const SherlockVsFootprintiq = lazy(() => import("./pages/comparisons/SherlockVsFootprintiq"));
 const CredentialReuseRisk = lazy(() => import("./pages/CredentialReuseRisk"));
@@ -928,6 +938,16 @@ function RouterContent() {
               <Route path="/search-twitch-username" element={<SearchTwitchUsername />} />
               <Route path="/search-pinterest-username" element={<SearchPinterestUsername />} />
               <Route path="/search-github-username" element={<SearchGithubUsername />} />
+              <Route path="/search-twitter-username" element={<SearchTwitterUsername />} />
+              <Route path="/search-steam-username" element={<SearchSteamUsername />} />
+              <Route path="/search-tumblr-username" element={<SearchTumblrUsername />} />
+              <Route path="/search-quora-username" element={<SearchQuoraUsername />} />
+              <Route path="/search-medium-username" element={<SearchMediumUsername />} />
+              <Route path="/search-behance-username" element={<SearchBehanceUsername />} />
+              <Route path="/search-dribbble-username" element={<SearchDribbbleUsername />} />
+              <Route path="/search-stackoverflow-username" element={<SearchStackoverflowUsername />} />
+              <Route path="/search-vk-username" element={<SearchVkUsername />} />
+              <Route path="/search-weibo-username" element={<SearchWeiboUsername />} />
               <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
                <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
                <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
