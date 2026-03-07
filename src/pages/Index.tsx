@@ -39,7 +39,7 @@ const FloatingCTA = lazy(() => import("@/components/FloatingCTA").then(m => ({ d
 const ScrollToTop = lazy(() => import("@/components/ScrollToTop").then(m => ({ default: m.ScrollToTop })));
 
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
-import { SocialProofToast } from "@/components/conversion/SocialProofToast";
+
 import { ExitIntentModal } from "@/components/conversion/ExitIntentModal";
 
 // Minimal suspense fallback that doesn't cause CLS
@@ -312,7 +312,7 @@ export default function Home() {
         <FloatingCTA />
         <ScrollToTop />
       </Suspense>
-      <SocialProofToast />
+      
       <ExitIntentModal />
       {/* Bottom padding for mobile CTA bar */}
       <div className="h-20 md:hidden" />
