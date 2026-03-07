@@ -260,7 +260,7 @@ const ReverseUsernameSearch = () => {
                     <Globe className="h-6 w-6 text-primary" />
                   </div>
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                    What Is a Reverse Username Lookup?
+                    What Is Reverse Username Search
                   </h2>
                 </div>
 
@@ -300,7 +300,7 @@ const ReverseUsernameSearch = () => {
                     <Zap className="h-6 w-6 text-primary" />
                   </div>
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                    How Reverse Username Search Works
+                    How Reverse Username Lookup Works
                   </h2>
                 </div>
 
@@ -395,7 +395,7 @@ const ReverseUsernameSearch = () => {
           <section className="py-16 md:py-20 bg-muted/30">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-                <h2>How Investigators Use Username Lookup</h2>
+                <h2>How Investigators Use Username Searches</h2>
 
                 <p>
                   Reverse username search is a cornerstone technique in open-source intelligence (OSINT)
@@ -453,7 +453,7 @@ const ReverseUsernameSearch = () => {
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-                <h2>How To Find Social Media Profiles From a Username</h2>
+                <h2>How To Find Social Media Profiles</h2>
 
                 <p>
                   Finding social media profiles from a username is straightforward with the right tool,
@@ -513,7 +513,7 @@ const ReverseUsernameSearch = () => {
           <section className="py-16 md:py-20 bg-muted/30">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-                <h2>Why Usernames Reveal Digital Footprints</h2>
+                <h2>Username Reuse Across Platforms</h2>
 
                 <p>
                   Usernames are one of the most underestimated privacy risks on the internet. Unlike
@@ -565,67 +565,59 @@ const ReverseUsernameSearch = () => {
             </div>
           </section>
 
-          {/* Section: How To Protect Your Online Identity */}
+          {/* Section: Privacy Risks Of Public Usernames */}
           <section className="py-16 md:py-20">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-                <h2>How To Protect Your Online Identity</h2>
+                <h2>Privacy Risks Of Public Usernames</h2>
 
                 <p>
-                  Once a reverse username search reveals the extent of your exposure, the next step is
-                  reducing it. Here's a structured approach to protecting your online identity, ordered by
-                  impact:
+                  Public usernames create privacy risks that extend far beyond any single platform. When a
+                  handle is visible on a profile page, it becomes a searchable identifier — indexed by search
+                  engines, scraped by data brokers, and queryable through OSINT tools. Understanding these
+                  risks is essential for anyone who uses the same username across multiple services.
                 </p>
 
-                <ol>
-                  <li>
-                    <strong>Audit your current exposure.</strong> Run a reverse username search on every
-                    handle you've ever used — your primary username, old gaming tags, email prefixes, and
-                    any nicknames. Document where each appears.
-                  </li>
-                  <li>
-                    <strong>Delete dormant accounts.</strong> Accounts you no longer use are pure
-                    liability. They expand your attack surface without providing value. Delete them
-                    permanently where possible — deactivation alone may leave profile data indexed.
-                    FootprintIQ provides direct links to account deletion pages where available.
-                  </li>
-                  <li>
-                    <strong>Break the username chain.</strong> Stop reusing the same handle across
-                    platforms. Use a password manager to generate and store unique usernames for each
-                    service. At minimum, use different usernames for personal, professional, and
-                    anonymous activity.
-                  </li>
-                  <li>
-                    <strong>Review privacy settings on active accounts.</strong> Ensure profiles are set
-                    to the most restrictive visibility appropriate for each platform. Remove unnecessary
-                    personal details — phone numbers, birthdates, physical addresses — from public
-                    bios.
-                  </li>
-                  <li>
-                    <strong>Enable two-factor authentication everywhere.</strong> Even if a username is
-                    exposed, 2FA prevents account takeover from credential stuffing attacks. Use
-                    authenticator apps rather than SMS-based 2FA where possible.
-                  </li>
-                  <li>
-                    <strong>Opt out of data brokers.</strong> After reducing your social media footprint,
-                    submit opt-out requests to major data aggregators to prevent re-collection. This is
-                    an ongoing process — brokers re-scrape public data regularly.
-                  </li>
-                  <li>
-                    <strong>Monitor continuously.</strong> Set a quarterly reminder to re-run your
-                    reverse username search. New platforms emerge, old platforms change defaults, and
-                    data breaches can expose previously private information.
-                  </li>
-                </ol>
-
+                <h3>Cross-Platform Identity Correlation</h3>
                 <p>
-                  For a comprehensive approach, combine reverse username lookup with an{" "}
+                  The primary risk of public usernames is identity correlation. A username that appears on
+                  Instagram with a real name, on Reddit with personal opinions, and on GitHub with a work
+                  email creates a composite identity profile that was never intended to exist. Anyone with
+                  access to a <strong>reverse username search</strong> tool can assemble this profile in
+                  seconds — linking accounts the user may have considered entirely separate.
+                </p>
+
+                <h3>Social Engineering Vectors</h3>
+                <p>
+                  Publicly visible usernames provide starting points for social engineering attacks. An
+                  attacker who discovers your gaming username on Discord can check whether the same handle
+                  exists on email services, financial platforms, or corporate systems. Combined with
+                  information gathered from public profiles — interests, employer, location — this creates
+                  the foundation for targeted phishing campaigns.
+                </p>
+
+                <h3>Credential Stuffing Amplification</h3>
+                <p>
+                  Users who reuse usernames are statistically more likely to reuse passwords. When a
+                  breach exposes credentials from one platform, attackers automatically test the same
+                  username-password combination across hundreds of other services. A{" "}
+                  <Link to="/usernames" className="text-primary hover:underline">
+                    username search tool
+                  </Link>{" "}
+                  reveals which platforms share the same handle — the exact list an attacker would target.
+                </p>
+
+                <h3>Reducing Your Exposure</h3>
+                <p>
+                  To mitigate these risks: use unique handles for sensitive accounts, delete dormant
+                  profiles, enable two-factor authentication everywhere, and run regular scans with a{" "}
+                  <Link to="/digital-footprint-checker" className="text-primary hover:underline">
+                    digital footprint checker
+                  </Link>{" "}
+                  to monitor where your information appears. For a complete assessment, combine a reverse
+                  username lookup with an{" "}
                   <Link to="/email-breach-check" className="text-primary hover:underline">
                     email breach check
-                  </Link>{" "}
-                  and a full{" "}
-                  <Link to="/scan" className="text-primary hover:underline">
-                    digital footprint scan
                   </Link>{" "}
                   to cover all exposure vectors — usernames, emails, and data broker listings.
                 </p>
