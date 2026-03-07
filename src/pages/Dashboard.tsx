@@ -242,67 +242,50 @@ const Dashboard = () => {
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
     try {
-      // Fetch recent scans for display (excluding archived)
-      const {
-        data: scansData,
-        error: scansError
-      } = await supabase.from('scans').select('*').eq('user_id', userId).is('archived_at', null).order('created_at', {
-        ascending: false
-      }).limit(10);
-      if (scansError) throw scansError;
-      setScans(scansData || []);
-
-      // Get accurate total scan count
-      const {
-        count: totalCount
-      } = await supabase.from('scans').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('user_id', userId).is('archived_at', null);
-
-      // Get scans this month count
+      // Run all independent queries in parallel
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
-      const {
-        count: monthCount
-      } = await supabase.from('scans').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('user_id', userId).is('archived_at', null).gte('created_at', monthStart.toISOString());
-
-      // Get recent (24h) scans count
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const {
-        count: recentCount
-      } = await supabase.from('scans').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('user_id', userId).is('archived_at', null).gte('created_at', dayAgo.toISOString());
-
-      // Get aggregate high risk count from all scans with workspace filter
       const currentWorkspaceId = workspace?.id;
-      const scanFilter = currentWorkspaceId 
-        ? supabase.from('scans').select('high_risk_count').eq('workspace_id', currentWorkspaceId).is('archived_at', null)
-        : supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null);
-      
-      const { data: aggregateData } = await scanFilter;
-      const totalHighRisk = aggregateData?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
-      
-      // Get active watchlists count
-      const { count: activeWatchlistsCount } = await supabase
-        .from('watchlists')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('is_active', true);
-      
+
+      const [
+        scansResult,
+        totalCountResult,
+        monthCountResult,
+        recentCountResult,
+        aggregateResult,
+        watchlistResult,
+      ] = await Promise.all([
+        // Fetch recent scans
+        supabase.from('scans').select('*').eq('user_id', userId).is('archived_at', null).order('created_at', { ascending: false }).limit(10),
+        // Total scan count
+        supabase.from('scans').select('*', { count: 'exact', head: true }).eq('user_id', userId).is('archived_at', null),
+        // Scans this month
+        supabase.from('scans').select('*', { count: 'exact', head: true }).eq('user_id', userId).is('archived_at', null).gte('created_at', monthStart.toISOString()),
+        // Recent 24h count
+        supabase.from('scans').select('*', { count: 'exact', head: true }).eq('user_id', userId).is('archived_at', null).gte('created_at', dayAgo.toISOString()),
+        // High risk aggregate
+        currentWorkspaceId
+          ? supabase.from('scans').select('high_risk_count').eq('workspace_id', currentWorkspaceId).is('archived_at', null)
+          : supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null),
+        // Active watchlists
+        supabase.from('watchlists').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('is_active', true),
+      ]);
+
+      const scansData = scansResult.data;
+      if (scansResult.error) throw scansResult.error;
+      setScans(scansData || []);
+
+      const totalHighRisk = aggregateResult.data?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
+
       setStats({
-        totalScans: totalCount || 0,
+        totalScans: totalCountResult.count || 0,
         highRiskFindings: totalHighRisk,
-        recentFindings: recentCount || 0,
-        scansThisMonth: monthCount || 0,
+        recentFindings: recentCountResult.count || 0,
+        scansThisMonth: monthCountResult.count || 0,
         avgScanTime: 2.4,
-        activeMonitoring: activeWatchlistsCount || 0
+        activeMonitoring: watchlistResult.count || 0
       });
 
         // Calculate DNA metrics from MULTIPLE recent scans (not just one)
