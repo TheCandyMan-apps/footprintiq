@@ -25,7 +25,7 @@ const faqItems = [
   {
     question: "Can someone link my Kik username to other accounts?",
     answer:
-      "If you reuse the same username across platforms, it may be possible to connect public profiles together. FootprintIQ helps you understand and reduce that risk.",
+      "If you reuse the same username across platforms, it may be possible to connect public profiles together. A reverse username lookup reveals these connections so you can take action.",
   },
   {
     question: "Does FootprintIQ access private Kik messages?",
@@ -33,9 +33,14 @@ const faqItems = [
       "No. FootprintIQ does not access private messages, contact lists, or restricted account data. It only analyses publicly available information.",
   },
   {
+    question: "How do I find someone on Kik by username?",
+    answer:
+      "Enter the Kik username into FootprintIQ's search tool. The platform checks whether the handle appears across 500+ publicly indexed platforms — revealing where the same handle is used beyond Kik itself.",
+  },
+  {
     question: "How do I reduce my Kik exposure?",
     answer:
-      "By identifying where your username appears publicly and removing or changing exposed accounts. FootprintIQ highlights what needs attention.",
+      "Use a unique Kik handle that differs from your other platforms, avoid sharing it publicly on social media or forums, and run periodic scans to monitor where your username appears.",
   },
   {
     question: "Is this tool anonymous?",
@@ -230,9 +235,18 @@ export default function KikUsernameSearch() {
             <p>
               All legitimate OSINT investigations operate within strict legal and ethical boundaries. FootprintIQ
               accesses only publicly available data — pages that anyone can visit without logging in. No private
-              Kik messages, contacts, or account data are ever accessed. The same information our tool surfaces
-              is available to anyone willing to check each platform individually; we simply automate and
-              contextualise the process.
+              Kik messages, contacts, or account data are ever accessed. Explore the{" "}
+              <Link to="/username-search-engine" className="text-primary underline underline-offset-4 hover:text-primary/80">username search engine</Link>{" "}
+              to understand how multi-tool scanning works at scale.
+            </p>
+
+            <h3>Dating Platform Correlation</h3>
+            <p>
+              Kik usernames are frequently shared on dating platforms as a way to move conversations off-app.
+              This creates a direct, public link between a dating profile and a Kik identity. Investigators
+              can pivot from a Kik handle found on a dating site to discover matching accounts on social
+              media, gaming networks, and forums — building a comprehensive cross-platform view from a
+              single username.
             </p>
           </div>
         </section>
