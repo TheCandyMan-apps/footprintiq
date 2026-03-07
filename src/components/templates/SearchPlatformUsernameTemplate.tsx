@@ -20,6 +20,7 @@ export interface SearchPlatformUsernameConfig {
   metaDesc: string;
   howItWorks: React.ReactNode;
   findingProfiles: React.ReactNode;
+  usernameReuse?: React.ReactNode;
   osintInvestigation: React.ReactNode;
   privacyExposure: React.ReactNode;
   faqs: { q: string; a: string }[];
@@ -82,24 +83,33 @@ export function SearchPlatformUsernameTemplate({ config }: { config: SearchPlatf
 
         <section className="py-16">
           <div className="max-w-4xl mx-auto px-6 prose prose-lg dark:prose-invert">
-            <h2>Finding Profiles Using Usernames</h2>
+            <h2>How Investigators Track {config.platform} Accounts</h2>
             {config.findingProfiles}
           </div>
         </section>
 
-        <section className="py-16 bg-muted/20">
+        {config.usernameReuse && (
+          <section className="py-16 bg-muted/20">
+            <div className="max-w-4xl mx-auto px-6 prose prose-lg dark:prose-invert">
+              <h2>Username Reuse Across Social Platforms</h2>
+              {config.usernameReuse}
+            </div>
+          </section>
+        )}
+
+        <section className={`py-16 ${config.usernameReuse ? '' : 'bg-muted/20'}`}>
           <div className="max-w-4xl mx-auto px-6 prose prose-lg dark:prose-invert">
             <h2>OSINT Username Investigation</h2>
             {config.osintInvestigation}
           </div>
         </section>
 
-        <section className="py-16">
+        <section className={`py-16 ${config.usernameReuse ? 'bg-muted/20' : ''}`}>
           <div className="max-w-4xl mx-auto px-6 prose prose-lg dark:prose-invert">
-            <h2>Privacy And Username Exposure</h2>
+            <h2>Privacy Risks Of Public Usernames</h2>
             {config.privacyExposure}
             <p>
-              Use FootprintIQ's <Link to="/usernames" className="text-primary hover:underline">username search tool</Link> to audit your own exposure, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, check your full digital presence with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint checker</Link>, or explore the <Link to="/username-search-engine" className="text-primary hover:underline">username search engine</Link> to see how multi-tool scanning works.
+              Use FootprintIQ's <Link to="/username-search" className="text-primary hover:underline">username search tool</Link> to audit your own exposure, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or check your full digital presence with the <Link to="/check-my-digital-footprint" className="text-primary hover:underline">digital footprint checker</Link>.
             </p>
           </div>
         </section>
