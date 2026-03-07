@@ -394,6 +394,10 @@ const SearchTelegramByUsername = lazy(() => import("./pages/search-by-username/S
 const SearchSnapchatByUsername = lazy(() => import("./pages/search-by-username/SearchSnapchatByUsername"));
 const SearchTwitchByUsername = lazy(() => import("./pages/search-by-username/SearchTwitchByUsername"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
+const FindSomeoneByEmail = lazy(() => import("./pages/find-someone/FindSomeoneByEmail"));
+const FindSomeoneByPhoneNumber = lazy(() => import("./pages/find-someone/FindSomeoneByPhoneNumber"));
+const FindSomeoneByPhoto = lazy(() => import("./pages/find-someone/FindSomeoneByPhoto"));
+const FindSomeoneBySocialMedia = lazy(() => import("./pages/find-someone/FindSomeoneBySocialMedia"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
 const CheckUsernameAcrossPlatforms = lazy(() => import("./pages/CheckUsernameAcrossPlatforms"));
@@ -859,6 +863,10 @@ function RouterContent() {
               <Route path="/search-snapchat-by-username" element={<SearchSnapchatByUsername />} />
               <Route path="/search-twitch-by-username" element={<SearchTwitchByUsername />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
+              <Route path="/find-someone-by-email" element={<FindSomeoneByEmail />} />
+              <Route path="/find-someone-by-phone-number" element={<FindSomeoneByPhoneNumber />} />
+              <Route path="/find-someone-by-photo" element={<FindSomeoneByPhoto />} />
+              <Route path="/find-someone-by-social-media" element={<FindSomeoneBySocialMedia />} />
               <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
               <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
