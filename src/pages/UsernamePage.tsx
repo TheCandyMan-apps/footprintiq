@@ -69,6 +69,26 @@ const faqItems = [
   {
     question: "What is a social media user search?",
     answer: "A social media user search lets you search user names across platforms like Instagram, TikTok, Twitter, Reddit, and Facebook to find linked accounts. Unlike manual searching, FootprintIQ checks 500+ platforms simultaneously with AI-powered confidence scoring, so you get accurate results without false positives. It's the fastest way to see where a username appears across social media."
+  },
+  {
+    question: "What is the difference between a username search and a people search?",
+    answer: "A people search uses real-world identifiers like names, phone numbers, or addresses to find someone. A username search uses an online handle — a screen name, alias, or nickname — to locate public profiles across platforms. Username search is more precise for digital investigations because handles are unique within each platform, whereas names are shared by millions of people."
+  },
+  {
+    question: "Can a username search find deleted or deactivated accounts?",
+    answer: "Generally, no. Username search tools check live, publicly accessible profile URLs. If an account has been fully deleted, the profile page will return a 404 error and won't appear in results. However, some platforms retain profile pages for deactivated (but not deleted) accounts, and cached references on third-party sites may still surface."
+  },
+  {
+    question: "How accurate is an online username search?",
+    answer: "Accuracy depends on username uniqueness and the quality of the tool's filtering. Common handles like 'alex' or 'gaming123' produce many false positives — matches belonging to different people. FootprintIQ uses AI-powered confidence scoring to filter these, achieving significantly higher accuracy than raw enumeration tools. Unique or unusual usernames typically produce the most reliable results."
+  },
+  {
+    question: "Will the account owner know I searched their username?",
+    answer: "No. FootprintIQ only queries publicly accessible profile URLs — the same pages anyone can visit by typing the URL into a browser. No notifications are sent to profile owners, no accounts are accessed, and no interactions are recorded on the target platforms."
+  },
+  {
+    question: "How often should I search my own username?",
+    answer: "We recommend running a username search at least once per quarter, or immediately after receiving a data breach notification. Your digital footprint changes over time — new accounts are created, old platforms change their privacy defaults, and data brokers continuously aggregate public information. Regular scanning catches new exposure before it becomes entrenched."
   }
 ];
 
@@ -420,6 +440,200 @@ export default function UsernamePage() {
           </div>
         </section>
 
+        {/* SEO Long-Form: What Is a Username Search? */}
+        <section className="py-16 px-6 bg-muted/30">
+          <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+            <h2>What Is a Username Search?</h2>
+
+            <p>
+              A username search is the process of querying a specific handle — such as a screen name, alias,
+              or nickname — across multiple public websites to identify where that identifier appears online.
+              Unlike a traditional people search that relies on names, addresses, or phone numbers, a username
+              search exploits a behavioural pattern that most internet users share: <strong>username reuse</strong>.
+            </p>
+
+            <p>
+              Research consistently shows that the majority of internet users recycle the same username across
+              multiple platforms. A handle created for a gaming forum in 2012 might still be active on
+              Reddit, Instagram, GitHub, and a dozen other sites today. Each reuse extends that person's
+              digital footprint — often without their awareness. A single username can connect a professional
+              LinkedIn profile to a pseudonymous forum account, revealing interests, locations, and activity
+              patterns that were never intended to be linked.
+            </p>
+
+            <p>
+              This is why username search has become a foundational technique in open-source intelligence
+              (OSINT). Security researchers, privacy auditors, and everyday users rely on it to map online
+              presence, identify forgotten accounts, and assess exposure risk. The technique is entirely
+              passive — it queries publicly accessible profile URLs without interacting with accounts,
+              bypassing authentication, or accessing private data.
+            </p>
+
+            <h2>How Username Lookup Tools Work</h2>
+
+            <p>
+              Username lookup tools operate on a straightforward principle: they construct predictable
+              profile URLs for hundreds of platforms and check whether a valid page exists at each address.
+              For example, if you search the username <code>john_doe</code>, the tool checks URLs like
+              <code>twitter.com/john_doe</code>, <code>github.com/john_doe</code>, and
+              <code>instagram.com/john_doe</code> — plus hundreds more.
+            </p>
+
+            <p>
+              The technical process involves several layers:
+            </p>
+
+            <ol>
+              <li>
+                <strong>URL enumeration.</strong> The tool maintains a database of URL patterns for 500+
+                platforms. Each platform has a known profile URL structure that accepts a username as a
+                parameter.
+              </li>
+              <li>
+                <strong>HTTP response analysis.</strong> For each constructed URL, the tool sends a request
+                and analyses the response. A <code>200 OK</code> status typically indicates an existing
+                profile, while a <code>404 Not Found</code> suggests the username isn't registered.
+                However, many platforms return custom error pages with 200 status codes, requiring deeper
+                page-content analysis.
+              </li>
+              <li>
+                <strong>False positive filtering.</strong> Raw results are processed through confidence
+                scoring algorithms. Common usernames generate matches on nearly every platform — but most
+                belong to different people. AI-powered filtering cross-references profile metadata,
+                creation patterns, and contextual signals to separate genuine matches from coincidental ones.
+              </li>
+              <li>
+                <strong>Result enrichment.</strong> Verified matches are enriched with platform category
+                (social media, gaming, professional), risk context, and remediation guidance — transforming
+                raw data into actionable intelligence.
+              </li>
+            </ol>
+
+            <p>
+              FootprintIQ builds on this foundation with multi-tool correlation. Rather than relying on a
+              single scanning engine, we aggregate results from multiple OSINT providers and apply a
+              unified confidence model. This reduces both false positives and false negatives compared to
+              standalone tools like Sherlock or Maigret used in isolation.
+            </p>
+
+            <h2>Why People Search Usernames Online</h2>
+
+            <p>
+              Username searching serves a range of legitimate purposes. Understanding <em>why</em> people
+              run these scans helps clarify the value of the results — and the ethical boundaries that
+              apply.
+            </p>
+
+            <h3>Checking Your Own Digital Footprint</h3>
+            <p>
+              The most common use case is self-assessment. You may have created accounts on platforms you
+              no longer use — forums, social networks, dating sites, or gaming communities. These dormant
+              accounts often retain personal information: profile photos, bios, location data, and post
+              history. A username search reveals which of these accounts still exist publicly, giving you a
+              clear starting point for cleanup. Running a quarterly scan is a recommended practice for
+              anyone concerned about online privacy.
+            </p>
+
+            <h3>Investigating Suspicious Accounts</h3>
+            <p>
+              Parents, employers, and cybersecurity teams use username searches to investigate suspicious
+              online activity. If a suspicious account contacts you, checking whether that username appears
+              elsewhere can reveal whether it's a genuine person or a throwaway alias. Consistent presence
+              across multiple platforms suggests authenticity; a username that exists only on one platform
+              may warrant caution.
+            </p>
+
+            <h3>Verifying Online Identities</h3>
+            <p>
+              Before engaging with someone online — whether for business, dating, or collaboration — a
+              reverse username search can help verify their identity. If the person claims to be a
+              software developer, do they have matching GitHub and Stack Overflow profiles? If they claim
+              to be a photographer, does their handle appear on Behance or 500px? Cross-platform consistency
+              is a strong signal of authenticity.
+            </p>
+
+            <h3>Cybersecurity Research</h3>
+            <p>
+              Security professionals use username enumeration as part of threat surface analysis. During
+              authorised penetration testing or risk assessments, mapping an organisation's employees'
+              public usernames can reveal shadow IT accounts, credential reuse risks, and social
+              engineering vectors. This is standard practice in ethical security auditing.
+            </p>
+
+            <h2>Find Social Media Profiles With a Username</h2>
+
+            <p>
+              Social media platforms are where username reuse creates the most visible exposure. A single
+              handle can link profiles across Instagram, TikTok, Twitter/X, Reddit, LinkedIn, Facebook,
+              Snapchat, Pinterest, and dozens of niche networks. FootprintIQ's username finder checks all
+              of these simultaneously — returning results in seconds rather than the hours it would take
+              to search each platform manually.
+            </p>
+
+            <p>
+              The tool identifies not just whether an account exists, but categorises each finding by
+              platform type: social media, gaming, professional, developer, forum, or messaging. This
+              categorisation helps you understand the <em>shape</em> of a digital footprint — is the
+              exposure concentrated on social networks, spread across gaming communities, or bridging
+              professional and personal platforms?
+            </p>
+
+            <p>
+              For targeted searches, FootprintIQ also offers platform-specific scanners. You can run an{" "}
+              <Link to="/instagram-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Instagram username search</Link>,{" "}
+              <Link to="/tiktok-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">TikTok username search</Link>, or{" "}
+              <Link to="/reddit-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Reddit username search</Link>{" "}
+              to focus on a specific network while still benefiting from cross-platform correlation data.
+            </p>
+
+            <h2>Protecting Your Digital Footprint</h2>
+
+            <p>
+              Understanding your exposure is only valuable if you act on it. Once a username search reveals
+              where your handle appears, the next step is reducing unnecessary exposure. Here are
+              practical, prioritised steps:
+            </p>
+
+            <ol>
+              <li>
+                <strong>Delete unused accounts.</strong> Dormant profiles are low-hanging fruit for data
+                brokers and social engineers. If you haven't used a platform in over a year, consider
+                deleting the account entirely. FootprintIQ provides direct links to account deletion
+                pages where available.
+              </li>
+              <li>
+                <strong>Break the username chain.</strong> Stop reusing the same handle everywhere. Use
+                unique usernames for platforms where privacy matters — especially those that expose your
+                real name, location, or interests. A password manager can help you track different
+                usernames across services.
+              </li>
+              <li>
+                <strong>Tighten privacy settings.</strong> On platforms you actively use, review privacy
+                settings to limit what's publicly visible. Set profiles to private where possible. Remove
+                personal details like phone numbers, birthdates, and locations from public bios.
+              </li>
+              <li>
+                <strong>Opt out of data brokers.</strong> Data aggregators scrape public profiles and
+                compile them into searchable databases. After reducing your social media exposure, submit
+                opt-out requests to major data brokers to prevent re-aggregation.
+              </li>
+              <li>
+                <strong>Monitor regularly.</strong> Digital footprints grow over time. Set a reminder to
+                run a username scan quarterly, or after any data breach notification. Continuous monitoring
+                catches new exposure before it becomes entrenched.
+              </li>
+            </ol>
+
+            <p>
+              For a comprehensive approach, combine a username search with an{" "}
+              <Link to="/email-breach-check" className="text-primary underline underline-offset-4 hover:text-primary/80">email breach check</Link>{" "}
+              and a full{" "}
+              <Link to="/digital-footprint-scanner" className="text-primary underline underline-offset-4 hover:text-primary/80">digital footprint scan</Link>{" "}
+              to cover all exposure vectors — not just social media profiles.
+            </p>
+          </div>
+        </section>
+
         {/* Ethical OSINT Explanation */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-6xl mx-auto">
@@ -632,9 +846,9 @@ export default function UsernamePage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
+              <h2 className="text-3xl font-bold mb-4">Username Search FAQs</h2>
               <p className="text-muted-foreground">
-                Common questions about username search, reverse username lookup, and reducing digital exposure.
+                Common questions about username search, reverse username lookup, online username search tools, and reducing digital exposure.
               </p>
             </div>
 
