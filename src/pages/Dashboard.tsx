@@ -401,62 +401,39 @@ const Dashboard = () => {
             setDnaMetrics({ score: 100, breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 });
           }
 
-        // Fetch data sources for the most recent scan
-        const recentScanForSources = scansData[0];
-        const {
-          data: sources
-        } = await supabase.from('data_sources').select('*').eq('scan_id', recentScanForSources.id);
-        
-        // Fetch social media links for recent scans
+        // Parallel fetch: sources, social links, finding stats, trends
         const socialScanIds = scansData.slice(0, 3).map(s => s.id);
-        const { data: allSources } = await supabase
-          .from('data_sources')
-          .select('scan_id, name, url, category')
-          .in('scan_id', socialScanIds);
-        
+        const [sourcesResult, allSourcesResult, findingsStatsResult, trends] = await Promise.all([
+          supabase.from('data_sources').select('*').eq('scan_id', scansData[0].id),
+          supabase.from('data_sources').select('scan_id, name, url, category').in('scan_id', socialScanIds),
+          supabase.from('findings').select('scan_id, severity').in('scan_id', socialScanIds),
+          import('@/lib/trends').then(m => m.analyzeTrends(userId, 30)),
+        ]);
+
         // Group social links by scan_id
         const socialLinksMap: Record<string, any[]> = {};
-        allSources?.forEach(source => {
+        allSourcesResult.data?.forEach(source => {
           const isSocialMedia = 
             source.category?.toLowerCase().includes('social') ||
             source.name?.toLowerCase().match(/linkedin|twitter|facebook|instagram|github/);
           
           if (isSocialMedia && source.url) {
-            if (!socialLinksMap[source.scan_id]) {
-              socialLinksMap[source.scan_id] = [];
-            }
-            
-            // Determine platform from name or URL
+            if (!socialLinksMap[source.scan_id]) socialLinksMap[source.scan_id] = [];
             let platform: 'linkedin' | 'twitter' | 'facebook' | 'web' = 'web';
             const lowerName = source.name?.toLowerCase() || '';
             const lowerUrl = source.url?.toLowerCase() || '';
-            
             if (lowerName.includes('linkedin') || lowerUrl.includes('linkedin')) platform = 'linkedin';
             else if (lowerName.includes('twitter') || lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) platform = 'twitter';
             else if (lowerName.includes('facebook') || lowerUrl.includes('facebook')) platform = 'facebook';
-            
-            socialLinksMap[source.scan_id].push({
-              platform,
-              url: source.url
-            });
+            socialLinksMap[source.scan_id].push({ platform, url: source.url });
           }
         });
         setScanSocialLinks(socialLinksMap);
         
-        // Fetch finding stats for entity cards (match % and risk score)
-        const entityScanIds = scansData.slice(0, 3).map(s => s.id);
-        const { data: findingsForStats } = await supabase
-          .from('findings')
-          .select('scan_id, severity')
-          .in('scan_id', entityScanIds);
-        
-        // Calculate stats per scan
+        // Calculate finding stats per scan
         const statsMap: Record<string, { total: number; high: number; medium: number; low: number }> = {};
-        entityScanIds.forEach(id => {
-          statsMap[id] = { total: 0, high: 0, medium: 0, low: 0 };
-        });
-        
-        findingsForStats?.forEach(f => {
+        socialScanIds.forEach(id => { statsMap[id] = { total: 0, high: 0, medium: 0, low: 0 }; });
+        findingsStatsResult.data?.forEach(f => {
           if (statsMap[f.scan_id]) {
             statsMap[f.scan_id].total++;
             const severity = (f.severity || 'low').toLowerCase();
@@ -465,14 +442,8 @@ const Dashboard = () => {
             else statsMap[f.scan_id].low++;
           }
         });
-        
         setScanFindingStats(statsMap);
-        
-        // DNA metrics already calculated above (lines 277-341)
-        // This duplicate calculation has been removed to prevent overwriting correct values
 
-        // Fetch trend data for this user
-        const trends = await analyzeTrends(userId, 30);
         setTrendData(trends);
       }
     } catch (error: any) {
