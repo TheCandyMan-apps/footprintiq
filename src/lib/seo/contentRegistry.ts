@@ -277,8 +277,9 @@ export const researchPages: ContentEntry[] = [
     description: "Explore 500+ websites and platforms where usernames reveal online profiles. Learn how social media, gaming, developer, and dating platforms expose digital identities through username reuse.",
     primaryKeyword: "websites where usernames reveal profiles",
     faqs: [
-      { q: "How many websites does FootprintIQ scan?", a: "FootprintIQ scans over 500 public platforms — including social media, gaming, developer, forum, and dating sites — in a single search." },
-      { q: "Can a username reveal my real identity?", a: "If you reuse a username across platforms that contain personal details — real names, photos, locations — then cross-referencing can link those fragments into an identity profile." },
+      { q: "How can I search a username online?", a: "Enter the username into a cross-platform search tool like FootprintIQ. It checks over 500 public platforms simultaneously and returns matching profiles with confidence scores." },
+      { q: "Can you find someone's social media by username?", a: "Yes. If a person uses the same handle across platforms, a username search can discover matching profiles on Instagram, TikTok, Reddit, Twitter, YouTube, and hundreds of other public sites." },
+      { q: "How do investigators track usernames?", a: "OSINT investigators use automated tools to check a known username against hundreds of platform URL patterns, then cross-reference matching profiles using only publicly available data." },
     ],
     related: ["/usernames", "/reverse-username-search", "/digital-footprint-checker", "/research/username-reuse-statistics"],
   },
