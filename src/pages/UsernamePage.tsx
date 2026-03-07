@@ -68,6 +68,10 @@ const faqItems = [
   {
     question: "How often should I search my own username?",
     answer: "We recommend running a username search at least once per quarter, or immediately after receiving a data breach notification. Your digital footprint changes over time — new accounts are created, old platforms change their privacy defaults, and data brokers continuously aggregate public information. Regular scanning catches new exposure before it becomes entrenched."
+  },
+  {
+    question: "Can you find social media accounts by username?",
+    answer: "Yes. FootprintIQ checks over 500 platforms — including Instagram, TikTok, Twitter/X, Reddit, LinkedIn, Snapchat, YouTube, and hundreds more — for matching profiles when you search a username. Results are categorised by platform type (social, gaming, professional, developer, forum) and scored for confidence to help you distinguish genuine matches from coincidental ones."
   }
 ];
 
@@ -579,6 +583,16 @@ export default function UsernamePage() {
               professional sites (LinkedIn, Behance, Dribbble), developer communities (Stack Overflow, GitLab),
               forums (Quora, Medium, Hacker News), and hundreds of niche communities. The broader the scan,
               the more complete the picture of your digital footprint.
+            </p>
+
+            <p>
+              Each platform category carries different risks. Social media profiles expose personal photos and
+              real names. Developer platforms may leak work email addresses through commit history. Gaming
+              networks reveal activity patterns and friend connections. Forum posts — often written
+              pseudonymously — may contain candid personal information that users wouldn't share on a
+              profile page. A comprehensive username finder like FootprintIQ checks all of these categories
+              in a single scan, giving you a complete view of where your handle appears and what information
+              each platform exposes.
             </p>
           </div>
         </section>
