@@ -240,7 +240,93 @@ const CheckMyDigitalFootprint = () => {
           </div>
         </section>
 
-        {/* ═══════════════ HOW TO CHECK YOUR DIGITAL FOOTPRINT ═══════════════ */}
+        {/* ═══════════════ DIGITAL EXPOSURE SCORE ═══════════════ */}
+        <section className="py-16 bg-muted/20">
+          <div className="max-w-4xl mx-auto px-6">
+            <div className="prose prose-lg dark:prose-invert mb-8">
+              <h2>Understanding Your Digital Exposure Score</h2>
+              <p>
+                FootprintIQ quantifies your online visibility into a single metric: the <strong>Digital Exposure Score</strong>. Scored from 0 to 100, it measures how discoverable and exploitable your personal information is across the public internet. A higher score means greater exposure — and greater urgency to act.
+              </p>
+            </div>
+
+            {/* Score display */}
+            <div className="rounded-2xl border border-border bg-card p-8 mb-8">
+              <div className="text-center mb-8">
+                <p className="text-sm text-muted-foreground mb-2 font-medium uppercase tracking-wide">Example Digital Exposure Score</p>
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-6xl md:text-7xl font-bold text-orange-500">72</span>
+                  <span className="text-2xl text-muted-foreground font-medium">/ 100</span>
+                </div>
+                <p className="text-sm text-orange-500 font-medium mt-2">High Exposure</p>
+              </div>
+
+              {/* Breakdown bars */}
+              <div className="space-y-4 max-w-lg mx-auto">
+                {[
+                  { label: "Profiles detected", value: 14, max: 20, color: "bg-primary" },
+                  { label: "Data breaches", value: 3, max: 5, color: "bg-destructive" },
+                  { label: "Public usernames", value: 8, max: 12, color: "bg-yellow-500" },
+                  { label: "Exposed personal information", value: 5, max: 8, color: "bg-orange-500" },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="text-foreground font-medium">{item.label}</span>
+                      <span className="text-muted-foreground">{item.value} found</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${item.color} transition-all duration-500`}
+                        style={{ width: `${(item.value / item.max) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="prose prose-lg dark:prose-invert">
+              <h3>What Each Factor Means</h3>
+              <p>
+                <strong>Profiles detected</strong> counts the number of platforms where your username, email, or phone number was found on a public-facing profile page. More profiles mean more entry points for data collection and social engineering.
+              </p>
+              <p>
+                <strong>Data breaches</strong> reflects how many known breach databases contain your credentials or personal details. Each breach increases the likelihood that your passwords, security questions, or payment information have been circulated among attackers.
+              </p>
+              <p>
+                <strong>Public usernames</strong> measures how many distinct platforms share the same handle. Username reuse is the strongest cross-platform correlation signal — it allows anyone to link otherwise disconnected accounts into a single identity profile within minutes.
+              </p>
+              <p>
+                <strong>Exposed personal information</strong> captures the presence of sensitive data — real names, addresses, phone numbers, email addresses, photographs — in data broker listings, people-search sites, and public directories. This is the category most directly linked to identity theft and impersonation risk.
+              </p>
+
+              <h3>Score Tiers</h3>
+              <p>
+                The score maps to five risk tiers: <strong>Low</strong> (0–20), <strong>Moderate</strong> (21–40), <strong>High</strong> (41–60), <strong>Very High</strong> (61–80), and <strong>Critical</strong> (81–100). Each tier reflects the combined density of discoverable signals and the ease with which an attacker could assemble a usable identity profile from public sources.
+              </p>
+
+              <h3>How To Lower Your Score</h3>
+              <p>
+                Reducing your Digital Exposure Score follows the <strong>Scan → Act → Verify → Measure</strong> lifecycle. After your initial scan identifies exposure, take action: delete dormant accounts, opt out of data brokers, switch to unique usernames per platform, and tighten privacy settings. Then verify by re-scanning to confirm removals took effect. Finally, measure your progress over time — Pro users can track their score trend and receive alerts when new exposure is detected.
+              </p>
+              <p>
+                Every finding you mark as resolved or remove from public view directly reduces your score. FootprintIQ Pro tracks these changes through the Exposure Resolution Timeline, showing measurable privacy improvement over weeks and months.
+              </p>
+            </div>
+
+            {/* CTA */}
+            <div className="mt-8 text-center">
+              <p className="text-muted-foreground mb-4">Find out your real score — run a free scan now.</p>
+              <Button size="lg" className="text-lg px-8 py-6 h-auto" asChild>
+                <Link to="/scan">
+                  <Search className="w-5 h-5 mr-2" />
+                  Check My Exposure Score
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
         <section className="py-16 bg-muted/20">
           <div className="max-w-4xl mx-auto px-6 prose prose-lg dark:prose-invert">
             <h2>How To Check Your Digital Footprint</h2>
