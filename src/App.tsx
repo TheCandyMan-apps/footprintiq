@@ -376,6 +376,7 @@ const RemovePersonalInformation = lazy(() => import("./pages/RemovePersonalInfor
 const CheckMyDigitalFootprint = lazy(() => import("./pages/CheckMyDigitalFootprint"));
 const WhatCanAUsernameReveal = lazy(() => import("./pages/WhatCanAUsernameReveal"));
 const FindSomeoneByUsername = lazy(() => import("./pages/FindSomeoneByUsername"));
+const WebsitesWhereUsernamesCanBeUsed = lazy(() => import("./pages/WebsitesWhereUsernamesCanBeUsed"));
 const BestOsintTools = lazy(() => import("./pages/BestOsintTools"));
 const OsintToolsPage = lazy(() => import("./pages/OsintTools"));
 const SearchUsernameOnTwitter = lazy(() => import("./pages/search-username/SearchUsernameOnTwitter"));
@@ -834,7 +835,8 @@ function RouterContent() {
              <Route path="/username-reuse-risks" element={<UsernameReuseRisks />} />
              <Route path="/digital-footprint-investigation" element={<DigitalFootprintInvestigation />} />
              <Route path="/how-investigators-trace-usernames" element={<HowInvestigatorsTraceUsernamesPage />} />
-             <Route path="/find-someone-by-username" element={<FindSomeoneByUsername />} />
+              <Route path="/find-someone-by-username" element={<FindSomeoneByUsername />} />
+              <Route path="/websites-where-usernames-can-be-used" element={<WebsitesWhereUsernamesCanBeUsed />} />
              <Route path="/after-have-i-been-pwned-what-next" element={<AfterHaveIBeenPwned />} />
              <Route path="/data-breach-cleanup-checklist" element={<DataBreachCleanupChecklist />} />
              <Route path="/breach-vs-digital-footprint-risk" element={<BreachVsDigitalFootprintRisk />} />
