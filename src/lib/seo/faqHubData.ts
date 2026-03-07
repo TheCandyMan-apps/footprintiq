@@ -105,6 +105,44 @@ export const faqHubs: FAQHubEntry[] = [
       },
     ],
   },
+  {
+    slug: "username-searches",
+    title: "Username Searches FAQ",
+    seoTitle: "Username Searches FAQ – Find Accounts & Protect Privacy | FootprintIQ",
+    description: "Answers to common questions about username searches, how they reveal social media accounts, OSINT tracking techniques, and how to protect your online identity.",
+    intro: "Username searches are one of the most effective ways to map someone's online presence. Below are the most frequently asked questions about how username lookups work, what they reveal, and how to stay protected.",
+    sections: [
+      {
+        heading: "How Username Searches Work",
+        sourcePath: "/usernames",
+        sourceLabel: "Username Search Tool",
+        faqs: [
+          { q: "How can I search a username online?", a: "Enter a username into FootprintIQ's search tool and it checks 500+ public platforms simultaneously — including social networks, forums, gaming sites, and dating apps — returning every publicly accessible profile that matches the handle." },
+          { q: "Can usernames reveal social media accounts?", a: "Yes. Most people reuse the same username across multiple platforms. A single search can surface Instagram, TikTok, Reddit, Twitter, Discord, and dozens of other social media accounts linked to that handle." },
+          { q: "Are usernames unique across websites?", a: "No. Each platform enforces uniqueness only within its own system. The same username can be registered by different people on different sites, which is why false-positive filtering — like FootprintIQ's LENS AI — is essential for accurate results." },
+          { q: "What platforms does a username search cover?", a: "FootprintIQ checks 500+ platforms including major social networks, forums, developer sites, gaming platforms, dating apps, and niche communities. Coverage is continuously updated as new platforms emerge." },
+        ],
+      },
+      {
+        heading: "OSINT & Investigation Techniques",
+        sourcePath: "/how-investigators-trace-usernames",
+        sourceLabel: "How Investigators Trace Usernames",
+        faqs: [
+          { q: "How do OSINT investigators track usernames?", a: "Investigators use automated tools to check a username across hundreds of platforms simultaneously, then correlate the results — matching profile photos, bios, linked accounts, and registration dates — to build a verified identity map." },
+          { q: "Can a username search find deleted accounts?", a: "Username searches query live, public data. Deleted accounts typically don't appear, but cached references on third-party sites, web archives, or breach databases may still surface evidence of the former account." },
+        ],
+      },
+      {
+        heading: "Privacy & Protection",
+        sourcePath: "/digital-footprint-checker",
+        sourceLabel: "Digital Footprint Checker",
+        faqs: [
+          { q: "How can I protect my online identity?", a: "Use unique usernames for sensitive accounts, enable two-factor authentication, regularly audit your digital footprint with tools like FootprintIQ, and opt out of data brokers that aggregate your public information." },
+          { q: "Will someone know if I search their username?", a: "No. FootprintIQ only queries publicly available data — no login is performed, no notifications are sent, and no interaction occurs with the target's accounts." },
+        ],
+      },
+    ],
+  },
 ];
 
 export function getFAQHub(slug: string): FAQHubEntry | undefined {
