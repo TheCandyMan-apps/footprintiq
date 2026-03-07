@@ -5,23 +5,9 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import {
-  CheckCircle,
-  XCircle,
   Shield,
   ArrowRight,
-  Globe,
-  Search,
-  Eye,
-  Zap,
-  Target,
-  Filter,
-  FileText,
-  UserCheck,
-  Lock,
-  AlertTriangle,
-  MessageSquare,
 } from "lucide-react";
 import {
   Accordion,
@@ -56,37 +42,16 @@ const faqItems = [
     answer:
       "Yes. Searches are processed securely and designed with user privacy in mind. We do not store or sell your search queries.",
   },
-];
-
-const differentiators = [
   {
-    icon: Target,
-    title: "Exposure Awareness",
-    description: "Understand what your Kik username reveals across the web",
+    question: "Will the Kik user be notified if I search their username?",
+    answer:
+      "No. FootprintIQ only queries publicly accessible profile URLs on external platforms. No notifications are sent to any profile owner.",
   },
   {
-    icon: Shield,
-    title: "Ethical OSINT",
-    description: "Public data only — no hacking, scraping, or unauthorised access",
+    question: "How accurate is a Kik username search?",
+    answer:
+      "Accuracy depends on username uniqueness. Common handles produce more false positives. FootprintIQ uses AI-powered confidence scoring to filter coincidental matches and improve result quality.",
   },
-  {
-    icon: Zap,
-    title: "Privacy-First Analysis",
-    description: "Designed for self-audit and defensive use, not surveillance",
-  },
-  {
-    icon: Eye,
-    title: "Clear Action Steps",
-    description: "Know what to do with the results — not just raw data",
-  },
-];
-
-const whoShouldUse = [
-  { icon: UserCheck, label: "Individuals concerned about messaging app exposure" },
-  { icon: Globe, label: "Users who reuse usernames across platforms" },
-  { icon: Shield, label: "Privacy-conscious individuals" },
-  { icon: AlertTriangle, label: "People checking for impersonation" },
-  { icon: Search, label: "Anyone wanting to audit their digital footprint" },
 ];
 
 export default function KikUsernameSearch() {
@@ -111,14 +76,14 @@ export default function KikUsernameSearch() {
     operatingSystem: "Web",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     description:
-      "Free Kik username search tool to check public profiles and assess digital footprint exposure across publicly indexed sources.",
+      "Free Kik username search tool. Check where a Kik handle appears across 500+ public platforms and assess digital footprint exposure.",
   };
 
   return (
     <>
       <SEO
-        title="Kik Username Search – Check Public Profiles & Digital Exposure | FootprintIQ"
-        description="Search a Kik username across hundreds of public platforms. Understand your digital exposure, find matching profiles, and reduce your footprint risk. Free, ethical, privacy-first."
+        title="Kik Username Search – Find Profiles & Check Exposure | FootprintIQ"
+        description="Search a Kik username across 500+ public platforms. Find matching profiles, assess digital exposure, and reduce your footprint risk. Free, ethical, privacy-first."
         canonical="https://footprintiq.app/kik-username-search"
         schema={{
           breadcrumbs: {
@@ -150,180 +115,196 @@ export default function KikUsernameSearch() {
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              Kik usernames are frequently reused across other platforms. A single handle can
-              connect messaging accounts to social media profiles, forums, and more — often
-              without the user realising. FootprintIQ helps you understand that exposure.
+              Search any Kik username across 500+ public platforms to discover matching profiles,
+              assess digital exposure, and understand where that handle appears online.
             </p>
 
             <Button size="lg" asChild className="text-lg px-8 py-6 mb-8">
               <Link to="/scan">
-                Check Your Exposure Now
+                Run a Free Kik Username Scan
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
           </div>
         </section>
 
-        {/* What Is a Kik Username Search? */}
-        <section className="py-12 px-6">
+        {/* H2: Can You Find Someone By Username On Kik */}
+        <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-            <h2>What Is a Kik Username Search?</h2>
+            <h2>Can You Find Someone By Username On Kik</h2>
+
             <p>
-              A Kik username search checks whether a specific messaging handle appears across
-              other publicly indexed platforms. Many users choose a Kik username and reuse it on:
-            </p>
-            <ul>
-              <li>Instagram</li>
-              <li>Twitter/X</li>
-              <li>Reddit</li>
-              <li>Snapchat</li>
-              <li>Forums and communities</li>
-              <li>Older archived accounts</li>
-            </ul>
-            <p>
-              This creates potential exposure patterns. FootprintIQ analyses publicly available data
-              sources to identify possible cross-platform matches — without accessing private messages
-              or contacts. Running a{" "}
-              <Link to="/digital-footprint-scan" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                digital footprint scan
-              </Link>{" "}
-              can help you understand the full scope of your exposure beyond a single platform.
+              Kik Messenger allows users to create accounts with a username rather than a phone number, which
+              has made it a popular platform for pseudonymous communication. But that same username often travels
+              beyond Kik — users carry it to Instagram, Reddit, Snapchat, Discord, gaming platforms, and forums
+              without considering the exposure this creates.
             </p>
 
-            <h2>Why Kik Username Reuse Increases Exposure</h2>
-            <p>Reused usernames can:</p>
-            <ul>
-              <li>Link messaging identities to social media profiles</li>
-              <li>Reveal old or forgotten accounts</li>
-              <li>Increase impersonation risk</li>
-              <li>Expose private communication patterns</li>
-            </ul>
             <p>
-              Understanding your digital footprint is the first step toward controlling it.
-              FootprintIQ's{" "}
-              <Link to="/usernames" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                username search tool
-              </Link>{" "}
-              covers hundreds of public sources in a single scan, helping you see the full picture.
+              Finding someone by their Kik username doesn't mean accessing Kik itself. FootprintIQ checks whether
+              that handle appears on 500+ other public platforms. If the Kik user has reused their handle
+              elsewhere — which is extremely common — the scan reveals matching profiles across social media,
+              messaging apps, developer sites, and niche communities.
             </p>
 
-            <h2>What You Can Discover</h2>
-            <p>Depending on public exposure, a Kik username search may reveal:</p>
-            <ul>
-              <li>Matching social media profiles</li>
-              <li>Forum posts and community activity</li>
-              <li>Gaming and messaging accounts</li>
-              <li>Publicly indexed usernames</li>
-              <li>Data breach references</li>
-            </ul>
             <p>
-              The same methodology applies across platforms. For example, you can also run a{" "}
-              <Link to="/snapchat-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                Snapchat username search
-              </Link>{" "}
-              to check exposure on other messaging services.
+              This cross-platform approach is far more powerful than searching within Kik alone. A single Kik
+              username can connect to Instagram profiles with real names, Reddit accounts with post history,
+              and gaming profiles with location data. FootprintIQ surfaces these connections with confidence
+              scoring so you can distinguish genuine matches from coincidental username collisions.
             </p>
 
-            <h2>Why Check Your Digital Footprint?</h2>
             <p>
-              Many people underestimate how searchable they are. Checking your digital footprint
-              helps you identify exposed accounts, remove old profiles, reduce impersonation risk,
-              and strengthen online security. If you're unsure where to start, our guide on{" "}
-              <Link to="/blog/how-to-check-whats-online-about-you" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                how to check what's online about you
-              </Link>{" "}
-              walks through practical steps anyone can follow.
+              Whether you're auditing your own digital footprint, checking where your Kik handle is publicly
+              visible, or investigating username reuse patterns, a Kik username search provides a clear starting
+              point.
             </p>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section className="py-16 px-6 bg-muted/30">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How FootprintIQ Works</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                The platform does not access private messages or bypass platform protections.
-                It analyses only publicly available information.
-              </p>
-            </div>
-
-            <div className="grid gap-6">
-              {[
-                { step: 1, icon: MessageSquare, title: "Enter a Kik Username", desc: "Type the handle you want to check. No account or login required." },
-                { step: 2, icon: Globe, title: "Scan Public OSINT Sources", desc: "Our system queries publicly accessible profile pages across hundreds of platforms." },
-                { step: 3, icon: Filter, title: "Identify Potential Matches", desc: "Confidence scoring reduces false positives from common or coincidental username matches." },
-                { step: 4, icon: FileText, title: "Highlight Exposure Signals", desc: "Each result includes the platform, profile URL, and confidence level." },
-                { step: 5, icon: Shield, title: "Take Action to Reduce Risk", desc: "Use the findings to clean up old accounts, change reused usernames, or tighten privacy settings." },
-              ].map(({ step, icon: Icon, title, desc }) => (
-                <Card key={step} className="p-6 border-l-4 border-l-primary">
-                  <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
-                      {step}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                        <Icon className="w-5 h-5 text-primary" />
-                        {title}
-                      </h3>
-                      <p className="text-muted-foreground">{desc}</p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Who Should Use */}
+        {/* H2: How Username Searches Work On Kik */}
         <section className="py-16 px-6">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Who Should Use This Tool?</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {whoShouldUse.map(({ icon: Icon, label }) => (
-                <Card key={label} className="p-5 flex items-center gap-3">
-                  <Icon className="w-5 h-5 text-primary shrink-0" />
-                  <span className="text-sm font-medium">{label}</span>
-                </Card>
-              ))}
-            </div>
+          <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+            <h2>How Username Searches Work On Kik</h2>
+
+            <p>
+              Kik doesn't host publicly browsable profile pages at standard URLs like Instagram or TikTok do.
+              This means Kik username search works primarily through cross-platform enumeration — checking whether
+              the same handle exists on platforms that <em>do</em> have public profiles.
+            </p>
+
+            <p>
+              When you enter a Kik username into FootprintIQ, the tool constructs profile URLs for 500+ platforms
+              using that handle — <code>instagram.com/username</code>, <code>reddit.com/user/username</code>,
+              <code>github.com/username</code>, and hundreds more. For each URL, the system analyses the HTTP
+              response to determine whether a valid profile exists.
+            </p>
+
+            <p>
+              The process involves several technical layers:
+            </p>
+
+            <ul>
+              <li><strong>URL enumeration</strong> across 500+ known profile URL patterns</li>
+              <li><strong>HTTP response analysis</strong> to distinguish real profiles from error pages</li>
+              <li><strong>False-positive filtering</strong> using AI confidence scoring</li>
+              <li><strong>Result categorisation</strong> by platform type — social, gaming, professional, or forum</li>
+            </ul>
+
+            <p>
+              Because Kik usernames tend to be personal and creative rather than professional, they often
+              produce reasonably unique matches across platforms. This actually improves search accuracy compared
+              to more generic professional handles. For a complete technical overview, read our{" "}
+              <Link to="/guides/how-username-search-tools-work" className="text-primary underline underline-offset-4 hover:text-primary/80">guide to how username search tools work</Link>.
+            </p>
           </div>
         </section>
 
-        {/* Ethical Notice */}
+        {/* H2: How Investigators Track Accounts */}
         <section className="py-16 px-6 bg-muted/30">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4">Ethical &amp; Legal Notice</h2>
-              <p className="text-lg text-muted-foreground">
-                FootprintIQ is designed for privacy awareness and defensive use.
-              </p>
-            </div>
-            <Card className="p-8 border-2 border-primary/20">
-              <div className="flex items-start gap-4">
-                <Lock className="w-8 h-8 text-primary shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold text-lg mb-3">FootprintIQ does not:</h3>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <XCircle className="w-4 h-4 text-destructive shrink-0" />
-                      Access private Kik messages or contacts
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <XCircle className="w-4 h-4 text-destructive shrink-0" />
-                      Circumvent account protections
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <XCircle className="w-4 h-4 text-destructive shrink-0" />
-                      Hack or scrape restricted data
-                    </li>
-                  </ul>
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    All results are derived from publicly available information.
-                  </p>
-                </div>
-              </div>
-            </Card>
+          <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+            <h2>How Investigators Track Accounts</h2>
+
+            <p>
+              Kik usernames are valuable starting points in OSINT investigations because of the platform's
+              emphasis on pseudonymous communication. Users who believe their Kik identity is separate from their
+              real identity often reuse the same handle on platforms where they're less cautious about personal
+              information.
+            </p>
+
+            <p>
+              Professional investigators follow a structured approach. They begin with a known Kik handle —
+              perhaps obtained from a public forum post, a shared screenshot, or a data breach notification —
+              and run it through a{" "}
+              <Link to="/reverse-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">reverse username lookup</Link>{" "}
+              that checks hundreds of platforms simultaneously.
+            </p>
+
+            <p>
+              The investigative value comes from cross-referencing. If the same Kik handle appears on Instagram
+              with a real name, on a gaming forum with a location, and on Reddit with detailed post history, these
+              fragments can be correlated to build a composite identity profile. Profile metadata — bios, creation
+              dates, linked websites, and profile photos — provides additional signals for identity resolution.
+            </p>
+
+            <p>
+              All legitimate OSINT investigations operate within strict legal and ethical boundaries. FootprintIQ
+              accesses only publicly available data — pages that anyone can visit without logging in. No private
+              Kik messages, contacts, or account data are ever accessed. The same information our tool surfaces
+              is available to anyone willing to check each platform individually; we simply automate and
+              contextualise the process.
+            </p>
+          </div>
+        </section>
+
+        {/* H2: Username Reuse Across Platforms */}
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+            <h2>Username Reuse Across Platforms</h2>
+
+            <p>
+              Kik users are particularly prone to username reuse because the platform's sign-up process encourages
+              users to choose a memorable, personalised handle. That same handle — chosen for its memorability —
+              naturally gets carried to every other platform the user joins.
+            </p>
+
+            <p>
+              The exposure chain typically includes:
+            </p>
+
+            <ul>
+              <li><strong>Social media:</strong> Instagram, Snapchat, TikTok, and Twitter/X</li>
+              <li><strong>Messaging apps:</strong> Discord, Telegram, and other chat platforms</li>
+              <li><strong>Gaming:</strong> Steam, Roblox, and gaming forums</li>
+              <li><strong>Forums:</strong> Reddit, Quora, and niche community sites</li>
+              <li><strong>Dating platforms:</strong> where Kik handles are commonly shared for off-platform contact</li>
+            </ul>
+
+            <p>
+              Each platform in this chain adds another data point. A Kik username that also appears on Instagram
+              with a real name and on a dating site with a location creates a composite identity profile that was
+              never intended to be public. Data brokers actively exploit these username chains, scraping public
+              profiles and correlating them into sellable identity dossiers.
+            </p>
+
+            <p>
+              FootprintIQ's{" "}
+              <Link to="/usernames" className="text-primary underline underline-offset-4 hover:text-primary/80">username search tool</Link>{" "}
+              helps you see this chain before someone else does. Enter your Kik username to discover where it
+              appears publicly, then take steps to break the chain — delete unused accounts, change reused handles,
+              and tighten privacy settings on active platforms.
+            </p>
+          </div>
+        </section>
+
+        {/* H2: Privacy Risks Of Public Profiles */}
+        <section className="py-16 px-6 bg-muted/30">
+          <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+            <h2>Privacy Risks Of Public Profiles</h2>
+
+            <p>
+              Kik is often perceived as a private messaging platform, but the username itself is a public
+              identifier. Once a Kik handle is shared — in an Instagram bio, a forum post, a dating profile,
+              or even a screenshot — it becomes a searchable, permanent data point that persists long after
+              the original context has been forgotten.
+            </p>
+
+            <p>
+              The privacy risks compound when that handle is reused. A Kik username that also exists on platforms
+              with public profiles effectively bridges the gap between pseudonymous messaging and identifiable
+              social media. Someone searching the Kik handle can discover real names, photos, locations, and
+              activity patterns — all through publicly accessible data on other platforms.
+            </p>
+
+            <p>
+              To protect your Kik privacy: use a unique username that you don't reuse on other platforms; avoid
+              sharing your Kik handle publicly on social media or forums; check whether your handle appears on
+              other sites using a{" "}
+              <Link to="/digital-footprint-checker" className="text-primary underline underline-offset-4 hover:text-primary/80">digital footprint checker</Link>;
+              and delete old accounts on platforms you no longer use. Regular self-auditing is the most effective
+              way to control your digital exposure — run a scan at least quarterly to catch new exposure before
+              it becomes entrenched.
+            </p>
           </div>
         </section>
 
@@ -331,87 +312,15 @@ export default function KikUsernameSearch() {
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl font-bold mb-4">Run a Free Username Exposure Scan</h2>
-            <p className="text-muted-foreground mb-6">
-              Find out what your username reveals across the web.
+            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+              Find out where your Kik username appears across 500+ public platforms.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" asChild className="text-lg px-8 py-6">
-                <Link to="/scan">
-                  Run a Free Scan
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
-                <Link to="/scan">
-                  Check Your Exposure Now
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Comparison */}
-        <section className="py-16 px-6 bg-muted/30">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Kik Username Search vs Generic Tools</h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Most free username tools focus on availability — not exposure.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-muted-foreground" />
-                  Generic Username Tools
-                </h3>
-                <ul className="space-y-3 text-muted-foreground">
-                  {["Check only basic social platforms", "Provide limited context", "Focus on availability, not exposure", "No risk scoring or action steps"].map((text) => (
-                    <li key={text} className="flex items-start gap-3">
-                      <XCircle className="w-4 h-4 text-destructive mt-1 shrink-0" />
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-
-              <Card className="p-6 border-2 border-primary/30">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-primary" />
-                  FootprintIQ
-                </h3>
-                <ul className="space-y-3 text-muted-foreground">
-                  {["Exposure awareness across hundreds of sources", "Ethical OSINT methodology", "Privacy-first analysis", "Clear action steps for remediation"].map((text) => (
-                    <li key={text} className="flex items-start gap-3">
-                      <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-sm border-t pt-4">
-                  Built as a <strong>digital footprint intelligence platform</strong>, not just a username checker.
-                </p>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Differentiators */}
-        <section className="py-16 px-6">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {differentiators.map((item, idx) => (
-                <Card key={idx} className="p-6 text-center hover:shadow-lg transition-shadow">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                    <item.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </Card>
-              ))}
-            </div>
+            <Button size="lg" asChild className="text-lg px-8 py-6">
+              <Link to="/scan">
+                Run a Free Scan
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
+            </Button>
           </div>
         </section>
 
@@ -421,62 +330,22 @@ export default function KikUsernameSearch() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
               <p className="text-muted-foreground">
-                Common questions about Kik username search and digital exposure
+                Common questions about Kik username search, privacy, and digital exposure.
               </p>
             </div>
 
             <Accordion type="single" collapsible className="w-full">
               {faqItems.map((item, idx) => (
                 <AccordionItem key={idx} value={`item-${idx}`}>
-                  <AccordionTrigger className="text-left">{item.question}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">{item.answer}</AccordionContent>
+                  <AccordionTrigger className="text-left">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {item.answer}
+                  </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
-          </div>
-        </section>
-
-        {/* Related Tools */}
-        <section className="py-12 px-6">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold mb-4 text-center">Explore More OSINT Tools</h2>
-            <p className="text-center text-muted-foreground mb-8">
-              Kik username search is just one piece of the puzzle.
-            </p>
-            <div className="grid md:grid-cols-2 gap-6">
-              <Link to="/usernames" className="group">
-                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                    Username Search <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Search any username across 500+ platforms</p>
-                </Card>
-              </Link>
-              <Link to="/onlyfans-username-search" className="group">
-                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                    OnlyFans Username Search <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Check OnlyFans username exposure across public sources</p>
-                </Card>
-              </Link>
-              <Link to="/discord-username-search" className="group">
-                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                    Discord Username Search <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Find accounts linked to a Discord handle</p>
-                </Card>
-              </Link>
-              <Link to="/digital-footprint-scan" className="group">
-                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                    Digital Footprint Scan <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </h3>
-                  <p className="text-sm text-muted-foreground">Run a complete scan across all identifiers</p>
-                </Card>
-              </Link>
-            </div>
           </div>
         </section>
       </main>
