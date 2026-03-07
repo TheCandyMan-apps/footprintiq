@@ -296,7 +296,11 @@ export default function WebsitesWhereUsernamesRevealProfiles() {
               The gaming ecosystem is particularly vulnerable to username-based exposure because gamers tend to
               use the same handle everywhere. A username discovered on Steam can lead to Twitch, Discord, Reddit,
               and social media profiles — often revealing real names, locations, and personal details that the
-              user never intended to connect to their gaming identity.
+              user never intended to connect to their gaming identity. Use a{" "}
+              <Link to="/check-my-digital-footprint" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                digital footprint checker
+              </Link>{" "}
+              to see exactly which gaming and social platforms expose your handle.
             </p>
 
             {/* ──────────────────────────────────────────── */}
