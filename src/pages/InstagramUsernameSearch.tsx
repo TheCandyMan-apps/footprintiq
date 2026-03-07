@@ -303,7 +303,215 @@ export default function InstagramUsernameSearchPage() {
           </div>
         </section>
 
-        {/* Privacy Tips */}
+        {/* SEO: How Instagram Username Search Works */}
+        <section className="py-16 bg-muted/20">
+          <div className="max-w-4xl mx-auto px-6 prose prose-lg dark:prose-invert">
+            <h2>How Instagram Username Search Works</h2>
+
+            <p>
+              An <strong>Instagram username search</strong> operates by checking whether a specific handle
+              is registered on Instagram and — critically — where else that same handle appears across the
+              public internet. This goes far beyond simply visiting instagram.com/username to see if a
+              profile page loads.
+            </p>
+
+            <p>
+              When you enter a username into FootprintIQ, the tool executes a multi-stage process:
+            </p>
+
+            <ol>
+              <li>
+                <strong>Instagram profile verification.</strong> The tool checks whether the username is
+                registered on Instagram by querying the platform's public profile URL structure. A valid
+                response confirms the account exists; a 404 response indicates it does not — or has been
+                deleted.
+              </li>
+              <li>
+                <strong>Cross-platform enumeration.</strong> Simultaneously, the same username is checked
+                against 500+ other platforms — TikTok, Twitter/X, Reddit, LinkedIn, Discord, GitHub,
+                gaming networks, forums, and niche communities. This reveals where the handle has been
+                reused.
+              </li>
+              <li>
+                <strong>Confidence scoring.</strong> Each match is scored based on username uniqueness,
+                profile metadata signals, and platform response reliability. A match on a distinctive
+                handle like <code>cybr_phantom_42</code> scores far higher than a generic handle like
+                <code>sarah</code>.
+              </li>
+              <li>
+                <strong>Exposure categorisation.</strong> Results are grouped by platform type — social
+                media, professional, gaming, developer, forum — giving you a structured view of the
+                digital footprint rather than a flat list of URLs.
+              </li>
+            </ol>
+
+            <p>
+              This approach transforms a simple <strong>Instagram username lookup</strong> into a
+              comprehensive exposure assessment. You don't just learn whether the account exists — you
+              understand how it connects to a broader online presence.
+            </p>
+
+            <h2>Can You Find Someone On Instagram By Username?</h2>
+
+            <p>
+              Yes — if the account is public. Instagram profiles are publicly accessible by default unless
+              the account holder has explicitly switched to a private setting. This means anyone can visit
+              <code>instagram.com/username</code> and view the profile, bio, follower count, and public
+              posts without logging in.
+            </p>
+
+            <p>
+              An <strong>Instagram profile search</strong> tool like FootprintIQ automates this process
+              and extends it beyond Instagram alone. When you search for an Instagram username, you're
+              not just confirming the account exists — you're discovering every other platform where that
+              handle appears publicly. This is particularly valuable in several scenarios:
+            </p>
+
+            <ul>
+              <li>
+                <strong>Verifying an online contact.</strong> If someone reaches out via Instagram, checking
+                whether they maintain consistent profiles across other platforms can help assess
+                authenticity. A well-established username across multiple networks suggests a genuine
+                presence.
+              </li>
+              <li>
+                <strong>Self-assessment.</strong> Before sharing your Instagram handle publicly — on a
+                business card, portfolio, or resume — it's worth checking what else that username
+                reveals. An Instagram handle that also appears on a forgotten dating profile or
+                controversial forum account could create unintended associations.
+              </li>
+              <li>
+                <strong>Brand research.</strong> Businesses can check whether a prospective Instagram
+                handle is already in use on other platforms before committing to a brand identity.
+              </li>
+            </ul>
+
+            <p>
+              Important caveat: finding an Instagram username on another platform does not confirm
+              it belongs to the same person. Common handles will match across platforms coincidentally.
+              Always cross-validate using additional signals — profile photos, bio content, posting
+              history — before drawing conclusions.
+            </p>
+
+            <h2>How Investigators Track Instagram Accounts</h2>
+
+            <p>
+              In authorised security investigations and compliance reviews, Instagram usernames serve
+              as valuable starting points for mapping online presence. Investigators use{" "}
+              <strong>Instagram username lookup</strong> as part of a broader OSINT methodology:
+            </p>
+
+            <h3>Username Pivoting</h3>
+            <p>
+              The most common technique is "pivoting" — starting with a known Instagram handle and
+              searching for it across other platforms. If the same username appears on Twitter, Reddit,
+              GitHub, and a gaming forum, each new profile provides additional context: interests,
+              locations mentioned in posts, professional affiliations, and activity patterns. This
+              cross-referencing is standard practice in ethical open-source intelligence.
+            </p>
+
+            <h3>Temporal Analysis</h3>
+            <p>
+              Investigators examine when accounts were created and how activity patterns have changed
+              over time. An Instagram account created in 2018 with a matching Reddit account from 2016
+              suggests long-term username reuse — strengthening the correlation between profiles.
+              Conversely, a brand-new account using a well-established handle on other platforms may
+              indicate impersonation.
+            </p>
+
+            <h3>Metadata Correlation</h3>
+            <p>
+              Public profile metadata — display names, bio descriptions, profile images, and linked
+              websites — provides additional signals for confirming or rejecting matches. When the
+              same profile photo appears across multiple platforms alongside a matching username, the
+              correlation confidence increases substantially.
+            </p>
+
+            <p>
+              FootprintIQ supports this workflow by providing categorised, confidence-scored results
+              rather than raw URL lists — enabling investigators to focus on high-confidence matches
+              while flagging potential false positives for manual review.
+            </p>
+
+            <h2>Username Reuse Across Social Platforms</h2>
+
+            <p>
+              Instagram usernames are among the most frequently reused handles on the internet. Because
+              Instagram is often the first social platform where users establish a "brand identity," the
+              handle chosen there tends to propagate across every subsequent platform — TikTok, Twitter/X,
+              Discord, Reddit, Snapchat, YouTube, and beyond.
+            </p>
+
+            <p>
+              This creates a measurable privacy risk. A single{" "}
+              <Link to="/reverse-username-search" className="text-primary hover:underline">
+                reverse username search
+              </Link>{" "}
+              on an Instagram handle can reveal:
+            </p>
+
+            <ul>
+              <li>Forgotten accounts on platforms you no longer use</li>
+              <li>Connections between personal and professional identities</li>
+              <li>Activity on forums or communities you'd prefer to keep separate</li>
+              <li>Data broker aggregation linking all these profiles into a single dossier</li>
+            </ul>
+
+            <p>
+              The solution isn't necessarily to delete everything — it's to make <em>informed</em>{" "}
+              decisions about where your username appears. Some platforms deserve your real handle for
+              discoverability. Others — anonymous forums, throwaway registrations, niche communities —
+              should use unique, unlinked usernames. A{" "}
+              <Link to="/digital-footprint-scanner" className="text-primary hover:underline">
+                digital footprint scan
+              </Link>{" "}
+              helps you map this exposure and prioritise cleanup.
+            </p>
+
+            <h2>Online Privacy and Instagram Accounts</h2>
+
+            <p>
+              Instagram's default privacy settings leave more exposed than most users realise. Even
+              with a private account, your username, profile photo, bio, and follower/following counts
+              remain publicly visible. This metadata alone — combined with username reuse — provides
+              enough for correlation across platforms.
+            </p>
+
+            <p>
+              Practical steps to reduce Instagram-related exposure:
+            </p>
+
+            <ol>
+              <li>
+                <strong>Use a unique Instagram handle.</strong> If privacy matters, don't reuse your
+                Instagram username on other platforms. This breaks the correlation chain that makes
+                reverse username search effective.
+              </li>
+              <li>
+                <strong>Audit your bio.</strong> Remove personally identifiable information — full names,
+                locations, workplace references, and links to other social profiles. Each detail
+                strengthens cross-platform correlation.
+              </li>
+              <li>
+                <strong>Switch to a private account.</strong> This prevents public viewing of your posts,
+                stories, and tagged content — though your username and profile photo remain public.
+              </li>
+              <li>
+                <strong>Disconnect linked accounts.</strong> Instagram's integration with Facebook, Twitter,
+                and Threads creates explicit cross-platform links. Disconnecting these reduces your
+                discoverable surface area.
+              </li>
+              <li>
+                <strong>Run periodic scans.</strong> Platform defaults change, new data brokers emerge,
+                and old accounts resurface. A quarterly{" "}
+                <Link to="/scan" className="text-primary hover:underline">username scan</Link>{" "}
+                ensures you stay ahead of new exposure.
+              </li>
+            </ol>
+          </div>
+        </section>
+
+
         <section className="py-16 bg-muted/30">
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
