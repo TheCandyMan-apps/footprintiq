@@ -377,6 +377,7 @@ const CheckMyDigitalFootprint = lazy(() => import("./pages/CheckMyDigitalFootpri
 const WhatCanAUsernameReveal = lazy(() => import("./pages/WhatCanAUsernameReveal"));
 const FindSomeoneByUsername = lazy(() => import("./pages/FindSomeoneByUsername"));
 const BestOsintTools = lazy(() => import("./pages/BestOsintTools"));
+const OsintToolsPage = lazy(() => import("./pages/OsintTools"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
@@ -825,7 +826,8 @@ function RouterContent() {
               <Route path="/guides/search-tiktok-without-account" element={<SearchTikTokWithoutAccount />} />
              <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
-             <Route path="/best-osint-tools" element={<BestOsintTools />} />
+              <Route path="/best-osint-tools" element={<BestOsintTools />} />
+              <Route path="/osint-tools" element={<OsintToolsPage />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
               <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
