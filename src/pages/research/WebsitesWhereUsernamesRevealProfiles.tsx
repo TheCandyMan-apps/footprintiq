@@ -17,29 +17,44 @@ const DESCRIPTION =
 
 const faqItems = [
   {
+    question: "How can I search a username online?",
+    answer:
+      "Enter the username into a cross-platform search tool like FootprintIQ. It checks over 500 public platforms simultaneously and returns a list of matching profiles with confidence scores — no login or technical knowledge required.",
+  },
+  {
+    question: "Can you find someone's social media by username?",
+    answer:
+      "Yes. If a person uses the same handle across platforms, a username search can discover matching profiles on Instagram, TikTok, Reddit, Twitter, YouTube, and hundreds of other public sites.",
+  },
+  {
+    question: "How do investigators track usernames?",
+    answer:
+      "OSINT investigators use automated tools to check a known username against hundreds of platform URL patterns. Matching profiles are then cross-referenced for shared names, photos, bios, and metadata to build a composite identity picture — using only publicly available data.",
+  },
+  {
+    question: "Are usernames unique across platforms?",
+    answer:
+      "No. Each platform manages usernames independently, so the same handle can be registered by different people on different sites. This is why quality search tools use confidence scoring to distinguish genuine cross-platform matches from coincidental collisions.",
+  },
+  {
+    question: "How can I protect my online identity?",
+    answer:
+      "Use a unique username on every platform, delete accounts you no longer use, tighten privacy settings, and run regular digital footprint scans to monitor where your information appears publicly.",
+  },
+  {
+    question: "What is a digital footprint?",
+    answer:
+      "A digital footprint is the trail of publicly discoverable data you leave online — social media profiles, forum posts, account registrations, and any other information tied to your usernames, email addresses, or phone numbers.",
+  },
+  {
     question: "How many websites does FootprintIQ scan?",
     answer:
-      "FootprintIQ scans over 500 public platforms — including social media, gaming, developer, forum, and dating sites — in a single search.",
+      "FootprintIQ scans over 500 public platforms in a single search — including social media, gaming networks, developer communities, forums, and dating sites.",
   },
   {
     question: "Is searching a username across websites legal?",
     answer:
-      "Yes. Querying publicly accessible profile URLs is legal. FootprintIQ accesses only public data and never bypasses authentication or accesses private content.",
-  },
-  {
-    question: "Can a username reveal my real identity?",
-    answer:
-      "If you reuse a username across platforms that contain personal details — real names, photos, locations — then cross-referencing can link those fragments into an identity profile.",
-  },
-  {
-    question: "What types of platforms expose usernames?",
-    answer:
-      "Social media, gaming networks, developer communities, forums, dating platforms, messaging apps, and professional networking sites all expose usernames publicly.",
-  },
-  {
-    question: "How do I reduce my username exposure?",
-    answer:
-      "Use unique handles on each platform, delete unused accounts, and run regular digital footprint scans to monitor where your information appears.",
+      "Yes. Querying publicly accessible profile URLs is legal. FootprintIQ accesses only public data and never bypasses authentication, accesses private content, or interacts with platform APIs in unauthorised ways.",
   },
 ];
 
