@@ -15,6 +15,7 @@ import type { PlatformEntry } from "@/lib/seo/platformRegistry";
 import { AccuracyCallout } from "@/components/seo/AccuracyCallout";
 import { FeaturedCollections } from "@/components/seo/FeaturedCollections";
 import { InstantPreviewTeaser } from "@/components/conversion/InstantPreviewTeaser";
+import { getPlatformLongFormContent } from "@/lib/seo/platformLongFormContent";
 
 interface Props {
   entry: PlatformEntry;
@@ -192,7 +193,12 @@ export function PlatformUsernameSearchTemplate({ entry }: Props) {
           </section>
 
           <AccuracyCallout context="platform" />
+        </div>
 
+        {/* Long-form SEO content (platform-specific) */}
+        {getPlatformLongFormContent(entry.slug)}
+
+        <div className="max-w-3xl mx-auto px-4">
           {/* FAQs */}
           {entry.faqs.length > 0 && (
             <section className="mb-16">
@@ -216,6 +222,7 @@ export function PlatformUsernameSearchTemplate({ entry }: Props) {
           <FeaturedCollections />
         </div>
       </main>
+
 
       <Footer />
     </>
