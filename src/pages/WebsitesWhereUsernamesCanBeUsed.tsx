@@ -213,7 +213,7 @@ export default function WebsitesWhereUsernamesCanBeUsed() {
               <strong>Actionable output.</strong> Results are presented with direct links to discovered profiles, confidence scores, platform categories, and remediation guidance. Users conducting self-audits can see exactly where their username appears and take steps to reduce their exposure — whether that means deleting old accounts, changing handles, or adjusting privacy settings.
             </p>
             <p>
-              Start a scan now using the <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, or check your overall exposure with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint checker</Link>. For deeper analysis, the <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username search</Link> can trace a handle back to linked identities across platforms.
+              Start a scan now using the <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, or check your overall exposure with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint checker</Link>. For deeper analysis, the <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link> can trace a handle back to linked identities, and our <Link to="/username-search-engine" className="text-primary hover:underline">username search engine</Link> explains how multi-tool scanning works at scale.
             </p>
           </div>
         </section>
