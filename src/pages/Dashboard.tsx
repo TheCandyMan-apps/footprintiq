@@ -830,73 +830,80 @@ const Dashboard = () => {
                     </div>
 
                     {/* Social Integrations */}
-                    <div className="mt-8">
-                      <SocialIntegrations />
-                    </div>
+                    <LazySection fallback={<SectionSkeleton />} className="mt-8">
+                      <Suspense fallback={<SectionSkeleton />}>
+                        <SocialIntegrations />
+                      </Suspense>
+                    </LazySection>
 
                     {/* Power Features Discovery */}
-                    <div className="mt-8">
-                      <PowerFeaturesCard />
-                    </div>
+                    <LazySection fallback={<SectionSkeleton />} className="mt-8">
+                      <Suspense fallback={<SectionSkeleton />}>
+                        <PowerFeaturesCard />
+                      </Suspense>
+                    </LazySection>
 
                     {/* Dashboard v2 Enhancements */}
-                    <div className="mt-8 space-y-6">
-                      <h2 className="text-2xl font-bold flex items-center gap-2">
-                        <Activity className="w-6 h-6 text-primary" />
-                        Intelligence Analytics
-                      </h2>
+                    <LazySection fallback={<SectionSkeleton />} className="mt-8 space-y-6">
+                      <Suspense fallback={<SectionSkeleton />}>
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                          <Activity className="w-6 h-6 text-primary" />
+                          Intelligence Analytics
+                        </h2>
 
-                      {/* Top Row: Breach Trend + Provider Health */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <SectionErrorBoundary section="Findings Activity Chart">
-                          <BreachTrendChart workspaceId={workspace?.id} />
-                        </SectionErrorBoundary>
-                        <SectionErrorBoundary section="Provider Health Map">
-                          <ProviderHealthMap workspaceId={workspace?.id} />
-                        </SectionErrorBoundary>
-                      </div>
+                        {/* Top Row: Breach Trend + Provider Health */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <SectionErrorBoundary section="Findings Activity Chart">
+                            <BreachTrendChart workspaceId={workspace?.id} />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Provider Health Map">
+                            <ProviderHealthMap workspaceId={workspace?.id} />
+                          </SectionErrorBoundary>
+                        </div>
 
-                      {/* Middle Row: Identity Risk + Credit Usage */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <SectionErrorBoundary section="Identity Risk Score">
-                          <IdentityRiskCard
-                            riskScore={dnaMetrics.score}
-                            breaches={dnaMetrics.breaches}
-                            darkWeb={dnaMetrics.darkWeb}
-                            dataBrokers={dnaMetrics.dataBrokers}
-                            exposures={dnaMetrics.exposures}
-                          />
-                        </SectionErrorBoundary>
-                        <SectionErrorBoundary section="Credit Usage Meter">
-                          <CreditUsageMeter />
-                        </SectionErrorBoundary>
-                      </div>
+                        {/* Middle Row: Identity Risk + Credit Usage */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <SectionErrorBoundary section="Identity Risk Score">
+                            <IdentityRiskCard
+                              riskScore={dnaMetrics.score}
+                              breaches={dnaMetrics.breaches}
+                              darkWeb={dnaMetrics.darkWeb}
+                              dataBrokers={dnaMetrics.dataBrokers}
+                              exposures={dnaMetrics.exposures}
+                            />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Credit Usage Meter">
+                            <CreditUsageMeter />
+                          </SectionErrorBoundary>
+                        </div>
 
-                      {/* Bottom Row: Recent Findings + Recommended Scans */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <SectionErrorBoundary section="Recent Findings">
-                          <RecentFindings workspaceId={workspace?.id} />
-                        </SectionErrorBoundary>
-                        <SectionErrorBoundary section="Recommended Scans">
-                          <RecommendedScans />
-                        </SectionErrorBoundary>
-                      </div>
+                        {/* Bottom Row: Recent Findings + Recommended Scans */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <SectionErrorBoundary section="Recent Findings">
+                            <RecentFindings workspaceId={workspace?.id} />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Recommended Scans">
+                            <RecommendedScans />
+                          </SectionErrorBoundary>
+                        </div>
 
-                      {/* Admin: Suspicious Users Widget */}
-                      <SectionErrorBoundary section="Suspicious Users">
-                        <SuspiciousUsersWidget />
-                      </SectionErrorBoundary>
-                    </div>
+                        {/* Admin: Suspicious Users Widget */}
+                        <SectionErrorBoundary section="Suspicious Users">
+                          <SuspiciousUsersWidget />
+                        </SectionErrorBoundary>
+                      </Suspense>
+                    </LazySection>
                   </div>
 
                   {/* Footprint DNA Card */}
-                  {loading ? <div className="mb-8">
-                      <FootprintDNASkeleton />
-                    </div> : scans.length > 0 ? <div data-tour="digital-dna" className="mb-8">
-                      <FootprintDNA score={dnaMetrics.score} breaches={dnaMetrics.breaches} exposures={dnaMetrics.exposures} dataBrokers={dnaMetrics.dataBrokers} darkWeb={dnaMetrics.darkWeb} trendData={trendData} onOpenDetails={() => setIsDNAModalOpen(true)} onRescan={handleRescan} isRescanning={isRescanning} />
-
-                      <FootprintDNAModal open={isDNAModalOpen} onOpenChange={setIsDNAModalOpen} trendData={trendData} currentScore={dnaMetrics.score} />
-                    </div> : null}
+                  <LazySection fallback={<FootprintDNASkeleton />}>
+                    <Suspense fallback={<FootprintDNASkeleton />}>
+                      {loading ? <FootprintDNASkeleton /> : scans.length > 0 ? <div data-tour="digital-dna" className="mb-8">
+                        <FootprintDNA score={dnaMetrics.score} breaches={dnaMetrics.breaches} exposures={dnaMetrics.exposures} dataBrokers={dnaMetrics.dataBrokers} darkWeb={dnaMetrics.darkWeb} trendData={trendData} onOpenDetails={() => setIsDNAModalOpen(true)} onRescan={handleRescan} isRescanning={isRescanning} />
+                        <FootprintDNAModal open={isDNAModalOpen} onOpenChange={setIsDNAModalOpen} trendData={trendData} currentScore={dnaMetrics.score} />
+                      </div> : null}
+                    </Suspense>
+                  </LazySection>
 
                   {/* Quick Actions */}
                   <Card className="p-6">
@@ -926,29 +933,34 @@ const Dashboard = () => {
                   </Card>
 
                   {/* Two Column Layout for Streak & Removal Queue */}
-                  <div className="grid md:grid-cols-3 gap-6">
-                    {/* Streak & Badges Sidebar */}
-                    <div className="md:col-span-1">
-                      <SectionErrorBoundary section="Streak & Badges">
-                        <StreakBadges userId={user?.id} />
-                      </SectionErrorBoundary>
-                    </div>
-
-                    {/* Removal Queue & Success Tracker */}
-                    <div className="md:col-span-2 space-y-6">
-                      <SectionErrorBoundary section="Removal Queue">
-                        <RemovalQueue userId={user.id} />
-                      </SectionErrorBoundary>
-                      <SectionErrorBoundary section="Removal Success Tracker">
-                        <RemovalSuccessTracker userId={user.id} />
-                      </SectionErrorBoundary>
-                    </div>
-                  </div>
+                  <LazySection fallback={<SectionSkeleton />}>
+                    <Suspense fallback={<SectionSkeleton />}>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="md:col-span-1">
+                          <SectionErrorBoundary section="Streak & Badges">
+                            <StreakBadges userId={user?.id} />
+                          </SectionErrorBoundary>
+                        </div>
+                        <div className="md:col-span-2 space-y-6">
+                          <SectionErrorBoundary section="Removal Queue">
+                            <RemovalQueue userId={user.id} />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Removal Success Tracker">
+                            <RemovalSuccessTracker userId={user.id} />
+                          </SectionErrorBoundary>
+                        </div>
+                      </div>
+                    </Suspense>
+                  </LazySection>
 
                   {/* Dark Web Monitor Settings */}
-                  <SectionErrorBoundary section="Dark Web Monitor">
-                    <DarkWebMonitorSettings />
-                  </SectionErrorBoundary>
+                  <LazySection fallback={<SectionSkeleton />}>
+                    <Suspense fallback={<SectionSkeleton />}>
+                      <SectionErrorBoundary section="Dark Web Monitor">
+                        <DarkWebMonitorSettings />
+                      </SectionErrorBoundary>
+                    </Suspense>
+                  </LazySection>
                 </TabsContent>
 
                 {/* Analytics Tab */}
