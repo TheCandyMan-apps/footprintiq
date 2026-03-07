@@ -99,7 +99,7 @@ export function SearchPlatformUsernameTemplate({ config }: { config: SearchPlatf
             <h2>Privacy And Username Exposure</h2>
             {config.privacyExposure}
             <p>
-              Use FootprintIQ's <Link to="/usernames" className="text-primary hover:underline">username search tool</Link> to audit your own exposure, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or check your full digital presence with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint scanner</Link>.
+              Use FootprintIQ's <Link to="/usernames" className="text-primary hover:underline">username search tool</Link> to audit your own exposure, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, check your full digital presence with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint checker</Link>, or explore the <Link to="/username-search-engine" className="text-primary hover:underline">username search engine</Link> to see how multi-tool scanning works.
             </p>
           </div>
         </section>
