@@ -155,6 +155,13 @@ serve(async (req) => {
     // ── Create scan record ────────────────────────────────────────
     const scanId = (providedScanId as string | undefined) || crypto.randomUUID();
 
+    // Generate secure claim token for ownership verification
+    const claimTokenBytes = new Uint8Array(32);
+    crypto.getRandomValues(claimTokenBytes);
+    const claimToken = Array.from(claimTokenBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const claimTokenHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(claimToken));
+    const claimTokenHash = Array.from(new Uint8Array(claimTokenHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
     const { data: scan, error: scanErr } = await db
       .from("scans")
       .insert({
@@ -168,6 +175,7 @@ serve(async (req) => {
         results_route: "results",
         claimed: false,
         session_fingerprint: session_fingerprint || null,
+        claim_token_hash: claimTokenHash,
       })
       .select()
       .single();
@@ -250,7 +258,7 @@ serve(async (req) => {
       await db.from("scans").update({ status: "running" }).eq("id", scanId);
     }
 
-    return json({ scan_id: scanId, anonymous: true }, 201);
+    return json({ scan_id: scanId, anonymous: true, claim_token: claimToken }, 201);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[anon-scan-trigger] Unhandled error:", msg);

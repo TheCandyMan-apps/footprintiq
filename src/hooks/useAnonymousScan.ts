@@ -72,9 +72,12 @@ export function useAnonymousScan() {
 
       const resolvedScanId = data.scan_id || scanId;
 
-      // Store scan ID in sessionStorage for claim flow
+      // Store scan ID and claim token in sessionStorage for claim flow
       sessionStorage.setItem("fpiq_anon_scan_id", resolvedScanId);
       sessionStorage.setItem("fpiq_anon_target", username);
+      if (data.claim_token) {
+        sessionStorage.setItem("fpiq_anon_claim_token", data.claim_token);
+      }
 
       setState({
         scanId: resolvedScanId,

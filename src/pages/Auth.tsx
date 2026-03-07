@@ -91,23 +91,36 @@ const Auth = () => {
     return '/dashboard';
   }, []);
 
-  // Claim anonymous scan after signup
+  // Claim anonymous scan after signup (with claim token verification)
   const claimAnonymousScan = useCallback(async (userId: string) => {
     try {
       const searchParams = new URLSearchParams(window.location.search);
       const claimScanId = searchParams.get('claim');
       if (!claimScanId) return;
 
+      const claimToken = sessionStorage.getItem('fpiq_anon_claim_token');
+      if (!claimToken) {
+        console.warn('[Auth] No claim token found — cannot verify scan ownership');
+        return;
+      }
+
+      // Hash the claim token client-side to match against stored hash
+      const encoder = new TextEncoder();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(claimToken));
+      const claimTokenHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
       const { error } = await supabase
         .from('scans')
         .update({ user_id: userId, claimed: true })
         .eq('id', claimScanId)
+        .eq('claim_token_hash', claimTokenHash)
         .is('user_id', null); // Only claim if still unclaimed
 
       if (!error) {
         console.log('[Auth] Anonymous scan claimed:', claimScanId);
         sessionStorage.removeItem('fpiq_anon_scan_id');
         sessionStorage.removeItem('fpiq_anon_target');
+        sessionStorage.removeItem('fpiq_anon_claim_token');
       }
     } catch (err) {
       console.warn('[Auth] Failed to claim anonymous scan:', err);
