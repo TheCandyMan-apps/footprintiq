@@ -35,27 +35,42 @@ const faqItems = [
   {
     question: "Is Discord username search legal?",
     answer:
-      "Searching publicly available information is legal. FootprintIQ only scans public data sources and does not access private accounts, servers, or messages.",
+      "Yes. Searching publicly available information is legal. FootprintIQ only scans public data sources and does not access private accounts, servers, or messages.",
   },
   {
     question: "Can someone find my real identity from my Discord username?",
     answer:
-      "If you reuse usernames across platforms, it is possible that profiles may be linked together publicly. FootprintIQ helps you understand this exposure so you can take action.",
+      "If you reuse usernames across platforms, it is possible that profiles may be linked together publicly. A reverse username lookup reveals these connections, helping you understand and reduce your exposure.",
   },
   {
-    question: "Does FootprintIQ access private Discord data?",
+    question: "Does FootprintIQ access private Discord servers or messages?",
     answer:
       "No. FootprintIQ does not access private Discord messages, servers, or accounts. It only analyses publicly available information across indexed sources.",
   },
   {
-    question: "Can I remove my digital footprint?",
+    question: "How do I find a Discord user by username?",
     answer:
-      "Yes. Many platforms allow account deletion or data removal. FootprintIQ helps identify what may need attention and provides guidance on reducing your exposure.",
+      "Enter the Discord username into FootprintIQ's search tool. The platform checks whether the handle appears across 500+ publicly indexed platforms — not just Discord — giving you a complete cross-platform exposure view.",
+  },
+  {
+    question: "Can I remove my Discord digital footprint?",
+    answer:
+      "Yes. Many platforms allow account deletion or data removal. FootprintIQ identifies where your username appears and provides guidance on reducing exposure across each platform.",
   },
   {
     question: "Is this tool anonymous?",
     answer:
       "Yes. Searches are processed securely and designed with user privacy in mind. We do not store or sell your search queries.",
+  },
+  {
+    question: "What platforms does a Discord username search check?",
+    answer:
+      "FootprintIQ checks over 500 platforms including Reddit, Instagram, TikTok, Twitter/X, GitHub, Steam, gaming forums, developer communities, and niche sites — anywhere the same handle might appear publicly.",
+  },
+  {
+    question: "How is this different from searching Discord directly?",
+    answer:
+      "Discord's built-in search only finds users within its own platform. FootprintIQ performs a cross-platform search, revealing where the same username appears across the entire public internet — social media, forums, gaming networks, and data broker listings.",
   },
 ];
 
@@ -161,76 +176,180 @@ export default function DiscordUsernameSearch() {
           </div>
         </section>
 
-        {/* What Is a Discord Username Search? */}
+        {/* SEO Content Sections */}
         <section className="py-12 px-6">
           <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
-            <h2>What Is a Discord Username Search?</h2>
+            <h2>How Discord Username Searches Work</h2>
+
             <p>
-              A Discord username search is the process of checking whether a specific Discord handle
-              appears across other publicly available platforms. Many users reuse the same username —
-              or similar variations — across Instagram, Reddit, TikTok, gaming forums, and developer
-              communities.
+              A <strong>Discord username search</strong> checks whether a specific handle is registered
+              on Discord and — more importantly — where else that same handle appears across the public
+              internet. Unlike Discord's built-in user search, which only operates within the platform,
+              FootprintIQ queries 500+ publicly indexed sources simultaneously.
             </p>
-            <p>This can unintentionally expose:</p>
+
+            <p>
+              The process follows a structured pipeline. First, the tool verifies whether the username
+              exists on Discord by checking publicly accessible profile endpoints. Then it executes a
+              cross-platform enumeration — scanning social media, gaming networks, developer communities,
+              forums, and niche platforms for matching handles. Each result receives a confidence score
+              based on username uniqueness, profile metadata, and platform response reliability.
+            </p>
+
+            <p>
+              This transforms a simple <strong>Discord lookup</strong> into a comprehensive exposure
+              assessment. A username like <code>phantom_drift_99</code> will produce high-confidence
+              matches across platforms, while a generic handle like <code>alex</code> generates more
+              coincidental matches that require manual verification. FootprintIQ's scoring system
+              separates signal from noise automatically.
+            </p>
+
+            <h2>Finding Discord Profiles</h2>
+
+            <p>
+              There are several approaches to <strong>find Discord user</strong> profiles when you have
+              a username or partial information:
+            </p>
+
             <ul>
-              <li>Personal social media profiles</li>
-              <li>Old or forgotten accounts</li>
-              <li>Forum activity and public posts</li>
-              <li>Data breach references</li>
+              <li>
+                <strong>Direct platform search.</strong> Discord allows searching by exact username
+                within the app, but this only works if you share a server with the user or have their
+                full handle.
+              </li>
+              <li>
+                <strong>Cross-platform pivoting.</strong> If someone uses the same handle on Discord
+                and other platforms, discovering it on Instagram, Reddit, or a gaming forum provides
+                strong evidence for the Discord account. FootprintIQ's{" "}
+                <Link to="/usernames" className="text-primary hover:underline">
+                  username search tool
+                </Link>{" "}
+                automates this cross-referencing.
+              </li>
+              <li>
+                <strong>Server-based discovery.</strong> Public Discord server directories and bot
+                listing sites sometimes index usernames. These are publicly accessible data points
+                that OSINT tools can reference.
+              </li>
+              <li>
+                <strong>Linked account detection.</strong> Discord profiles may display connected
+                accounts — Spotify, Steam, GitHub, YouTube — providing additional investigative
+                leads for authorised research.
+              </li>
             </ul>
+
             <p>
-              FootprintIQ scans across hundreds of publicly indexed sources to identify potential
-              digital footprint connections linked to a Discord-style username. Running a{" "}
-              <Link to="/digital-footprint-scan" className="text-primary underline underline-offset-4 hover:text-primary/80">digital footprint scan</Link>{" "}
-              can help you understand the full scope of your exposure beyond a single platform.
+              For a broader approach covering all platforms, use our{" "}
+              <Link to="/reverse-username-search" className="text-primary hover:underline">
+                reverse username lookup
+              </Link>{" "}
+              to map every service where a handle appears.
             </p>
 
-            <h2>Why Discord Usernames Matter for OSINT</h2>
+            <h2>Investigating Discord Accounts</h2>
+
             <p>
-              Open-source intelligence (OSINT) relies on publicly available data. Usernames are
-              powerful OSINT identifiers because they are frequently reused, act as cross-platform
-              anchors, connect fragmented digital identities, and leave searchable traces. Understanding{" "}
-              <Link to="/username-reuse-risk" className="text-primary underline underline-offset-4 hover:text-primary/80">how username reuse creates risk</Link>{" "}
-              is essential for managing your exposure.
-            </p>
-            <p>
-              Cybersecurity professionals, privacy-conscious individuals, and digital investigators
-              use username analysis to assess exposure risk. FootprintIQ brings that methodology
-              into an ethical, privacy-first platform — you can{" "}
-              <Link to="/scan" className="text-primary underline underline-offset-4 hover:text-primary/80">run a scan</Link>{" "}
-              to check your Discord handle across hundreds of public sources in seconds.
+              In authorised security investigations, Discord usernames serve as valuable OSINT pivot
+              points. Analysts use <strong>search Discord username</strong> techniques as part of
+              structured investigation workflows:
             </p>
 
-            <h2>What You Can Discover</h2>
-            <p>Depending on public exposure, a Discord username search may reveal:</p>
             <ul>
-              <li>Matching social media profiles</li>
-              <li>Forum posts and community activity</li>
-              <li>Old gaming accounts</li>
-              <li>Publicly indexed usernames</li>
-              <li>Data breach references</li>
-              <li>Metadata patterns linking identities</li>
+              <li>
+                <strong>Username enumeration.</strong> The Discord handle serves as a search key across
+                all indexed platforms. A single confirmed username can reveal dozens of connected
+                accounts on social media, gaming, and developer platforms.
+              </li>
+              <li>
+                <strong>Server membership analysis.</strong> Public bot directories and server listings
+                may reveal which communities a Discord user participates in — providing context about
+                interests, affiliations, and activity patterns.
+              </li>
+              <li>
+                <strong>Temporal correlation.</strong> Comparing account creation dates and activity
+                patterns across platforms strengthens or weakens the hypothesis that two accounts
+                belong to the same individual.
+              </li>
+              <li>
+                <strong>Metadata cross-referencing.</strong> Display names, profile photos, bio text,
+                and linked accounts provide additional signals for confirming identity correlations.
+              </li>
             </ul>
+
             <p>
-              This helps answer the question: <em>"What can someone find about me using just my
-              username?"</em> The same methodology applies to other platforms — for example, you can also run a{" "}
-              <Link to="/kik-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Kik username search</Link>{" "}
-              to check exposure on messaging apps, or an{" "}
-              <Link to="/instagram-username-search" className="text-primary underline underline-offset-4 hover:text-primary/80">Instagram username search</Link>{" "}
-              to assess visibility on one of the most widely indexed social platforms.
+              FootprintIQ supports investigators by delivering confidence-scored, categorised results —
+              not raw URL lists. This allows analysts to prioritise high-confidence matches and flag
+              potential false positives efficiently. Explore the full{" "}
+              <Link to="/username-search-engine" className="text-primary hover:underline">
+                username search engine
+              </Link>{" "}
+              to understand how multi-tool scanning works.
             </p>
 
-            <h2>Why Check Your Digital Footprint?</h2>
+            <h2>Username Reuse Across Platforms</h2>
+
             <p>
-              Many people underestimate how searchable they are. Checking your digital footprint
-              helps you identify exposed accounts, remove old or unused profiles, reduce
-              impersonation risk, protect personal privacy, and strengthen online security.
+              Discord usernames are frequently reused across gaming networks, social platforms, and
+              developer communities. Because Discord is central to gaming and tech culture, the handle
+              chosen there often propagates to Steam, Twitch, Reddit, GitHub, and dozens of niche
+              forums.
             </p>
+
             <p>
-              Digital exposure is not just a concern for influencers or public figures. It affects
-              everyday users. If you're unsure where to start, our guide on{" "}
-              <Link to="/blog/how-to-check-whats-online-about-you" className="text-primary underline underline-offset-4 hover:text-primary/80">how to check what's online about you</Link>{" "}
-              walks through practical steps anyone can follow.
+              This creates measurable privacy risk. A single{" "}
+              <Link to="/digital-footprint-checker" className="text-primary hover:underline">
+                digital footprint checker
+              </Link>{" "}
+              scan on a Discord handle can reveal forgotten accounts on platforms you no longer use,
+              connections between gaming and professional identities, activity on communities you'd
+              prefer to keep separate, and data broker listings aggregating all these profiles into
+              a single dossier.
+            </p>
+
+            <p>
+              The solution is informed exposure management. Some platforms benefit from a consistent
+              handle for discoverability — professional networks, portfolio sites. Others — anonymous
+              forums, throwaway registrations — should use unique, unlinked usernames to prevent
+              cross-platform correlation.
+            </p>
+
+            <h2>Privacy Risks Of Discord Profiles</h2>
+
+            <p>
+              Discord's default settings expose more than most users realise. Even without joining
+              public servers, your username, avatar, display name, and connected accounts (Spotify,
+              Steam, GitHub) are potentially visible to anyone who shares a server with you.
+            </p>
+
+            <p>
+              The primary risks include:
+            </p>
+
+            <ul>
+              <li>
+                <strong>Cross-platform identity linking.</strong> Reusing your Discord handle on
+                other platforms allows anyone to map your digital presence with a single search.
+              </li>
+              <li>
+                <strong>Connected account exposure.</strong> Discord's integrations with Steam,
+                Spotify, and GitHub create explicit links between accounts that were never intended
+                to be publicly associated.
+              </li>
+              <li>
+                <strong>Social engineering vectors.</strong> Server memberships, display name history,
+                and public activity provide material for targeted phishing and impersonation.
+              </li>
+              <li>
+                <strong>Gaming identity leakage.</strong> Discord's deep integration with gaming
+                platforms means your competitive gaming identity, purchase history indicators, and
+                community affiliations may be discoverable from a single username.
+              </li>
+            </ul>
+
+            <p>
+              To reduce exposure: use a unique Discord handle, disconnect unnecessary account
+              integrations, review server visibility settings, and run periodic scans to monitor
+              where your information appears.
             </p>
           </div>
         </section>
