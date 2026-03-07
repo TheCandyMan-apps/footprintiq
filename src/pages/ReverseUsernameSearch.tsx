@@ -156,7 +156,7 @@ const ReverseUsernameSearch = () => {
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: "Reverse Username Lookup: How to Find Accounts by Username (2026 Guide)",
+    headline: "Reverse Username Search Tool – Find Accounts by Username (2026)",
     description: "Learn how reverse username lookup works and use our free tool to find accounts by username across 500+ platforms. Ethical OSINT methodology with confidence scoring.",
     author: { "@type": "Organization", name: "FootprintIQ" },
     publisher: {
@@ -173,7 +173,7 @@ const ReverseUsernameSearch = () => {
   return (
     <>
       <Helmet>
-        <title>Reverse Username Search – Find Linked Accounts Fast | FootprintIQ</title>
+        <title>Reverse Username Search Tool – Find Accounts by Username | FootprintIQ</title>
         <meta
           name="description"
           content="Free reverse username search across 500+ platforms. Discover linked accounts, map exposure, and reduce your digital footprint with ethical OSINT — no login required."
