@@ -142,21 +142,32 @@ function loadTurnstileScript(): Promise<void> {
  * Custom hook for Turnstile integration
  */
 export function useTurnstile(options?: Partial<TurnstileOptions>) {
-  const [token, setToken] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const isPreview = isPreviewEnvironment();
+
+  const [token, setToken] = useState<string | null>(isPreview ? 'preview-bypass' : null);
+  const [isReady, setIsReady] = useState(isPreview);
   const [error, setError] = useState<string | null>(null);
   const widgetIdRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Select key based on environment - test key for preview, production key for live
-  const isPreview = isPreviewEnvironment();
+  // In preview/dev environments, bypass Turnstile entirely
+  if (isPreview) {
+    console.debug('[Turnstile] Bypassing for preview environment:', window.location.hostname);
+    return {
+      token: 'preview-bypass',
+      isReady: true,
+      error: null,
+      initialize: () => {},
+      reset: () => {},
+      hasToken: true,
+      siteKeyConfigured: false, // prevents widget from rendering
+    };
+  }
+
+  // Select key based on environment
   const siteKey = options?.siteKey || 
     import.meta.env.VITE_TURNSTILE_SITE_KEY || 
-    (isPreview ? TURNSTILE_TEST_KEY : TURNSTILE_PROD_KEY);
-
-  if (isPreview) {
-    console.debug('[Turnstile] Using TEST key for preview environment:', window.location.hostname);
-  }
+    TURNSTILE_PROD_KEY;
 
   // Initialize Turnstile
   const initialize = useCallback(async (container: HTMLDivElement) => {
