@@ -378,6 +378,11 @@ const WhatCanAUsernameReveal = lazy(() => import("./pages/WhatCanAUsernameReveal
 const FindSomeoneByUsername = lazy(() => import("./pages/FindSomeoneByUsername"));
 const BestOsintTools = lazy(() => import("./pages/BestOsintTools"));
 const OsintToolsPage = lazy(() => import("./pages/OsintTools"));
+const SearchUsernameOnTwitter = lazy(() => import("./pages/search-username/SearchUsernameOnTwitter"));
+const SearchUsernameOnReddit = lazy(() => import("./pages/search-username/SearchUsernameOnReddit"));
+const SearchUsernameOnTiktok = lazy(() => import("./pages/search-username/SearchUsernameOnTiktok"));
+const SearchUsernameOnYoutube = lazy(() => import("./pages/search-username/SearchUsernameOnYoutube"));
+const SearchUsernameOnDiscord = lazy(() => import("./pages/search-username/SearchUsernameOnDiscord"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
@@ -828,6 +833,11 @@ function RouterContent() {
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
               <Route path="/best-osint-tools" element={<BestOsintTools />} />
               <Route path="/osint-tools" element={<OsintToolsPage />} />
+              <Route path="/search-username-on-twitter" element={<SearchUsernameOnTwitter />} />
+              <Route path="/search-username-on-reddit" element={<SearchUsernameOnReddit />} />
+              <Route path="/search-username-on-tiktok" element={<SearchUsernameOnTiktok />} />
+              <Route path="/search-username-on-youtube" element={<SearchUsernameOnYoutube />} />
+              <Route path="/search-username-on-discord" element={<SearchUsernameOnDiscord />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
               <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
