@@ -45,6 +45,14 @@ const FAQS = [
     question: "How often should I check my Instagram exposure?",
     answer: "Periodic checks are recommended — particularly before job applications, after data breaches, or when creating a new professional brand. Digital exposure changes as platforms update indexing and privacy defaults.",
   },
+  {
+    question: "How do I find someone's Instagram by username?",
+    answer: "Enter the username into FootprintIQ's Instagram username search tool. The platform checks whether the handle is registered on Instagram and simultaneously scans 500+ other platforms for matching accounts — giving you a complete cross-platform view in seconds.",
+  },
+  {
+    question: "What platforms does FootprintIQ check alongside Instagram?",
+    answer: "FootprintIQ checks over 500 platforms including TikTok, Twitter/X, Reddit, Discord, Snapchat, YouTube, GitHub, LinkedIn, Telegram, gaming networks, forums, and niche communities. Each match is confidence-scored and categorised by platform type.",
+  },
 ];
 
 export default function InstagramUsernameSearchPage() {
@@ -393,7 +401,7 @@ export default function InstagramUsernameSearchPage() {
               history — before drawing conclusions.
             </p>
 
-            <h2>How Investigators Track Instagram Accounts</h2>
+            <h2>OSINT Investigation Techniques</h2>
 
             <p>
               In authorised security investigations and compliance reviews, Instagram usernames serve
@@ -427,10 +435,24 @@ export default function InstagramUsernameSearchPage() {
               correlation confidence increases substantially.
             </p>
 
+            <h3>Network Analysis</h3>
+            <p>
+              Beyond individual profile checks, OSINT practitioners map relationships between accounts.
+              If a username appears on Instagram, Twitter, and a gaming forum, the investigator examines
+              followers, mutual connections, and shared communities across all three. This network-layer
+              analysis often reveals additional linked accounts that a simple{" "}
+              <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>{" "}
+              wouldn't surface on its own — making it a critical step in any structured OSINT
+              investigation.
+            </p>
+
             <p>
               FootprintIQ supports this workflow by providing categorised, confidence-scored results
               rather than raw URL lists — enabling investigators to focus on high-confidence matches
-              while flagging potential false positives for manual review.
+              while flagging potential false positives for manual review. For deeper methodology, explore
+              our{" "}
+              <Link to="/username-search-engine" className="text-primary hover:underline">username search engine</Link>{" "}
+              documentation.
             </p>
 
             <h2>Username Reuse Across Social Platforms</h2>
@@ -468,7 +490,7 @@ export default function InstagramUsernameSearchPage() {
               helps you map this exposure and prioritise cleanup.
             </p>
 
-            <h2>Online Privacy and Instagram Accounts</h2>
+            <h2>Instagram Privacy Risks</h2>
 
             <p>
               Instagram's default privacy settings leave more exposed than most users realise. Even
@@ -478,14 +500,29 @@ export default function InstagramUsernameSearchPage() {
             </p>
 
             <p>
+              The risks are compounded by Instagram's integration with Meta's broader ecosystem.
+              Linked Facebook accounts, Threads profiles, and WhatsApp connections create explicit
+              cross-platform bridges. Data brokers routinely harvest these public signals, aggregating
+              them into comprehensive profiles that are sold commercially. A{" "}
+              <Link to="/digital-footprint-checker" className="text-primary hover:underline">
+                digital footprint checker
+              </Link>{" "}
+              reveals exactly which brokers hold your information and where your Instagram handle has
+              propagated.
+            </p>
+
+            <p>
               Practical steps to reduce Instagram-related exposure:
             </p>
 
             <ol>
               <li>
                 <strong>Use a unique Instagram handle.</strong> If privacy matters, don't reuse your
-                Instagram username on other platforms. This breaks the correlation chain that makes
-                reverse username search effective.
+                Instagram username on other platforms. This breaks the correlation chain that makes{" "}
+                <Link to="/reverse-username-search" className="text-primary hover:underline">
+                  reverse username lookup
+                </Link>{" "}
+                effective.
               </li>
               <li>
                 <strong>Audit your bio.</strong> Remove personally identifiable information — full names,
