@@ -129,7 +129,7 @@ export default function HowToFindSomeoneOnSnapchat() {
               <li><strong>Confidence scoring.</strong> Each result receives a confidence score based on multi-signal correlation, helping distinguish genuine identity links from coincidental username matches.</li>
               <li><strong>Comprehensive reporting.</strong> Results from all platforms are compiled into a single report, providing the full picture that Snapchat's limited public profile data cannot deliver alone.</li>
             </ul>
-            <p>Start with a <Link to="/scan" className="text-primary hover:underline">free username scan</Link> to see what's publicly discoverable. You can also use our <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or check your full exposure with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint scanner</Link>.</p>
+            <p>Start with a <Link to="/scan" className="text-primary hover:underline">free username scan</Link> to see what's publicly discoverable. You can also use our <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, check your full exposure with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint checker</Link>, or explore the <Link to="/username-search-engine" className="text-primary hover:underline">username search engine</Link>.</p>
           </div>
         </section>
 
