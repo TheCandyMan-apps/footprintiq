@@ -1,22 +1,6 @@
-import { FootprintDNA } from '@/components/FootprintDNA';
 import { FootprintDNASkeleton } from '@/components/FootprintDNASkeleton';
-import { FootprintDNAModal } from '@/components/FootprintDNAModal';
-import { RemovalQueue } from '@/components/RemovalQueue';
-import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
-import { DarkWebMonitorSettings } from '@/components/settings/DarkWebMonitorSettings';
-import { InitializeDarkWebDemo } from '@/components/settings/InitializeDarkWebDemo';
-import { StreakBadges } from '@/components/StreakBadges';
-import { analyzeTrends } from '@/lib/trends';
-import { BreachTrendChart } from '@/components/dashboard/BreachTrendChart';
-import { ProviderHealthMap } from '@/components/dashboard/ProviderHealthMap';
-import { IdentityRiskCard } from '@/components/dashboard/IdentityRiskCard';
-import { RecentFindings } from '@/components/dashboard/RecentFindings';
-import { CreditUsageMeter } from '@/components/dashboard/CreditUsageMeter';
-import { RecommendedScans } from '@/components/dashboard/RecommendedScans';
-import { PowerFeaturesCard } from '@/components/dashboard/PowerFeaturesCard';
-import { SuspiciousUsersWidget } from '@/components/dashboard/SuspiciousUsersWidget';
 import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -28,23 +12,17 @@ import { ScrollToTop } from '@/components/ScrollToTop';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { PremiumUpgradeCTA } from '@/components/upsell/PremiumUpgradeCTA';
 import { DashboardUpgradeHeader } from '@/components/upsell/DashboardUpgradeHeader';
-import { ScheduledScansManager } from '@/components/ScheduledScansManager';
-import { WebhookIntegrations } from '@/components/WebhookIntegrations';
-import { ArchivedScans } from '@/components/ArchivedScans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
 import { SkeletonThreatAnalytics } from '@/components/analytics/SkeletonAnalytics';
 import { GlassCard } from '@/components/dashboard/GlassCard';
 import { CircularMetric } from '@/components/dashboard/CircularMetric';
 import { EntityCard } from '@/components/dashboard/EntityCard';
-import { NetworkPreview } from '@/components/dashboard/NetworkPreview';
 import { MonitoringStatusBanner } from '@/components/dashboard/MonitoringStatusBanner';
-import { SocialIntegrations } from '@/components/dashboard/SocialIntegrations';
 import { SavedViewsDialog } from '@/components/dashboard/SavedViewsDialog';
 import { useDashboardQuery } from '@/hooks/useDashboardQuery';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -57,11 +35,38 @@ import { TourHighlight } from '@/components/tour/TourHighlight';
 import { TOURS } from '@/lib/tour/steps';
 import { useWelcomeEmail } from '@/hooks/useWelcomeEmail';
 import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X, Bookmark, Settings2 } from 'lucide-react';
-import { WelcomeInterstitial } from '@/components/conversion/WelcomeInterstitial';
-import { PostCheckoutOnboarding } from '@/components/conversion/PostCheckoutOnboarding';
 import { format } from 'date-fns';
 import { DashboardBarChart, DashboardLineChart } from '@/components/dashboard/DashboardCharts';
+import { LazySection } from '@/hooks/useLazySection';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { Database } from '@/integrations/supabase/types';
+
+// Lazy-load heavy below-fold components
+const FootprintDNA = lazy(() => import('@/components/FootprintDNA').then(m => ({ default: m.FootprintDNA })));
+const FootprintDNAModal = lazy(() => import('@/components/FootprintDNAModal').then(m => ({ default: m.FootprintDNAModal })));
+const RemovalQueue = lazy(() => import('@/components/RemovalQueue').then(m => ({ default: m.RemovalQueue })));
+const RemovalSuccessTracker = lazy(() => import('@/components/RemovalSuccessTracker').then(m => ({ default: m.RemovalSuccessTracker })));
+const DarkWebMonitorSettings = lazy(() => import('@/components/settings/DarkWebMonitorSettings').then(m => ({ default: m.DarkWebMonitorSettings })));
+const InitializeDarkWebDemo = lazy(() => import('@/components/settings/InitializeDarkWebDemo').then(m => ({ default: m.InitializeDarkWebDemo })));
+const StreakBadges = lazy(() => import('@/components/StreakBadges').then(m => ({ default: m.StreakBadges })));
+const BreachTrendChart = lazy(() => import('@/components/dashboard/BreachTrendChart').then(m => ({ default: m.BreachTrendChart })));
+const ProviderHealthMap = lazy(() => import('@/components/dashboard/ProviderHealthMap').then(m => ({ default: m.ProviderHealthMap })));
+const IdentityRiskCard = lazy(() => import('@/components/dashboard/IdentityRiskCard').then(m => ({ default: m.IdentityRiskCard })));
+const RecentFindings = lazy(() => import('@/components/dashboard/RecentFindings').then(m => ({ default: m.RecentFindings })));
+const CreditUsageMeter = lazy(() => import('@/components/dashboard/CreditUsageMeter').then(m => ({ default: m.CreditUsageMeter })));
+const RecommendedScans = lazy(() => import('@/components/dashboard/RecommendedScans').then(m => ({ default: m.RecommendedScans })));
+const PowerFeaturesCard = lazy(() => import('@/components/dashboard/PowerFeaturesCard').then(m => ({ default: m.PowerFeaturesCard })));
+const SuspiciousUsersWidget = lazy(() => import('@/components/dashboard/SuspiciousUsersWidget').then(m => ({ default: m.SuspiciousUsersWidget })));
+const NetworkPreview = lazy(() => import('@/components/dashboard/NetworkPreview').then(m => ({ default: m.NetworkPreview })));
+const SocialIntegrations = lazy(() => import('@/components/dashboard/SocialIntegrations').then(m => ({ default: m.SocialIntegrations })));
+const ThreatAnalyticsPanel = lazy(() => import('@/components/ThreatAnalyticsPanel').then(m => ({ default: m.ThreatAnalyticsPanel })));
+const ScheduledScansManager = lazy(() => import('@/components/ScheduledScansManager').then(m => ({ default: m.ScheduledScansManager })));
+const WebhookIntegrations = lazy(() => import('@/components/WebhookIntegrations').then(m => ({ default: m.WebhookIntegrations })));
+const ArchivedScans = lazy(() => import('@/components/ArchivedScans').then(m => ({ default: m.ArchivedScans })));
+const WelcomeInterstitial = lazy(() => import('@/components/conversion/WelcomeInterstitial').then(m => ({ default: m.WelcomeInterstitial })));
+const PostCheckoutOnboarding = lazy(() => import('@/components/conversion/PostCheckoutOnboarding').then(m => ({ default: m.PostCheckoutOnboarding })));
+
+const SectionSkeleton = () => <Skeleton className="w-full h-[200px] rounded-xl" />;
 type Scan = Database['public']['Tables']['scans']['Row'];
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -235,67 +240,50 @@ const Dashboard = () => {
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
     try {
-      // Fetch recent scans for display (excluding archived)
-      const {
-        data: scansData,
-        error: scansError
-      } = await supabase.from('scans').select('*').eq('user_id', userId).is('archived_at', null).order('created_at', {
-        ascending: false
-      }).limit(10);
-      if (scansError) throw scansError;
-      setScans(scansData || []);
-
-      // Get accurate total scan count
-      const {
-        count: totalCount
-      } = await supabase.from('scans').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('user_id', userId).is('archived_at', null);
-
-      // Get scans this month count
+      // Run all independent queries in parallel
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
-      const {
-        count: monthCount
-      } = await supabase.from('scans').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('user_id', userId).is('archived_at', null).gte('created_at', monthStart.toISOString());
-
-      // Get recent (24h) scans count
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const {
-        count: recentCount
-      } = await supabase.from('scans').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('user_id', userId).is('archived_at', null).gte('created_at', dayAgo.toISOString());
-
-      // Get aggregate high risk count from all scans with workspace filter
       const currentWorkspaceId = workspace?.id;
-      const scanFilter = currentWorkspaceId 
-        ? supabase.from('scans').select('high_risk_count').eq('workspace_id', currentWorkspaceId).is('archived_at', null)
-        : supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null);
-      
-      const { data: aggregateData } = await scanFilter;
-      const totalHighRisk = aggregateData?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
-      
-      // Get active watchlists count
-      const { count: activeWatchlistsCount } = await supabase
-        .from('watchlists')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('is_active', true);
-      
+
+      const [
+        scansResult,
+        totalCountResult,
+        monthCountResult,
+        recentCountResult,
+        aggregateResult,
+        watchlistResult,
+      ] = await Promise.all([
+        // Fetch recent scans
+        supabase.from('scans').select('*').eq('user_id', userId).is('archived_at', null).order('created_at', { ascending: false }).limit(10),
+        // Total scan count
+        supabase.from('scans').select('*', { count: 'exact', head: true }).eq('user_id', userId).is('archived_at', null),
+        // Scans this month
+        supabase.from('scans').select('*', { count: 'exact', head: true }).eq('user_id', userId).is('archived_at', null).gte('created_at', monthStart.toISOString()),
+        // Recent 24h count
+        supabase.from('scans').select('*', { count: 'exact', head: true }).eq('user_id', userId).is('archived_at', null).gte('created_at', dayAgo.toISOString()),
+        // High risk aggregate
+        currentWorkspaceId
+          ? supabase.from('scans').select('high_risk_count').eq('workspace_id', currentWorkspaceId).is('archived_at', null)
+          : supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null),
+        // Active watchlists
+        supabase.from('watchlists').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('is_active', true),
+      ]);
+
+      const scansData = scansResult.data;
+      if (scansResult.error) throw scansResult.error;
+      setScans(scansData || []);
+
+      const totalHighRisk = aggregateResult.data?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
+
       setStats({
-        totalScans: totalCount || 0,
+        totalScans: totalCountResult.count || 0,
         highRiskFindings: totalHighRisk,
-        recentFindings: recentCount || 0,
-        scansThisMonth: monthCount || 0,
+        recentFindings: recentCountResult.count || 0,
+        scansThisMonth: monthCountResult.count || 0,
         avgScanTime: 2.4,
-        activeMonitoring: activeWatchlistsCount || 0
+        activeMonitoring: watchlistResult.count || 0
       });
 
         // Calculate DNA metrics from MULTIPLE recent scans (not just one)
@@ -411,62 +399,39 @@ const Dashboard = () => {
             setDnaMetrics({ score: 100, breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 });
           }
 
-        // Fetch data sources for the most recent scan
-        const recentScanForSources = scansData[0];
-        const {
-          data: sources
-        } = await supabase.from('data_sources').select('*').eq('scan_id', recentScanForSources.id);
-        
-        // Fetch social media links for recent scans
+        // Parallel fetch: sources, social links, finding stats, trends
         const socialScanIds = scansData.slice(0, 3).map(s => s.id);
-        const { data: allSources } = await supabase
-          .from('data_sources')
-          .select('scan_id, name, url, category')
-          .in('scan_id', socialScanIds);
-        
+        const [sourcesResult, allSourcesResult, findingsStatsResult, trends] = await Promise.all([
+          supabase.from('data_sources').select('*').eq('scan_id', scansData[0].id),
+          supabase.from('data_sources').select('scan_id, name, url, category').in('scan_id', socialScanIds),
+          supabase.from('findings').select('scan_id, severity').in('scan_id', socialScanIds),
+          import('@/lib/trends').then(m => m.analyzeTrends(userId, 30)),
+        ]);
+
         // Group social links by scan_id
         const socialLinksMap: Record<string, any[]> = {};
-        allSources?.forEach(source => {
+        allSourcesResult.data?.forEach(source => {
           const isSocialMedia = 
             source.category?.toLowerCase().includes('social') ||
             source.name?.toLowerCase().match(/linkedin|twitter|facebook|instagram|github/);
           
           if (isSocialMedia && source.url) {
-            if (!socialLinksMap[source.scan_id]) {
-              socialLinksMap[source.scan_id] = [];
-            }
-            
-            // Determine platform from name or URL
+            if (!socialLinksMap[source.scan_id]) socialLinksMap[source.scan_id] = [];
             let platform: 'linkedin' | 'twitter' | 'facebook' | 'web' = 'web';
             const lowerName = source.name?.toLowerCase() || '';
             const lowerUrl = source.url?.toLowerCase() || '';
-            
             if (lowerName.includes('linkedin') || lowerUrl.includes('linkedin')) platform = 'linkedin';
             else if (lowerName.includes('twitter') || lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) platform = 'twitter';
             else if (lowerName.includes('facebook') || lowerUrl.includes('facebook')) platform = 'facebook';
-            
-            socialLinksMap[source.scan_id].push({
-              platform,
-              url: source.url
-            });
+            socialLinksMap[source.scan_id].push({ platform, url: source.url });
           }
         });
         setScanSocialLinks(socialLinksMap);
         
-        // Fetch finding stats for entity cards (match % and risk score)
-        const entityScanIds = scansData.slice(0, 3).map(s => s.id);
-        const { data: findingsForStats } = await supabase
-          .from('findings')
-          .select('scan_id, severity')
-          .in('scan_id', entityScanIds);
-        
-        // Calculate stats per scan
+        // Calculate finding stats per scan
         const statsMap: Record<string, { total: number; high: number; medium: number; low: number }> = {};
-        entityScanIds.forEach(id => {
-          statsMap[id] = { total: 0, high: 0, medium: 0, low: 0 };
-        });
-        
-        findingsForStats?.forEach(f => {
+        socialScanIds.forEach(id => { statsMap[id] = { total: 0, high: 0, medium: 0, low: 0 }; });
+        findingsStatsResult.data?.forEach(f => {
           if (statsMap[f.scan_id]) {
             statsMap[f.scan_id].total++;
             const severity = (f.severity || 'low').toLowerCase();
@@ -475,14 +440,8 @@ const Dashboard = () => {
             else statsMap[f.scan_id].low++;
           }
         });
-        
         setScanFindingStats(statsMap);
-        
-        // DNA metrics already calculated above (lines 277-341)
-        // This duplicate calculation has been removed to prevent overwriting correct values
 
-        // Fetch trend data for this user
-        const trends = await analyzeTrends(userId, 30);
         setTrendData(trends);
       }
     } catch (error: any) {
@@ -871,73 +830,80 @@ const Dashboard = () => {
                     </div>
 
                     {/* Social Integrations */}
-                    <div className="mt-8">
-                      <SocialIntegrations />
-                    </div>
+                    <LazySection fallback={<SectionSkeleton />} className="mt-8">
+                      <Suspense fallback={<SectionSkeleton />}>
+                        <SocialIntegrations />
+                      </Suspense>
+                    </LazySection>
 
                     {/* Power Features Discovery */}
-                    <div className="mt-8">
-                      <PowerFeaturesCard />
-                    </div>
+                    <LazySection fallback={<SectionSkeleton />} className="mt-8">
+                      <Suspense fallback={<SectionSkeleton />}>
+                        <PowerFeaturesCard />
+                      </Suspense>
+                    </LazySection>
 
                     {/* Dashboard v2 Enhancements */}
-                    <div className="mt-8 space-y-6">
-                      <h2 className="text-2xl font-bold flex items-center gap-2">
-                        <Activity className="w-6 h-6 text-primary" />
-                        Intelligence Analytics
-                      </h2>
+                    <LazySection fallback={<SectionSkeleton />} className="mt-8 space-y-6">
+                      <Suspense fallback={<SectionSkeleton />}>
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                          <Activity className="w-6 h-6 text-primary" />
+                          Intelligence Analytics
+                        </h2>
 
-                      {/* Top Row: Breach Trend + Provider Health */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <SectionErrorBoundary section="Findings Activity Chart">
-                          <BreachTrendChart workspaceId={workspace?.id} />
-                        </SectionErrorBoundary>
-                        <SectionErrorBoundary section="Provider Health Map">
-                          <ProviderHealthMap workspaceId={workspace?.id} />
-                        </SectionErrorBoundary>
-                      </div>
+                        {/* Top Row: Breach Trend + Provider Health */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <SectionErrorBoundary section="Findings Activity Chart">
+                            <BreachTrendChart workspaceId={workspace?.id} />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Provider Health Map">
+                            <ProviderHealthMap workspaceId={workspace?.id} />
+                          </SectionErrorBoundary>
+                        </div>
 
-                      {/* Middle Row: Identity Risk + Credit Usage */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <SectionErrorBoundary section="Identity Risk Score">
-                          <IdentityRiskCard
-                            riskScore={dnaMetrics.score}
-                            breaches={dnaMetrics.breaches}
-                            darkWeb={dnaMetrics.darkWeb}
-                            dataBrokers={dnaMetrics.dataBrokers}
-                            exposures={dnaMetrics.exposures}
-                          />
-                        </SectionErrorBoundary>
-                        <SectionErrorBoundary section="Credit Usage Meter">
-                          <CreditUsageMeter />
-                        </SectionErrorBoundary>
-                      </div>
+                        {/* Middle Row: Identity Risk + Credit Usage */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <SectionErrorBoundary section="Identity Risk Score">
+                            <IdentityRiskCard
+                              riskScore={dnaMetrics.score}
+                              breaches={dnaMetrics.breaches}
+                              darkWeb={dnaMetrics.darkWeb}
+                              dataBrokers={dnaMetrics.dataBrokers}
+                              exposures={dnaMetrics.exposures}
+                            />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Credit Usage Meter">
+                            <CreditUsageMeter />
+                          </SectionErrorBoundary>
+                        </div>
 
-                      {/* Bottom Row: Recent Findings + Recommended Scans */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <SectionErrorBoundary section="Recent Findings">
-                          <RecentFindings workspaceId={workspace?.id} />
-                        </SectionErrorBoundary>
-                        <SectionErrorBoundary section="Recommended Scans">
-                          <RecommendedScans />
-                        </SectionErrorBoundary>
-                      </div>
+                        {/* Bottom Row: Recent Findings + Recommended Scans */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <SectionErrorBoundary section="Recent Findings">
+                            <RecentFindings workspaceId={workspace?.id} />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Recommended Scans">
+                            <RecommendedScans />
+                          </SectionErrorBoundary>
+                        </div>
 
-                      {/* Admin: Suspicious Users Widget */}
-                      <SectionErrorBoundary section="Suspicious Users">
-                        <SuspiciousUsersWidget />
-                      </SectionErrorBoundary>
-                    </div>
+                        {/* Admin: Suspicious Users Widget */}
+                        <SectionErrorBoundary section="Suspicious Users">
+                          <SuspiciousUsersWidget />
+                        </SectionErrorBoundary>
+                      </Suspense>
+                    </LazySection>
                   </div>
 
                   {/* Footprint DNA Card */}
-                  {loading ? <div className="mb-8">
-                      <FootprintDNASkeleton />
-                    </div> : scans.length > 0 ? <div data-tour="digital-dna" className="mb-8">
-                      <FootprintDNA score={dnaMetrics.score} breaches={dnaMetrics.breaches} exposures={dnaMetrics.exposures} dataBrokers={dnaMetrics.dataBrokers} darkWeb={dnaMetrics.darkWeb} trendData={trendData} onOpenDetails={() => setIsDNAModalOpen(true)} onRescan={handleRescan} isRescanning={isRescanning} />
-
-                      <FootprintDNAModal open={isDNAModalOpen} onOpenChange={setIsDNAModalOpen} trendData={trendData} currentScore={dnaMetrics.score} />
-                    </div> : null}
+                  <LazySection fallback={<FootprintDNASkeleton />}>
+                    <Suspense fallback={<FootprintDNASkeleton />}>
+                      {loading ? <FootprintDNASkeleton /> : scans.length > 0 ? <div data-tour="digital-dna" className="mb-8">
+                        <FootprintDNA score={dnaMetrics.score} breaches={dnaMetrics.breaches} exposures={dnaMetrics.exposures} dataBrokers={dnaMetrics.dataBrokers} darkWeb={dnaMetrics.darkWeb} trendData={trendData} onOpenDetails={() => setIsDNAModalOpen(true)} onRescan={handleRescan} isRescanning={isRescanning} />
+                        <FootprintDNAModal open={isDNAModalOpen} onOpenChange={setIsDNAModalOpen} trendData={trendData} currentScore={dnaMetrics.score} />
+                      </div> : null}
+                    </Suspense>
+                  </LazySection>
 
                   {/* Quick Actions */}
                   <Card className="p-6">
@@ -967,29 +933,34 @@ const Dashboard = () => {
                   </Card>
 
                   {/* Two Column Layout for Streak & Removal Queue */}
-                  <div className="grid md:grid-cols-3 gap-6">
-                    {/* Streak & Badges Sidebar */}
-                    <div className="md:col-span-1">
-                      <SectionErrorBoundary section="Streak & Badges">
-                        <StreakBadges userId={user?.id} />
-                      </SectionErrorBoundary>
-                    </div>
-
-                    {/* Removal Queue & Success Tracker */}
-                    <div className="md:col-span-2 space-y-6">
-                      <SectionErrorBoundary section="Removal Queue">
-                        <RemovalQueue userId={user.id} />
-                      </SectionErrorBoundary>
-                      <SectionErrorBoundary section="Removal Success Tracker">
-                        <RemovalSuccessTracker userId={user.id} />
-                      </SectionErrorBoundary>
-                    </div>
-                  </div>
+                  <LazySection fallback={<SectionSkeleton />}>
+                    <Suspense fallback={<SectionSkeleton />}>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="md:col-span-1">
+                          <SectionErrorBoundary section="Streak & Badges">
+                            <StreakBadges userId={user?.id} />
+                          </SectionErrorBoundary>
+                        </div>
+                        <div className="md:col-span-2 space-y-6">
+                          <SectionErrorBoundary section="Removal Queue">
+                            <RemovalQueue userId={user.id} />
+                          </SectionErrorBoundary>
+                          <SectionErrorBoundary section="Removal Success Tracker">
+                            <RemovalSuccessTracker userId={user.id} />
+                          </SectionErrorBoundary>
+                        </div>
+                      </div>
+                    </Suspense>
+                  </LazySection>
 
                   {/* Dark Web Monitor Settings */}
-                  <SectionErrorBoundary section="Dark Web Monitor">
-                    <DarkWebMonitorSettings />
-                  </SectionErrorBoundary>
+                  <LazySection fallback={<SectionSkeleton />}>
+                    <Suspense fallback={<SectionSkeleton />}>
+                      <SectionErrorBoundary section="Dark Web Monitor">
+                        <DarkWebMonitorSettings />
+                      </SectionErrorBoundary>
+                    </Suspense>
+                  </LazySection>
                 </TabsContent>
 
                 {/* Analytics Tab */}
@@ -997,9 +968,11 @@ const Dashboard = () => {
 
                   {/* Threat Analytics */}
                   {loading ? <SkeletonThreatAnalytics /> : (
-                    <SectionErrorBoundary section="Threat Analytics">
-                      <ThreatAnalyticsPanel />
-                    </SectionErrorBoundary>
+                    <Suspense fallback={<SkeletonThreatAnalytics />}>
+                      <SectionErrorBoundary section="Threat Analytics">
+                        <ThreatAnalyticsPanel />
+                      </SectionErrorBoundary>
+                    </Suspense>
                   )}
                 </TabsContent>
 
@@ -1130,17 +1103,23 @@ const Dashboard = () => {
 
               {/* Scheduled Scans Tab */}
               <TabsContent value="scheduled" className="space-y-6">
-                {workspace?.id && <ScheduledScansManager workspaceId={workspace.id} />}
+                <Suspense fallback={<SectionSkeleton />}>
+                  {workspace?.id && <ScheduledScansManager workspaceId={workspace.id} />}
+                </Suspense>
               </TabsContent>
 
               {/* Webhooks Tab */}
               <TabsContent value="webhooks" className="space-y-6">
-                <WebhookIntegrations />
+                <Suspense fallback={<SectionSkeleton />}>
+                  <WebhookIntegrations />
+                </Suspense>
               </TabsContent>
 
               {/* Archived Tab */}
               <TabsContent value="archived" className="space-y-6">
-                <ArchivedScans />
+                <Suspense fallback={<SectionSkeleton />}>
+                  <ArchivedScans />
+                </Suspense>
               </TabsContent>
             </Tabs>
           </div>
