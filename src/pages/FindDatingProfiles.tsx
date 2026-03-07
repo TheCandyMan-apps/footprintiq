@@ -277,7 +277,9 @@ const FindDatingProfiles = () => {
 
             <h2>Ethical Considerations</h2>
             <p>
-              FootprintIQ takes a firm ethical stance on dating profile discovery. We believe in <strong>transparency, consent, and responsible use</strong>. Our platform is designed primarily for <strong>self-auditing</strong> — helping you understand your own digital exposure rather than surveilling others.
+              FootprintIQ takes a firm ethical stance on dating profile discovery. We believe in <strong>transparency, consent, and responsible use</strong>. Our platform is designed primarily for <strong>self-auditing</strong> — helping you understand your own digital exposure rather than surveilling others. Start with a{" "}
+                <Link to="/check-my-digital-footprint" className="text-primary hover:underline">digital footprint check</Link>{" "}
+                to see what's publicly visible before taking action.
             </p>
             <div className="not-prose my-6 p-6 rounded-xl border border-border bg-card">
               <div className="flex items-start gap-3">
