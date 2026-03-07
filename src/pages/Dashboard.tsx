@@ -968,9 +968,11 @@ const Dashboard = () => {
 
                   {/* Threat Analytics */}
                   {loading ? <SkeletonThreatAnalytics /> : (
-                    <SectionErrorBoundary section="Threat Analytics">
-                      <ThreatAnalyticsPanel />
-                    </SectionErrorBoundary>
+                    <Suspense fallback={<SkeletonThreatAnalytics />}>
+                      <SectionErrorBoundary section="Threat Analytics">
+                        <ThreatAnalyticsPanel />
+                      </SectionErrorBoundary>
+                    </Suspense>
                   )}
                 </TabsContent>
 
