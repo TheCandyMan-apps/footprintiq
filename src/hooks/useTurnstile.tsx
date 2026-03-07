@@ -150,29 +150,14 @@ export function useTurnstile(options?: Partial<TurnstileOptions>) {
   const widgetIdRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // In preview/dev environments, bypass Turnstile entirely
-  if (isPreview) {
-    console.debug('[Turnstile] Bypassing for preview environment:', window.location.hostname);
-    return {
-      token: 'preview-bypass',
-      isReady: true,
-      error: null,
-      initialize: () => {},
-      reset: () => {},
-      hasToken: true,
-      siteKeyConfigured: false, // prevents widget from rendering
-    };
-  }
-
-  // Select key based on environment
-  const siteKey = options?.siteKey || 
+  const siteKey = isPreview ? '' : (options?.siteKey || 
     import.meta.env.VITE_TURNSTILE_SITE_KEY || 
-    TURNSTILE_PROD_KEY;
+    TURNSTILE_PROD_KEY);
 
   // Initialize Turnstile
   const initialize = useCallback(async (container: HTMLDivElement) => {
-    if (!siteKey) {
-      console.warn('[Turnstile] No site key configured - bypassing verification');
+    if (isPreview || !siteKey) {
+      console.debug('[Turnstile] Bypassing for preview/no key:', window.location.hostname);
       setIsReady(true);
       return;
     }
@@ -219,12 +204,13 @@ export function useTurnstile(options?: Partial<TurnstileOptions>) {
     } catch (err) {
       console.error('[Turnstile] Initialization error:', err);
       setError(err instanceof Error ? err.message : 'Failed to initialize verification');
-      setIsReady(true); // Allow form to proceed on initialization failure
+      setIsReady(true);
     }
-  }, [siteKey, options?.theme, options?.size, options?.action]);
+  }, [isPreview, siteKey, options?.theme, options?.size, options?.action]);
 
-  // Reset the widget to get a new token
+  // Reset the widget
   const reset = useCallback(() => {
+    if (isPreview) return;
     setToken(null);
     setError(null);
 
@@ -235,7 +221,7 @@ export function useTurnstile(options?: Partial<TurnstileOptions>) {
         console.warn('[Turnstile] Reset error:', err);
       }
     }
-  }, []);
+  }, [isPreview]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -257,6 +243,6 @@ export function useTurnstile(options?: Partial<TurnstileOptions>) {
     initialize,
     reset,
     hasToken: !!token,
-    siteKeyConfigured: !!siteKey,
+    siteKeyConfigured: !isPreview && !!siteKey,
   };
 }
