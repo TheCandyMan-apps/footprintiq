@@ -157,10 +157,10 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  Annual
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-0">
-                    Save 20%
-                  </Badge>
+                   Annual
+                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-0">
+                     Save 34%
+                   </Badge>
                 </button>
               </div>
             </div>
@@ -173,7 +173,7 @@ export function InlineUpgradeModal({ open, onOpenChange }: InlineUpgradeModalPro
                 size="lg"
                 className="w-full h-12 text-base font-semibold gap-2"
               >
-                {loading ? 'Processing…' : cycle === 'annual' ? 'Upgrade — £3.75/mo' : 'Upgrade — £4.99/mo'}
+                {loading ? 'Processing…' : cycle === 'annual' ? 'Upgrade — £9.92/mo' : 'Upgrade — £14.99/mo'}
                 {!loading && <ChevronRight className="h-4 w-4" />}
               </Button>
 
