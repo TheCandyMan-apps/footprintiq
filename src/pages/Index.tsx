@@ -6,6 +6,7 @@ import { PLATFORM_SCHEMA_DESCRIPTION, PLATFORM_META_DESCRIPTION } from "@/lib/pl
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
+import { LazySection } from "@/hooks/useLazySection";
 
 // Below-fold on mobile (hero is 80svh): lazy-loaded for LCP
 const HomepageResultPreview = lazy(() => import("@/components/HomepageResultPreview").then(m => ({ default: m.HomepageResultPreview })));
@@ -174,96 +175,136 @@ export default function Home() {
       {/* Educational content */}
       <HomepageEducational />
       
-      {/* Below fold sections - lazy loaded */}
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><WhatYouCanDiscover /></div>
-      </Suspense>
+      {/* Below fold sections - lazy loaded AND deferred until scrolled into view */}
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <WhatYouCanDiscover />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><TrustSignals /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <TrustSignals />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><WhatWeDoSection /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <WhatWeDoSection />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><PlatformCapabilities includeSchema /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <PlatformCapabilities includeSchema />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><ExposureIntelligenceSection /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <ExposureIntelligenceSection />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div id="how-it-works" className="below-fold"><HowItWorks /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <div id="how-it-works"><HowItWorks /></div>
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div id="features" className="below-fold"><WhyChooseUs /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <div id="features"><WhyChooseUs /></div>
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><CategoryComparisonStrip /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <CategoryComparisonStrip />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><WhatWeAre /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <WhatWeAre />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><WhoItsFor /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <WhoItsFor />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><EverydayUseCases /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <EverydayUseCases />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><ProductEntryPoints /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <ProductEntryPoints />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><FreeVsPro /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <FreeVsPro />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><SampleReportPreview /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <SampleReportPreview />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><TrustTransparency /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <TrustTransparency />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><WhyItMatters /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <WhyItMatters />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><FinalCTA /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <FinalCTA />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><DiscoveryToProofSection /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <DiscoveryToProofSection />
+        </Suspense>
+      </LazySection>
       
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><FAQ /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <FAQ />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold"><ForProfessionals /></div>
-      </Suspense>
+      <LazySection>
+        <Suspense fallback={<SectionFallback />}>
+          <ForProfessionals />
+        </Suspense>
+      </LazySection>
 
-      <Suspense fallback={<SectionFallback />}>
-        <div className="below-fold">
+      <LazySection>
+        <Suspense fallback={null}>
           <div className="max-w-3xl mx-auto px-6 pb-12 text-center">
             <p className="text-sm text-muted-foreground leading-relaxed">
               FootprintIQ is an ethical OSINT platform designed to help individuals understand their public digital footprint. It analyses publicly available information to identify potential account exposure and correlation risks, while emphasising accuracy, transparency, and responsible interpretation.
             </p>
           </div>
-        </div>
-      </Suspense>
+        </Suspense>
+      </LazySection>
       
       <Suspense fallback={null}>
         <ResponsibleUsePledge />
@@ -273,6 +314,8 @@ export default function Home() {
       </Suspense>
       <SocialProofToast />
       <ExitIntentModal />
+      {/* Bottom padding for mobile CTA bar */}
+      <div className="h-20 md:hidden" />
       <Footer />
     </>
   );

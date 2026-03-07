@@ -177,11 +177,11 @@ export const Header = () => {
                 alt="FootprintIQ Logo"
                 width={280}
                 height={80}
-                sizes="(max-width: 768px) 200px, 280px"
+                sizes="(max-width: 768px) 160px, 280px"
                 loading="eager"
                 decoding="sync"
                 fetchPriority="high"
-                className="h-20 w-auto object-contain max-w-[280px] transition-all duration-300 group-hover:scale-105"
+                className="h-12 md:h-20 w-auto object-contain max-w-[180px] md:max-w-[280px] transition-all duration-300 group-hover:scale-105"
               />
             </Link>
           </div>
