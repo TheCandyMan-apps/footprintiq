@@ -1103,17 +1103,23 @@ const Dashboard = () => {
 
               {/* Scheduled Scans Tab */}
               <TabsContent value="scheduled" className="space-y-6">
-                {workspace?.id && <ScheduledScansManager workspaceId={workspace.id} />}
+                <Suspense fallback={<SectionSkeleton />}>
+                  {workspace?.id && <ScheduledScansManager workspaceId={workspace.id} />}
+                </Suspense>
               </TabsContent>
 
               {/* Webhooks Tab */}
               <TabsContent value="webhooks" className="space-y-6">
-                <WebhookIntegrations />
+                <Suspense fallback={<SectionSkeleton />}>
+                  <WebhookIntegrations />
+                </Suspense>
               </TabsContent>
 
               {/* Archived Tab */}
               <TabsContent value="archived" className="space-y-6">
-                <ArchivedScans />
+                <Suspense fallback={<SectionSkeleton />}>
+                  <ArchivedScans />
+                </Suspense>
               </TabsContent>
             </Tabs>
           </div>
