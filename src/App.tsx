@@ -398,6 +398,14 @@ const HowToFindSomeoneOnReddit = lazy(() => import("./pages/how-to-find-someone/
 const HowToFindSomeoneOnInstagram = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnInstagram"));
 const HowToFindSomeoneOnTiktok = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnTiktok"));
 const HowToFindSomeoneOnDiscord = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnDiscord"));
+const HowToFindSomeoneOnYoutube = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnYoutube"));
+const HowToFindSomeoneOnTelegram = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnTelegram"));
+const HowToFindSomeoneOnSnapchat = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnSnapchat"));
+const HowToFindSomeoneOnTwitch = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnTwitch"));
+const HowToFindSomeoneOnPinterest = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnPinterest"));
+const HowToFindSomeoneOnGithub = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnGithub"));
+const HowToFindSomeoneOnTwitter = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnTwitter"));
+const HowToFindSomeoneOnLinkedin = lazy(() => import("./pages/how-to-find-someone/HowToFindSomeoneOnLinkedin"));
 const FindSomeoneByEmail = lazy(() => import("./pages/find-someone/FindSomeoneByEmail"));
 const FindSomeoneByPhoneNumber = lazy(() => import("./pages/find-someone/FindSomeoneByPhoneNumber"));
 const FindSomeoneByPhoto = lazy(() => import("./pages/find-someone/FindSomeoneByPhoto"));
@@ -882,6 +890,14 @@ function RouterContent() {
               <Route path="/how-to-find-someone-on-instagram" element={<HowToFindSomeoneOnInstagram />} />
               <Route path="/how-to-find-someone-on-tiktok" element={<HowToFindSomeoneOnTiktok />} />
               <Route path="/how-to-find-someone-on-discord" element={<HowToFindSomeoneOnDiscord />} />
+              <Route path="/how-to-find-someone-on-youtube" element={<HowToFindSomeoneOnYoutube />} />
+              <Route path="/how-to-find-someone-on-telegram" element={<HowToFindSomeoneOnTelegram />} />
+              <Route path="/how-to-find-someone-on-snapchat" element={<HowToFindSomeoneOnSnapchat />} />
+              <Route path="/how-to-find-someone-on-twitch" element={<HowToFindSomeoneOnTwitch />} />
+              <Route path="/how-to-find-someone-on-pinterest" element={<HowToFindSomeoneOnPinterest />} />
+              <Route path="/how-to-find-someone-on-github" element={<HowToFindSomeoneOnGithub />} />
+              <Route path="/how-to-find-someone-on-twitter" element={<HowToFindSomeoneOnTwitter />} />
+              <Route path="/how-to-find-someone-on-linkedin" element={<HowToFindSomeoneOnLinkedin />} />
               <Route path="/find-someone-by-email" element={<FindSomeoneByEmail />} />
               <Route path="/find-someone-by-phone-number" element={<FindSomeoneByPhoneNumber />} />
               <Route path="/find-someone-by-photo" element={<FindSomeoneByPhoto />} />
