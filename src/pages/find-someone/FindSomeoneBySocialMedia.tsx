@@ -121,6 +121,7 @@ export default function FindSomeoneBySocialMedia() {
               <li><strong>Minimise profile metadata.</strong> Remove personal details — location, employer, phone number — from bios and profile fields unless they're necessary.</li>
               <li><strong>Monitor continuously.</strong> Your digital footprint changes as platforms index new content. Periodic rescanning catches new exposure.</li>
             </ul>
+            <p>Start with FootprintIQ's <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or use the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint scanner</Link> to audit your full cross-platform presence.</p>
           </div>
         </section>
 
