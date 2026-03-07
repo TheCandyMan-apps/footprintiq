@@ -846,9 +846,9 @@ export default function UsernamePage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
+              <h2 className="text-3xl font-bold mb-4">Username Search FAQs</h2>
               <p className="text-muted-foreground">
-                Common questions about username search, reverse username lookup, and reducing digital exposure.
+                Common questions about username search, reverse username lookup, online username search tools, and reducing digital exposure.
               </p>
             </div>
 
