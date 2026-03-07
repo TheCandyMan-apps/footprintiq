@@ -110,6 +110,7 @@ export default function FindSomeoneByPhoneNumber() {
               <li><strong>Use authenticator apps instead of SMS.</strong> Replace SMS-based 2FA with app-based authenticators (Google Authenticator, Authy) to reduce SIM swap risk.</li>
               <li><strong>Monitor for breaches.</strong> Regular scans ensure you're aware when your phone number appears in new breach datasets.</li>
             </ul>
+            <p>Complement your phone number investigation with FootprintIQ's <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint scanner</Link> for complete exposure analysis.</p>
           </div>
         </section>
 

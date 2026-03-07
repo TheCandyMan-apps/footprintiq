@@ -171,6 +171,7 @@ export default function FindSomeoneByEmail() {
               <li><strong>Opt out of data brokers.</strong> Request removal of your email from people-search sites and data aggregation platforms. FootprintIQ identifies which brokers list your information and provides removal guidance.</li>
               <li><strong>Monitor for breaches.</strong> Regular breach checks ensure you're aware when your email appears in new compromised datasets, allowing you to change passwords immediately.</li>
             </ul>
+            <p>Use FootprintIQ's <Link to="/usernames" className="text-primary hover:underline">username search tool</Link> to check associated handles, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or scan your full exposure with the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint scanner</Link>.</p>
           </div>
         </section>
 

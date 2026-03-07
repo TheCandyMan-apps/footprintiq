@@ -129,7 +129,7 @@ export default function HowToFindSomeoneOnDiscord() {
               <li><strong>Breach history check.</strong> FootprintIQ checks whether the username or associated email appears in known breach databases, identifying potential credential compromises and revealing additional identifiers.</li>
               <li><strong>Digital exposure report.</strong> The comprehensive scan results provide an overview of the identity's digital footprint — every platform where the username appears, breach exposure, and data broker presence — delivered as an actionable intelligence report.</li>
             </ul>
-            <p>Start with a <Link to="/scan" className="text-primary hover:underline">free username scan</Link> to see what's publicly discoverable about any Discord handle across the entire web.</p>
+            <p>Start with a <Link to="/scan" className="text-primary hover:underline">free username scan</Link> to see what's publicly discoverable about any Discord handle across the entire web. Also try our <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, run a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or use the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint scanner</Link> for full exposure analysis.</p>
           </div>
         </section>
 

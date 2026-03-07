@@ -111,7 +111,7 @@ export default function FindSomeoneByPhoto() {
               <li><strong>Accuracy limitations.</strong> Visual similarity does not guarantee identity. False positives — especially with common-looking photos — can lead to incorrect identifications with real consequences.</li>
               <li><strong>Legal considerations.</strong> Some jurisdictions regulate facial recognition technology and biometric data processing. Ensure compliance with applicable privacy laws.</li>
             </ul>
-            <p>FootprintIQ's approach prioritises username and email-based investigation, which are more accurate and carry fewer ethical concerns than facial recognition. See our <Link to="/ethical-osint" className="text-primary hover:underline">Ethical OSINT Charter</Link>.</p>
+            <p>FootprintIQ's approach prioritises username and email-based investigation, which are more accurate and carry fewer ethical concerns than facial recognition. Use our <Link to="/usernames" className="text-primary hover:underline">username search tool</Link>, try a <Link to="/reverse-username-search" className="text-primary hover:underline">reverse username lookup</Link>, or run the <Link to="/digital-footprint-checker" className="text-primary hover:underline">digital footprint scanner</Link>. See our <Link to="/ethical-osint" className="text-primary hover:underline">Ethical OSINT Charter</Link>.</p>
           </div>
         </section>
 
