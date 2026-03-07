@@ -383,6 +383,7 @@ const SearchUsernameOnReddit = lazy(() => import("./pages/search-username/Search
 const SearchUsernameOnTiktok = lazy(() => import("./pages/search-username/SearchUsernameOnTiktok"));
 const SearchUsernameOnYoutube = lazy(() => import("./pages/search-username/SearchUsernameOnYoutube"));
 const SearchUsernameOnDiscord = lazy(() => import("./pages/search-username/SearchUsernameOnDiscord"));
+const UsernameSearchPlatforms = lazy(() => import("./pages/UsernameSearchPlatforms"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
@@ -838,6 +839,7 @@ function RouterContent() {
               <Route path="/search-username-on-tiktok" element={<SearchUsernameOnTiktok />} />
               <Route path="/search-username-on-youtube" element={<SearchUsernameOnYoutube />} />
               <Route path="/search-username-on-discord" element={<SearchUsernameOnDiscord />} />
+              <Route path="/username-search-platforms" element={<UsernameSearchPlatforms />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
               <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
