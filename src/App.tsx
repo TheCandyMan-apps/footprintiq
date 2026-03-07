@@ -404,6 +404,7 @@ const FindSomeoneByPhoto = lazy(() => import("./pages/find-someone/FindSomeoneBy
 const FindSomeoneBySocialMedia = lazy(() => import("./pages/find-someone/FindSomeoneBySocialMedia"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
+const UsernameSearchEngine = lazy(() => import("./pages/UsernameSearchEngine"));
 const CheckUsernameAcrossPlatforms = lazy(() => import("./pages/CheckUsernameAcrossPlatforms"));
 const SherlockVsFootprintiq = lazy(() => import("./pages/comparisons/SherlockVsFootprintiq"));
 const CredentialReuseRisk = lazy(() => import("./pages/CredentialReuseRisk"));
@@ -878,6 +879,7 @@ function RouterContent() {
               <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
               <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
+              <Route path="/username-search-engine" element={<UsernameSearchEngine />} />
               <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
                <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
                <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
