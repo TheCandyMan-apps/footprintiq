@@ -384,6 +384,15 @@ const SearchUsernameOnTiktok = lazy(() => import("./pages/search-username/Search
 const SearchUsernameOnYoutube = lazy(() => import("./pages/search-username/SearchUsernameOnYoutube"));
 const SearchUsernameOnDiscord = lazy(() => import("./pages/search-username/SearchUsernameOnDiscord"));
 const UsernameSearchPlatforms = lazy(() => import("./pages/UsernameSearchPlatforms"));
+const SearchInstagramByUsername = lazy(() => import("./pages/search-by-username/SearchInstagramByUsername"));
+const SearchRedditByUsername = lazy(() => import("./pages/search-by-username/SearchRedditByUsername"));
+const SearchTiktokByUsername = lazy(() => import("./pages/search-by-username/SearchTiktokByUsername"));
+const SearchDiscordByUsername = lazy(() => import("./pages/search-by-username/SearchDiscordByUsername"));
+const SearchTwitterByUsername = lazy(() => import("./pages/search-by-username/SearchTwitterByUsername"));
+const SearchYoutubeByUsername = lazy(() => import("./pages/search-by-username/SearchYoutubeByUsername"));
+const SearchTelegramByUsername = lazy(() => import("./pages/search-by-username/SearchTelegramByUsername"));
+const SearchSnapchatByUsername = lazy(() => import("./pages/search-by-username/SearchSnapchatByUsername"));
+const SearchTwitchByUsername = lazy(() => import("./pages/search-by-username/SearchTwitchByUsername"));
 const HowToFindSomeoneOnline = lazy(() => import("./pages/HowToFindSomeoneOnline"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
@@ -840,6 +849,15 @@ function RouterContent() {
               <Route path="/search-username-on-youtube" element={<SearchUsernameOnYoutube />} />
               <Route path="/search-username-on-discord" element={<SearchUsernameOnDiscord />} />
               <Route path="/username-search-platforms" element={<UsernameSearchPlatforms />} />
+              <Route path="/search-instagram-by-username" element={<SearchInstagramByUsername />} />
+              <Route path="/search-reddit-by-username" element={<SearchRedditByUsername />} />
+              <Route path="/search-tiktok-by-username" element={<SearchTiktokByUsername />} />
+              <Route path="/search-discord-by-username" element={<SearchDiscordByUsername />} />
+              <Route path="/search-twitter-by-username" element={<SearchTwitterByUsername />} />
+              <Route path="/search-youtube-by-username" element={<SearchYoutubeByUsername />} />
+              <Route path="/search-telegram-by-username" element={<SearchTelegramByUsername />} />
+              <Route path="/search-snapchat-by-username" element={<SearchSnapchatByUsername />} />
+              <Route path="/search-twitch-by-username" element={<SearchTwitchByUsername />} />
              <Route path="/how-to-find-someone-online" element={<HowToFindSomeoneOnline />} />
               <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
