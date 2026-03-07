@@ -415,6 +415,7 @@ const FindSomeoneBySocialMedia = lazy(() => import("./pages/find-someone/FindSom
 const FindAccountsByEmail = lazy(() => import("./pages/FindAccountsByEmail"));
 const FindAccountsByPhone = lazy(() => import("./pages/FindAccountsByPhone"));
 const HowOnlineFootprintScanningWorks = lazy(() => import("./pages/HowOnlineFootprintScanningWorks"));
+const HowPeopleFindYouOnline = lazy(() => import("./pages/HowPeopleFindYouOnline"));
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
 const UsernameSearchEngine = lazy(() => import("./pages/UsernameSearchEngine"));
@@ -912,6 +913,7 @@ function RouterContent() {
                <Route path="/find-accounts-by-email" element={<FindAccountsByEmail />} />
                <Route path="/find-accounts-by-phone" element={<FindAccountsByPhone />} />
                <Route path="/how-online-footprint-scanning-works" element={<HowOnlineFootprintScanningWorks />} />
+               <Route path="/how-people-find-you-online" element={<HowPeopleFindYouOnline />} />
               <Route path="/comparisons/pimeyes-alternative" element={<Navigate to="/comparisons/pimeyes" replace />} />
               <Route path="/osint-techniques" element={<OsintTechniques />} />
               <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
