@@ -6,6 +6,7 @@ import { PLATFORM_SCHEMA_DESCRIPTION, PLATFORM_META_DESCRIPTION } from "@/lib/pl
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
+import { LazySection } from "@/hooks/useLazySection";
 
 // Below-fold on mobile (hero is 80svh): lazy-loaded for LCP
 const HomepageResultPreview = lazy(() => import("@/components/HomepageResultPreview").then(m => ({ default: m.HomepageResultPreview })));
