@@ -405,6 +405,16 @@ const FindSomeoneBySocialMedia = lazy(() => import("./pages/find-someone/FindSom
 const PimeyesAlternative = lazy(() => import("./pages/comparisons/PimeyesAlternative"));
 const OsintTechniques = lazy(() => import("./pages/OsintTechniques"));
 const UsernameSearchEngine = lazy(() => import("./pages/UsernameSearchEngine"));
+const SearchInstagramUsername = lazy(() => import("./pages/search-username/SearchInstagramUsername"));
+const SearchRedditUsername = lazy(() => import("./pages/search-username/SearchRedditUsername"));
+const SearchTiktokUsername = lazy(() => import("./pages/search-username/SearchTiktokUsername"));
+const SearchDiscordUsername = lazy(() => import("./pages/search-username/SearchDiscordUsername"));
+const SearchYoutubeUsername = lazy(() => import("./pages/search-username/SearchYoutubeUsername"));
+const SearchTelegramUsername = lazy(() => import("./pages/search-username/SearchTelegramUsername"));
+const SearchSnapchatUsername = lazy(() => import("./pages/search-username/SearchSnapchatUsername"));
+const SearchTwitchUsername = lazy(() => import("./pages/search-username/SearchTwitchUsername"));
+const SearchPinterestUsername = lazy(() => import("./pages/search-username/SearchPinterestUsername"));
+const SearchGithubUsername = lazy(() => import("./pages/search-username/SearchGithubUsername"));
 const CheckUsernameAcrossPlatforms = lazy(() => import("./pages/CheckUsernameAcrossPlatforms"));
 const SherlockVsFootprintiq = lazy(() => import("./pages/comparisons/SherlockVsFootprintiq"));
 const CredentialReuseRisk = lazy(() => import("./pages/CredentialReuseRisk"));
@@ -880,6 +890,16 @@ function RouterContent() {
               <Route path="/osint-techniques" element={<OsintTechniques />} />
               <Route path="/check-username-across-platforms" element={<CheckUsernameAcrossPlatforms />} />
               <Route path="/username-search-engine" element={<UsernameSearchEngine />} />
+              <Route path="/search-instagram-username" element={<SearchInstagramUsername />} />
+              <Route path="/search-reddit-username" element={<SearchRedditUsername />} />
+              <Route path="/search-tiktok-username" element={<SearchTiktokUsername />} />
+              <Route path="/search-discord-username" element={<SearchDiscordUsername />} />
+              <Route path="/search-youtube-username" element={<SearchYoutubeUsername />} />
+              <Route path="/search-telegram-username" element={<SearchTelegramUsername />} />
+              <Route path="/search-snapchat-username" element={<SearchSnapchatUsername />} />
+              <Route path="/search-twitch-username" element={<SearchTwitchUsername />} />
+              <Route path="/search-pinterest-username" element={<SearchPinterestUsername />} />
+              <Route path="/search-github-username" element={<SearchGithubUsername />} />
               <Route path="/comparisons/sherlock-vs-footprintiq" element={<Navigate to="/comparisons/sherlock" replace />} />
                <Route path="/credential-reuse-risk" element={<CredentialReuseRisk />} />
                <Route path="/scan-my-online-presence" element={<ScanMyOnlinePresence />} />
