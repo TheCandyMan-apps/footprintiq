@@ -7762,6 +7762,7 @@ export type Database = {
           archived_at: string | null
           cache_key: string | null
           cached_from_scan_id: string | null
+          claim_token_hash: string | null
           claimed: boolean
           completed_at: string | null
           created_at: string
@@ -7802,6 +7803,7 @@ export type Database = {
           archived_at?: string | null
           cache_key?: string | null
           cached_from_scan_id?: string | null
+          claim_token_hash?: string | null
           claimed?: boolean
           completed_at?: string | null
           created_at?: string
@@ -7842,6 +7844,7 @@ export type Database = {
           archived_at?: string | null
           cache_key?: string | null
           cached_from_scan_id?: string | null
+          claim_token_hash?: string | null
           claimed?: boolean
           completed_at?: string | null
           created_at?: string

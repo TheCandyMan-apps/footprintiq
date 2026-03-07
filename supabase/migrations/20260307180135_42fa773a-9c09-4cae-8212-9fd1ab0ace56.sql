@@ -1,0 +1,1 @@
+ALTER TABLE public.scans ADD COLUMN IF NOT EXISTS claim_token_hash text;
