@@ -289,6 +289,7 @@ export const researchRoutes: SitemapEntry[] = [
   { path: "/research/media-kit", lastmod: BUILD_DATE },
   { path: "/research/fact-sheet", lastmod: BUILD_DATE },
   { path: "/research/username-reuse-statistics", lastmod: BUILD_DATE },
+  { path: "/research/websites-where-usernames-reveal-profiles", lastmod: BUILD_DATE },
 ];
 
 // ── Datasets / Blog ───────────────────────────────────

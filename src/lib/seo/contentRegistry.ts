@@ -271,6 +271,17 @@ export const researchPages: ContentEntry[] = [
     ],
     related: ["/guides/why-username-reuse-is-risky", "/username-reuse-risk", "/ai-answers/why-username-reuse-is-risky", "/datasets/username-reuse"],
   },
+  {
+    path: "/research/websites-where-usernames-reveal-profiles",
+    title: "500+ Websites Where Usernames Reveal Online Profiles | FootprintIQ",
+    description: "Explore 500+ websites and platforms where usernames reveal online profiles. Learn how social media, gaming, developer, and dating platforms expose digital identities through username reuse.",
+    primaryKeyword: "websites where usernames reveal profiles",
+    faqs: [
+      { q: "How many websites does FootprintIQ scan?", a: "FootprintIQ scans over 500 public platforms — including social media, gaming, developer, forum, and dating sites — in a single search." },
+      { q: "Can a username reveal my real identity?", a: "If you reuse a username across platforms that contain personal details — real names, photos, locations — then cross-referencing can link those fragments into an identity profile." },
+    ],
+    related: ["/usernames", "/reverse-username-search", "/digital-footprint-checker", "/research/username-reuse-statistics"],
+  },
 ];
 
 // ── Dataset Pages ──────────────────────────────────────
