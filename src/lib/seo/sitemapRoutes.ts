@@ -160,6 +160,7 @@ export const guideRoutes: SitemapEntry[] = [
   { path: "/check-my-digital-footprint", lastmod: BUILD_DATE },
   { path: "/find-accounts-by-email", lastmod: BUILD_DATE },
   { path: "/find-accounts-by-phone", lastmod: BUILD_DATE },
+  { path: "/how-online-footprint-scanning-works", lastmod: BUILD_DATE },
   { path: "/how-to-check-whats-publicly-visible-about-you", lastmod: BUILD_DATE },
   { path: "/how-employers-check-your-online-presence", lastmod: BUILD_DATE },
   { path: "/see-what-google-knows-about-you", lastmod: BUILD_DATE },
